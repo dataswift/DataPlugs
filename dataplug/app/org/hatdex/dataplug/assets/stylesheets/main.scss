@@ -1,0 +1,72 @@
+@import "bootstrap";
+
+
+$base-white: white;
+$base-black: black;
+$base-color: rgb(188, 51, 51); /*rgb(233, 58, 63);*/
+$base-active-color: rgb(17, 134, 117);
+$text-light: white;
+$text-dark: lighten(black, 20%);
+$base-background-color: #535353;
+
+body {
+  font-family: 'Open Sans Regular', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  background: white;
+}
+
+h1, h2, h3, h4, h5 {
+  font-family: 'Open Sans Condensed', sans-serif;
+}
+
+.container-fluid.content {
+  min-height: 80vh;
+  /*background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('/assets/images/hat_foundation.jpg');*/
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  color: white;
+  padding-top: 10em;
+  padding-bottom: 10em;
+}
+
+
+
+.btn-facebook {
+  background: #3b5998;
+  color: white;
+  border-color: #3b5998;
+}
+
+.btn-twitter {
+  background: #2CA7E0;
+  color: white;
+  border-color: #2CA7E0;
+}
+
+.content-main {
+  width: 100%;
+}
+
+.share {
+  .fa-facebook {
+    width: 1.1em;
+    padding: 0.1em;
+    background: #3b5998;
+    font-size: 2em;
+  }
+
+  .fa-twitter {
+    width: 1.1em;
+    padding: 0.1em;
+    background: #00a0d1;
+    font-size: 2em;
+  }
+}
+
+.content-main {
+  background: lighten(#2d2d2d, 80%);
+}
+
+@import "headerFooter";
