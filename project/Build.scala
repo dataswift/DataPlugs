@@ -14,6 +14,11 @@ object Build extends Build {
     base = file("hat-client-scala-play")
   )
 
+  lazy val commonPlay = Project(
+    id = "common-play",
+    base = file("commonPlay")
+  )
+
   lazy val marketsquareClientPlay = Project(
     id = "marketsquare-client-play",
     base = file("marketsquare-client-scala-play"),
@@ -23,7 +28,10 @@ object Build extends Build {
   lazy val dataplug = Project(
     id = "dataplug",
     base = file("dataplug"),
-    dependencies = Seq(hatClientPlay % "compile->compile;test->test", marketsquareClientPlay % "compile->compile;test->test")
+    dependencies = Seq(
+      hatClientPlay % "compile->compile;test->test",
+      marketsquareClientPlay % "compile->compile;test->test",
+      commonPlay % "compile->compile;test->test")
   )
 
   val root = Project(

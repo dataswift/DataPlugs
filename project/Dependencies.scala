@@ -16,8 +16,10 @@ object Dependencies {
   val resolvers = Seq(
     "Atlassian Releases" at "https://maven.atlassian.com/public/",
     "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases",
-    "Sonatype snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
+    "Sonatype snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/",
+    Resolver.jcenterRepo
   )
+
 
   object Library {
 
@@ -29,6 +31,8 @@ object Dependencies {
       val specs2 = "com.typesafe.play" %% "play-specs2" % version
       val jsonDerivedCodecs = "org.julienrf" % "play-json-derived-codecs_2.11" % "3.3"
       val typesafeConfigExtras = "com.iheart" %% "ficus" % "1.2.6"
+      val mailer = "com.typesafe.play" %% "play-mailer" % "5.0.0"
+
       object Specs2 {
         private val version = "3.6.6"
         val matcherExtra = "org.specs2" %% "specs2-matcher-extra" % version
@@ -44,6 +48,19 @@ object Dependencies {
         val jdbc = "com.typesafe.play" %% "play-jdbc" % version
         val postgres = "org.postgresql" % "postgresql" % "9.4-1206-jdbc4"
         val anorm = "com.typesafe.play" %% "anorm" % "2.5.2"
+      }
+
+      object Utils {
+        val playBootstrap = "com.adrianhurt" %% "play-bootstrap" % "1.1-P25-B3" exclude("org.webjars", "jquery")
+        val commonsValidator = "commons-validator" % "commons-validator" % "1.5.0"
+        val htmlCompressor = "com.mohiva" %% "play-html-compressor" % "0.6.3"
+      }
+
+      object Silhouette {
+        val passwordBcrypt = "com.mohiva" %% "play-silhouette-password-bcrypt" % "4.0.0"
+        val persistence = "com.mohiva" %% "play-silhouette-persistence" % "4.0.0"
+        val cryptoJca = "com.mohiva" %% "play-silhouette-crypto-jca" % "4.0.0"
+        val silhouette = "com.mohiva" %% "play-silhouette" % "4.0.0"
       }
     }
 
