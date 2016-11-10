@@ -7,4 +7,8 @@
 
 package org.hatdex.dataplug.models
 
-case class Identity(phata: String)
+import com.mohiva.play.silhouette.api.{ Identity, LoginInfo }
+
+case class User(providerId: String, userId: String, linkedUsers: List[User]) extends Identity {
+  def loginInfo: LoginInfo = LoginInfo(providerId, userId)
+}

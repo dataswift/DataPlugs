@@ -19,7 +19,8 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo
 import org.bouncycastle.openssl.PEMParser
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter
 import org.hatdex.hat.api.services.HatClient
-import org.hatdex.dataplug.models.Identity
+import org.hatdex.dataplug.models.User
+import org.hatdex.dataplug.services.UserService
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.cache.{ CacheApi, NamedCache }
@@ -31,11 +32,16 @@ import play.api.mvc._
 import scala.concurrent.Future
 import scala.util.Try
 
-class JwtPhataAuthenticatedRequest[A](val identity: Identity, val request: Request[A])
+class JwtPhataAuthenticatedRequest[A](val identity: User, val request: Request[A])
   extends WrappedRequest[A](request)
 
-class JwtPhataAuthenticatedAction @Inject() (wSClient: WSClient, @NamedCache("session-cache") cache: CacheApi, configuration: play.api.Configuration) extends ActionBuilder[JwtPhataAuthenticatedRequest] {
-  val logger = Logger("JwtPhataAuthenticatedAction")
+class JwtPhataAuthenticatedAction @Inject() (
+    wSClient: WSClient,
+    @NamedCache("session-cache") cache: CacheApi,
+    configuration: play.api.Configuration,
+    userService: UserService) extends ActionBuilder[JwtPhataAuthenticatedRequest] {
+
+  val logger = Logger("JwtPhataAuthentication")
   def invokeBlock[A](request: Request[A], block: (JwtPhataAuthenticatedRequest[A]) => Future[Result]): Future[Result] = {
     request.headers.get("X-Auth-Token")
       .orElse(request.getQueryString("X-Auth-Token"))
@@ -44,7 +50,9 @@ class JwtPhataAuthenticatedAction @Inject() (wSClient: WSClient, @NamedCache("se
       .map { eventualMaybeUser =>
         eventualMaybeUser.flatMap { maybeIdentity =>
           maybeIdentity map { identity =>
-            block(new JwtPhataAuthenticatedRequest(identity, request))
+            userService.save(identity)
+              .flatMap(_ => userService.retrieve(identity.loginInfo).map(_.get)) // must have a user when we've just inserted one
+              .flatMap(saved => block(new JwtPhataAuthenticatedRequest(saved, request)))
           } getOrElse {
             Future.successful(Results.Unauthorized)
           }
@@ -58,7 +66,7 @@ class JwtPhataAuthenticatedAction @Inject() (wSClient: WSClient, @NamedCache("se
       .getOrElse(Future.successful(Results.Unauthorized))
   }
 
-  def validateJwtToken(token: String): Future[Option[Identity]] = {
+  def validateJwtToken(token: String): Future[Option[User]] = {
     val expectedSubject = "hat"
     val expectedResources = configuration.getStringSeq("auth.allowedResources").get
     val expectedAccessCope = "validate"
@@ -69,18 +77,18 @@ class JwtPhataAuthenticatedAction @Inject() (wSClient: WSClient, @NamedCache("se
       val fresh = claimSet.getExpirationTime.after(DateTime.now().toDate)
       val subjectMatches = claimSet.getSubject == expectedSubject
       val resourceMatches = Option(claimSet.getClaim("resource").asInstanceOf[String]).map { resource =>
-        expectedResources.exists(er => er.startsWith(resource))
+        expectedResources.exists(er => resource.startsWith(er))
       } getOrElse {
         false
       }
       val accessScopeMatches = Option(claimSet.getClaim("accessScope")).contains(expectedAccessCope)
 
       if (fresh && subjectMatches && resourceMatches && accessScopeMatches) {
-        val identity = Identity(claimSet.getIssuer)
+        val identity = User("hatlogin", claimSet.getIssuer, List())
         verifiedIdentityCached(identity, signedJWT)
       }
       else {
-        logger.debug("JWT token validation failed")
+        logger.debug(s"JWT token validation failed: fresh - ${fresh}, subject - ${subjectMatches}, resource - ${resourceMatches}, scope - ${accessScopeMatches}")
         Future(None)
       }
     } getOrElse {
@@ -89,19 +97,19 @@ class JwtPhataAuthenticatedAction @Inject() (wSClient: WSClient, @NamedCache("se
     }
   }
 
-  private def verifiedIdentityCached(identity: Identity, signedJWT: SignedJWT): Future[Option[Identity]] = {
-    val maybeCachedPublicKey = cache.get(identity.phata).map { publicKey: RSAPublicKey =>
+  private def verifiedIdentityCached(identity: User, signedJWT: SignedJWT): Future[Option[User]] = {
+    val maybeCachedPublicKey = cache.get(identity.userId).map { publicKey: RSAPublicKey =>
       Future.successful(Some(publicKey))
     }
 
     val eventuallySomePublicKey = maybeCachedPublicKey getOrElse {
-      val hatClient = new HatClient(wSClient, identity.phata)
+      val hatClient = new HatClient(wSClient, identity.userId)
       hatClient.retrievePublicKey()
       val eventualHatPublicKey = for {
         publicKeyString <- hatClient.retrievePublicKey()
         publicKey <- readPublicKey(publicKeyString)
       } yield {
-        cache.set(identity.phata, publicKey)
+        cache.set(identity.userId, publicKey)
         Some(publicKey)
       }
       eventualHatPublicKey
@@ -147,16 +155,17 @@ class JwtPhataAuthenticatedAction @Inject() (wSClient: WSClient, @NamedCache("se
   }
 }
 
-class JwtPhataAwareRequest[A](val maybeUser: Option[Identity], val request: Request[A])
+class JwtPhataAwareRequest[A](val maybeUser: Option[User], val request: Request[A])
   extends WrappedRequest[A](request)
 
 class JwtPhataAwareAction @Inject() (
     wSClient: WSClient,
     @NamedCache("session-cache") cache: CacheApi,
     configuration: play.api.Configuration,
+    userService: UserService,
     jwtAuthenticatedAction: JwtPhataAuthenticatedAction) extends ActionBuilder[JwtPhataAwareRequest] {
 
-  val logger = Logger("JwtPhataAwareAction")
+  val logger = Logger("JwtPhataAuthentication")
 
   def invokeBlock[A](request: Request[A], block: (JwtPhataAwareRequest[A]) => Future[Result]): Future[Result] = {
     request.headers.get("X-Auth-Token")
@@ -165,8 +174,16 @@ class JwtPhataAwareAction @Inject() (
       .map(jwtAuthenticatedAction.validateJwtToken)
       .map { eventualMaybeUser =>
         eventualMaybeUser.flatMap { maybe =>
-          logger.debug(s"User auth checked, got back user ${maybe.map(_.phata)}")
-          block(new JwtPhataAwareRequest(maybe, request))
+          logger.debug(s"User auth checked, got back user ${maybe}")
+          val eventuallySavedUser = maybe map { identity =>
+            userService.save(identity)
+              .flatMap(_ => userService.retrieve(identity.loginInfo)) // must have a user when we've just inserted one
+          } getOrElse {
+            Future.successful(None)
+          }
+          eventuallySavedUser flatMap { maybeUser =>
+            block(new JwtPhataAwareRequest(maybeUser, request))
+          }
         } recoverWith {
           case e =>
             logger.error(s"Error while authenticating: ${e.getMessage}")

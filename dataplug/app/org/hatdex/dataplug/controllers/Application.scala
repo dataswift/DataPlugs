@@ -11,26 +11,40 @@ import java.util.UUID
 import javax.inject.{ Inject, Named }
 
 import akka.actor.{ ActorRef, ActorSystem }
-import org.hatdex.dataplug.utils.JwtPhataAwareAction
+import com.mohiva.play.silhouette.api.Silhouette
+import com.mohiva.play.silhouette.api.util.Clock
+import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+import org.hatdex.dataplug.utils.{ JwtPhataAuthenticatedAction, JwtPhataAwareAction, PhataAuthenticationEnvironment, SilhouettePhataAuthenticationController }
 import org.hatdex.dataplug.views
 import play.api.i18n.MessagesApi
 import play.api.libs.ws.WSClient
 import play.api.mvc._
+import org.hatdex.dataplug.views
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import org.hatdex.commonPlay.models.auth.forms.AuthForms
+import org.hatdex.commonPlay.utils.MailService
+import play.api.Logger
+
 import scala.util.Try
 
 class Application @Inject() (
-    messagesApi: MessagesApi,
+    val messagesApi: MessagesApi,
     configuration: play.api.Configuration,
-    wsClient: WSClient,
-    actorSystem: ActorSystem,
-    tokenUserAwareAction: JwtPhataAwareAction) extends Controller {
+    socialProviderRegistry: SocialProviderRegistry,
+    silhouette: Silhouette[PhataAuthenticationEnvironment],
+    clock: Clock) extends SilhouettePhataAuthenticationController(silhouette, clock, configuration) {
 
-  def index(): Action[AnyContent] = tokenUserAwareAction.async { implicit request =>
-    Future.successful(InternalServerError("Not implemented"))
+  def index(): Action[AnyContent] = UserAwareAction.async { implicit request =>
+    Logger.debug(s"Maybe user? ${request.identity}")
+    request.identity.map { implicit user =>
+      Future.successful(Ok(views.html.connect(socialProviderRegistry)))
+    } getOrElse {
+      Future.successful(Ok(views.html.signIn(AuthForms.signinHatForm)))
+    }
   }
+
 }
 

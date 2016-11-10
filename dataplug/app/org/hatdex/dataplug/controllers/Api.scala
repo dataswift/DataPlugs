@@ -23,8 +23,6 @@ import scala.concurrent.Future
 class Api @Inject() (
     messagesApi: MessagesApi,
     configuration: play.api.Configuration,
-    wsClient: WSClient,
-    actorSystem: ActorSystem,
     tokenUserAwareAction: JwtPhataAwareAction,
     tokenUserAuthenticatedAction: JwtPhataAuthenticatedAction) extends Controller {
 

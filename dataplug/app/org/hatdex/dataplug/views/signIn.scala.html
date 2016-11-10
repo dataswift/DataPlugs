@@ -1,0 +1,26 @@
+@(signInForm: Form[String])(implicit request: RequestHeader, messages: Messages)
+
+@import com.mohiva.play.silhouette.impl.providers.oauth2.ClefProvider
+@import b3.inline.fieldConstructor
+
+@import org.hatdex.dataplug.views.html._
+@import org.hatdex.dataplug.controllers.routes
+
+@templates.main(Messages("sign.in.title")) {
+    <fieldset class="col-md-6 col-md-offset-3">
+        <legend>@Messages("sign.in.credentials")</legend>
+        @helper.form(action = routes.HatLoginController.signinHat()) {
+            @helper.CSRF.formField
+
+            @b3.text(signInForm("hataddress"),
+                '_label -> Messages("field.hataddress"),
+                'placeholder -> "yourhat.hubofallthings.net",
+                'autofocus -> true,
+                '_help -> "You will be taken to your personal HAT page. For security reasons, your HAT password can only be entered at that page.")
+
+            @b3.submit('class -> "btn btn-red btn-block") {
+                @Messages("signin.hat.signin")
+            }
+        }
+    </fieldset>
+}

@@ -13,6 +13,6 @@ import play.api.libs.concurrent.AkkaGuiceSupport
 class DiActorsModule extends AbstractModule with AkkaGuiceSupport {
 
   def configure = {
-
+    bind(classOf[org.hatdex.commonPlay.utils.Mailer]).to(classOf[org.hatdex.dataplug.utils.Mailer])
   }
 }

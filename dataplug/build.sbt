@@ -12,6 +12,7 @@ libraryDependencies ++= Seq(
   Library.Play.Jwt.bouncyCastle,
   Library.Play.Jwt.bouncyCastlePkix,
   Library.Play.Jwt.nimbusDsJwt,
+  Library.Play.Utils.playBootstrap,
   Library.akkaTestkit,
   Library.Play.Db.jdbc,
   Library.Play.Db.postgres,
@@ -30,7 +31,7 @@ routesGenerator := InjectedRoutesGenerator
 
 pipelineStages := Seq(uglify, digest, gzip)
 includeFilter in gzip := "*.js || *.css || *.svg || *.png"
-sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "bulletin" / "assets"
+sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "dataplug" / "assets"
 
 import com.typesafe.sbt.packager.docker._
 packageName in Docker := packageName.value

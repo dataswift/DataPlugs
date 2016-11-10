@@ -19,7 +19,7 @@
 
   <logger name="ch.qos.logback" level="WARN" />
   <logger name="play" level="INFO" />
-  <logger name="application" level="INFO" />
+  <logger name="application" level="DEBUG" />
   <logger name="DatabaseNotableStore" level="INFO" />
   <logger name="BulletinService" level="INFO" />
   <logger name="JwtPhataAuthenticatedAction" level="INFO" />
@@ -31,6 +31,9 @@
   <logger name="[actor] hat-client-actor" level="INFO" />
 
   <logger name="MarketsquareNoticeService" level="DEBUG"/>
+  <logger name="JwtPhataAuthentication" level="DEBUG"/>
+  <logger name="HatLoginController" level="DEBUG"/>
+
 
   <root level="WARN">
     <appender-ref ref="ASYNCSTDOUT" />
