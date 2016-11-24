@@ -57,3 +57,47 @@ CREATE OR REPLACE VIEW user_linked_user AS
 --rollback DROP TABLE user_oauth2_info;
 --rollback DROP TABLE user_oauth1_info;
 --rollback DROP TABLE user_user;
+
+--changeset dataplug:log context:structures
+
+CREATE SEQUENCE dataplug_endpoint_seq START WITH 1;
+
+CREATE TABLE dataplug_endpoint (
+  name        VARCHAR PRIMARY KEY,
+  description VARCHAR NOT NULL,
+  details     VARCHAR
+);
+
+CREATE SEQUENCE dataplug_user_link_seq START WITH 1;
+
+CREATE TABLE dataplug_user (
+  id                           INT8      NOT NULL DEFAULT nextval('dataplug_user_link_seq') PRIMARY KEY,
+  phata                        VARCHAR   NOT NULL,
+  dataplug_endpoint            VARCHAR   NOT NULL REFERENCES dataplug_endpoint (name),
+  endpoint_configuration       JSONB,
+  endpoint_variant             VARCHAR,
+  endpoint_variant_description VARCHAR,
+  active                       BOOLEAN   NOT NULL,
+  created                      TIMESTAMP NOT NULL DEFAULT now(),
+  CONSTRAINT dataplug_user_link_unique UNIQUE (phata, dataplug_endpoint, endpoint_variant)
+);
+
+CREATE SEQUENCE log_dataplug_seq_id START WITH 1;
+
+CREATE TABLE log_dataplug_user (
+  id                     INT8      NOT NULL DEFAULT nextval('log_dataplug_seq_id') PRIMARY KEY,
+  phata                  VARCHAR   NOT NULL,
+  dataplug_endpoint      VARCHAR   NOT NULL REFERENCES dataplug_endpoint (name),
+  endpoint_configuration JSONB     NOT NULL,
+  endpoint_variant       VARCHAR,
+  created                TIMESTAMP NOT NULL DEFAULT now(),
+  successful             BOOLEAN   NOT NULL,
+  message                VARCHAR
+);
+
+--rollback DROP TABLE log_dataplug_user;
+--rollback DROP SEQUENCE log_dataplug_seq_id;
+--rollback DROP TABLE dataplug_user;
+--rollback DROP SEQUENCE dataplug_user_link_seq;
+--rollback DROP TABLE dataplug_endpoint;
+--rollback DROP SEQUENCE dataplug_endpoint_seq;

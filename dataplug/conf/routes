@@ -1,13 +1,14 @@
 # Routes
 # This file defines all application routes (Higher priority routes first)
 
-GET        /assets/*file                  controllers.Assets.versioned(path="/public", file: Asset)
+GET         /assets/*file                  controllers.Assets.versioned(path="/public", file: Asset)
 
-GET        /                              org.hatdex.dataplug.controllers.Application.index()
-GET        /authenticate/hat              org.hatdex.dataplug.controllers.HatLoginController.authHat
-GET        /signin/hat                    org.hatdex.dataplug.controllers.HatLoginController.signinHat
-GET        /authenticate/:provider        org.hatdex.dataplug.controllers.SocialAuthController.authenticate(provider)
+GET         /                              org.hatdex.dataplugCalendar.controllers.Application.index
+POST        /connect                       org.hatdex.dataplugCalendar.controllers.Application.processSignups
+GET         /authenticate/hat              org.hatdex.dataplug.controllers.HatLoginController.authHat
+POST        /signin/hat                    org.hatdex.dataplug.controllers.HatLoginController.signinHat
+GET         /authenticate/:provider        org.hatdex.dataplug.controllers.SocialAuthController.authenticate(provider)
 
-GET        /api/tickle                    org.hatdex.dataplug.controllers.Api.tickle(hat: String)
-GET        /api/status                    org.hatdex.dataplug.controllers.Api.tickle(hat: String)
-GET        /api/permissions               org.hatdex.dataplug.controllers.Api.tickle(hat: String)
+GET         /api/tickle                    org.hatdex.dataplug.controllers.Api.tickle(hat: String)
+GET         /api/status                    org.hatdex.dataplug.controllers.Api.status(hat: String)
+GET         /api/permissions               org.hatdex.dataplug.controllers.Api.permissions(hat: String)

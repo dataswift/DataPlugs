@@ -33,6 +33,8 @@
   <logger name="MarketsquareNoticeService" level="DEBUG"/>
   <logger name="JwtPhataAuthentication" level="DEBUG"/>
   <logger name="HatLoginController" level="DEBUG"/>
+  <logger name="GoogleCalendarInterface" level="DEBUG"/>
+
 
 
   <root level="WARN">

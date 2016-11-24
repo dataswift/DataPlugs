@@ -7,13 +7,13 @@
     @if(socialProviders.providers.nonEmpty) {
         <h1>Networks already linked:</h1>
         <div class="social-providers">
-            <div>
             @for(p <- socialProviders.providers if user.linkedUsers.map(_.providerId).contains(p.id)) {
                 <a href="@routes.SocialAuthController.authenticate(p.id)" class="provider @p.id" title="@Messages(p.id)">
-                    <img src="@controllers.routes.Assets.versioned(s"images/providers/${p.id}.png")" width="64px" height="64px" alt="@Messages(p.id)">
+                    <div class="social-link">
+                    <i class="fa fa-@p.id.toLowerCase"></i>
+                    </div>
                 </a>
             }
-            </div>
         </div>
 
         <h1>Networks available:</h1>
@@ -21,7 +21,9 @@
             <div>
             @for(p <- socialProviders.providers if p.id != "clef") {
                 <a href="@routes.SocialAuthController.authenticate(p.id)" class="provider @p.id" title="@Messages(p.id)">
-                    <img src="@controllers.routes.Assets.versioned(s"images/providers/${p.id}.png")" width="64px" height="64px" alt="@Messages(p.id)">
+                    <div class="social-link">
+                        <i class="fa fa-@p.id.toLowerCase"></i>
+                    </div>
                 </a>
             }
             </div>

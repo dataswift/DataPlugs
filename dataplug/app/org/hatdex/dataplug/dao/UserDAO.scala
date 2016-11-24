@@ -1,4 +1,4 @@
-package org.hatdex.dataplug.services.dao
+package org.hatdex.dataplug.dao
 
 import java.util.UUID
 

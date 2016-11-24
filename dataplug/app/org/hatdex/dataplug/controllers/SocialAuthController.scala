@@ -33,6 +33,7 @@ class SocialAuthController @Inject() (
     userService: UserService,
     authInfoRepository: AuthInfoRepository,
     socialProviderRegistry: SocialProviderRegistry,
+    dataPlugViewSet: DataPlugViewSet,
     clock: Clock) extends SilhouettePhataAuthenticationController(silhouette, clock, configuration) with I18nSupport with Logger {
 
   /**
@@ -54,7 +55,7 @@ class SocialAuthController @Inject() (
             //            authenticator <- silhouette.env.authenticatorService.create(profile.loginInfo)
             //            value <- silhouette.env.authenticatorService.init(authenticator)
             //            result <- silhouette.env.authenticatorService.embed(value, Redirect(routes.Application.index()))
-            result <- Future.successful(Redirect(routes.Application.index()))
+            result <- Future.successful(Redirect(dataPlugViewSet.indexRedirect))
           } yield {
             silhouette.env.eventBus.publish(LoginEvent(socialUser, request))
             result
@@ -64,7 +65,7 @@ class SocialAuthController @Inject() (
     }).recover {
       case e: ProviderException =>
         logger.error("Unexpected provider error", e)
-        Redirect(routes.Application.index()).flashing("error" -> Messages("could.not.authenticate"))
+        Redirect(dataPlugViewSet.indexRedirect).flashing("error" -> Messages("could.not.authenticate"))
     }
   }
 }

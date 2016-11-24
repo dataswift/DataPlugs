@@ -27,23 +27,24 @@ object HatClientActor {
     Props(new HatClientActor(ws, hat, config, credentials))
 
   sealed trait AuthMessage
-  private case object Connect extends AuthMessage
-  private case object Disconnected extends AuthMessage
-  private case class Connected(token: String, jwtToken: JwtToken) extends AuthMessage
-  private case class Unauthorized(message: String) extends AuthMessage
 
   case class FetchDataDebit(id: UUID)
+
   case class FetchingFailed(message: String)
+
+  private case class Connected(token: String, jwtToken: JwtToken) extends AuthMessage
+
+  private case class Unauthorized(message: String) extends AuthMessage
+
+  private case object Connect extends AuthMessage
+
+  private case object Disconnected extends AuthMessage
+
 }
 
 class HatClientActor(ws: WSClient, hat: String, config: Config, credentials: HatClientCredentials) extends Actor with ActorLogging with Stash {
-  import HatClientActor._
-  val logger = Logger(s"[actor] ${self.path.name}")
-  // Use the actor's dispatcher as execution context for api calls
-  implicit val ec: ExecutionContext = context.dispatcher
 
-  val hatSecure = config.getOrElse("dexter.secure", false)
-  val mockClient = config.getOrElse("dexter.mock", false)
+  import HatClientActor._
 
   lazy val hatProtocol = {
     (hatSecure, mockClient) match {
@@ -52,7 +53,11 @@ class HatClientActor(ws: WSClient, hat: String, config: Config, credentials: Hat
       case (false, false) => "http://"
     }
   }
-
+  val logger = Logger(s"[actor] ${self.path.name}")
+  // Use the actor's dispatcher as execution context for api calls
+  implicit val ec: ExecutionContext = context.dispatcher
+  val hatSecure = config.getOrElse("dexter.secure", false)
+  val mockClient = config.getOrElse("dexter.mock", false)
   val hatAddress = if (mockClient) {
     ""
   }

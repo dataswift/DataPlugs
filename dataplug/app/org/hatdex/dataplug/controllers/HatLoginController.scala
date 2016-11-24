@@ -38,6 +38,7 @@ class HatLoginController @Inject() (
     userService: UserService,
     socialProviderRegistry: SocialProviderRegistry,
     tokenUserAwareAction: JwtPhataAwareAction,
+    dataPlugViewSet: DataPlugViewSet,
     tokenUserAuthenticatedAction: JwtPhataAuthenticatedAction) extends SilhouettePhataAuthenticationController(silhouette, clock, configuration) {
 
   val hatProtocol = {
@@ -58,7 +59,7 @@ class HatLoginController @Inject() (
       case Some(user) => for {
         authenticator <- env.authenticatorService.create(user.loginInfo)
         cookie <- env.authenticatorService.init(authenticator)
-        result <- env.authenticatorService.embed(cookie, Redirect(routes.Application.index()))
+        result <- env.authenticatorService.embed(cookie, Redirect(dataPlugViewSet.indexRedirect))
       } yield {
         logger.debug(s"Logged in! ${user}")
         env.eventBus.publish(LoginEvent(user, request))
@@ -76,7 +77,7 @@ class HatLoginController @Inject() (
 
   def signinHat: Action[AnyContent] = Action.async { implicit request =>
     AuthForms.signinHatForm.bindFromRequest.fold(
-      formWithErrors => Future.successful(BadRequest(views.html.signIn(formWithErrors))),
+      formWithErrors => Future.successful(BadRequest(dataPlugViewSet.signIn(AuthForms.signinHatForm))),
       address => {
         val hatHost = address.stripPrefix("http://").stripPrefix("https://").replaceAll("[^A-Za-z0-9.]", "")
 

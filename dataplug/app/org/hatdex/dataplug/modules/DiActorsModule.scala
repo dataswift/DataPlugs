@@ -8,11 +8,13 @@
 package org.hatdex.dataplug.modules
 
 import com.google.inject.AbstractModule
+import org.hatdex.dataplug.actors.DataPlugManagerActor
 import play.api.libs.concurrent.AkkaGuiceSupport
 
 class DiActorsModule extends AbstractModule with AkkaGuiceSupport {
 
   def configure = {
+    bindActor[DataPlugManagerActor]("dataPlugManager")
     bind(classOf[org.hatdex.commonPlay.utils.Mailer]).to(classOf[org.hatdex.dataplug.utils.Mailer])
   }
 }

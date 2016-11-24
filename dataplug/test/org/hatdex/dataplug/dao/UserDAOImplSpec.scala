@@ -1,4 +1,4 @@
-package org.hatdex.dataplug.services.dao
+package org.hatdex.dataplug.dao
 
 import org.hatdex.dataplug.models.User
 import org.specs2.concurrent.ExecutionEnv
@@ -12,7 +12,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class UserDAOImplTest(implicit ee: ExecutionEnv) extends Specification with Mockito {
+class UserDAOImplSpec(implicit ee: ExecutionEnv) extends Specification with Mockito {
 
   def awaiting[T]: Future[MatchResult[T]] => Result = { _.await }
 

@@ -1,26 +1,22 @@
-package org.hatdex.dataplug.services.dao
+package org.hatdex.dataplug.dao
 
 import javax.inject.{ Inject, Singleton }
 
-import anorm.SqlParser._
-import anorm.{ RowParser, ~, _ }
+import anorm._
 import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.impl.providers.OAuth2Info
+import com.mohiva.play.silhouette.impl.providers.OAuth1Info
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
-import org.hatdex.bulletin.actors.IoExecutionContext
-import play.api.db.DBApi
-import play.api.libs.json.{ JsValue, Json }
+import org.hatdex.dataplug.actors.IoExecutionContext
+import play.api.db.{ Database, _ }
 
-import scala.concurrent._
+import scala.concurrent.{ Future, blocking }
 
 /**
  * The DAO to store the OAuth2 information.
  */
 @Singleton
-class OAuth2InfoDAOImpl @Inject() (dbapi: DBApi) extends DelegableAuthInfoDAO[OAuth2Info] {
+class OAuth1InfoDAOImpl @Inject() (@NamedDatabase("default") db: Database) extends DelegableAuthInfoDAO[OAuth1Info] {
   implicit val ec = IoExecutionContext.ioThreadPool
-
-  private val db = dbapi.database("default")
 
   private def loginInfoParser(table: String): RowParser[LoginInfo] =
     Macro.parser[LoginInfo](
@@ -30,18 +26,7 @@ class OAuth2InfoDAOImpl @Inject() (dbapi: DBApi) extends DelegableAuthInfoDAO[OA
   private def singleLoginInfoParser(table: String): ResultSetParser[LoginInfo] =
     loginInfoParser(table).single
 
-  import org.hatdex.dataplug.utils.AnormParsers._
-
-  private def oauth2InfoParser: RowParser[OAuth2Info] = {
-    get[String]("access_token") ~
-      get[Option[String]]("token_Type") ~
-      get[Option[Int]]("expires_in") ~
-      get[Option[String]]("refresh_token") ~
-      get[Option[JsValue]]("params") map {
-        case accessToken ~ tokenType ~ expiresIn ~ refreshToken ~ params =>
-          OAuth2Info(accessToken, tokenType, expiresIn, refreshToken, params.map(_.as[Map[String, String]]))
-      }
-  }
+  private def oauth1InfoParser: RowParser[OAuth1Info] = Macro.namedParser[OAuth1Info]
 
   /**
    * Saves the OAuth2 info.
@@ -50,26 +35,23 @@ class OAuth2InfoDAOImpl @Inject() (dbapi: DBApi) extends DelegableAuthInfoDAO[OA
    * @param authInfo The OAuth2 info to save.
    * @return The saved OAuth2 info or None if the OAuth2 info couldn't be saved.
    */
-  def add(loginInfo: LoginInfo, authInfo: OAuth2Info): Future[OAuth2Info] = {
+  def add(loginInfo: LoginInfo, authInfo: OAuth1Info): Future[OAuth1Info] = {
     Future {
       blocking {
         db.withTransaction { implicit connection =>
           SQL(
             """
-              | INSERT INTO user_oauth2_info
-              |   (provider_id, user_id, access_token, token_type, expires_in, refresh_token, params)
+              | INSERT INTO user_oauth1_info
+              |   (provider_id, user_id, token, secret)
               | VALUES
-              |   ({providerId}, {userId}, {accessToken}, {tokenType}, {expiresIn}, {refreshToken}, {params}::json)
+              |   ({providerId}, {userId}, {token}, {secret})
             """.stripMargin)
             .on(
               'providerId -> loginInfo.providerID,
               'userId -> loginInfo.providerKey,
-              'accessToken -> authInfo.accessToken,
-              'tokenType -> authInfo.tokenType,
-              'expiresIn -> authInfo.expiresIn,
-              'refreshToken -> authInfo.refreshToken,
-              'params -> authInfo.params.map(params => Json.toJson(params).toString()))
-            .executeInsert(singleLoginInfoParser("user_oauth2_info"))
+              'token -> authInfo.token,
+              'secret -> authInfo.secret)
+            .executeInsert(singleLoginInfoParser("user_oauth1_info"))
           authInfo
         }
       }
@@ -83,19 +65,16 @@ class OAuth2InfoDAOImpl @Inject() (dbapi: DBApi) extends DelegableAuthInfoDAO[OA
    * @param authInfo The auth info to update.
    * @return The updated auth info.
    */
-  def update(loginInfo: LoginInfo, authInfo: OAuth2Info): Future[OAuth2Info] = {
+  def update(loginInfo: LoginInfo, authInfo: OAuth1Info): Future[OAuth1Info] = {
     Future {
       blocking {
         db.withTransaction { implicit connection =>
           SQL(
             """
-              | UPDATE user_oauth2_info
+              | UPDATE user_oauth1_info
               |   SET
-              |     access_token = {accessToken},
-              |     token_type = {tokenType},
-              |     expires_in = {expiresIn},
-              |     refresh_token = {refreshToken},
-              |     params = {params}::json
+              |     token = {token},
+              |     secret = {secret}
               | WHERE
               |   provider_id = {providerId}
               |   AND user_id = {userId}
@@ -103,12 +82,9 @@ class OAuth2InfoDAOImpl @Inject() (dbapi: DBApi) extends DelegableAuthInfoDAO[OA
             .on(
               'providerId -> loginInfo.providerID,
               'userId -> loginInfo.providerKey,
-              'accessToken -> authInfo.accessToken,
-              'tokenType -> authInfo.tokenType,
-              'expiresIn -> authInfo.expiresIn,
-              'refreshToken -> authInfo.refreshToken,
-              'params -> authInfo.params.map(params => Json.toJson(params).toString()))
-            .executeInsert(singleLoginInfoParser("user_oauth2_info"))
+              'token -> authInfo.token,
+              'secret -> authInfo.secret)
+            .executeInsert(singleLoginInfoParser("user_oauth1_info"))
           authInfo
         }
       }
@@ -121,13 +97,13 @@ class OAuth2InfoDAOImpl @Inject() (dbapi: DBApi) extends DelegableAuthInfoDAO[OA
    * @param loginInfo The linked login info.
    * @return The retrieved OAuth2 info or None if no OAuth2 info could be retrieved for the given login info.
    */
-  def find(loginInfo: LoginInfo): Future[Option[OAuth2Info]] = {
+  def find(loginInfo: LoginInfo): Future[Option[OAuth1Info]] = {
     Future {
       blocking {
         db.withTransaction { implicit connection =>
           SQL(
             """
-              | SELECT * FROM user_oauth2_info
+              | SELECT * FROM user_oauth1_info
               | WHERE
               |   provider_id = {providerId}
               |   AND user_id = {userId}
@@ -135,7 +111,7 @@ class OAuth2InfoDAOImpl @Inject() (dbapi: DBApi) extends DelegableAuthInfoDAO[OA
             .on(
               'providerId -> loginInfo.providerID,
               'userId -> loginInfo.providerKey)
-            .as(oauth2InfoParser.singleOpt)
+            .as(oauth1InfoParser.singleOpt)
         }
       }
     }
@@ -151,7 +127,7 @@ class OAuth2InfoDAOImpl @Inject() (dbapi: DBApi) extends DelegableAuthInfoDAO[OA
    * @param authInfo The auth info to save.
    * @return The saved auth info.
    */
-  def save(loginInfo: LoginInfo, authInfo: OAuth2Info): Future[OAuth2Info] = {
+  def save(loginInfo: LoginInfo, authInfo: OAuth1Info): Future[OAuth1Info] = {
     find(loginInfo).flatMap {
       case Some(_) => update(loginInfo, authInfo)
       case None    => add(loginInfo, authInfo)
@@ -170,7 +146,7 @@ class OAuth2InfoDAOImpl @Inject() (dbapi: DBApi) extends DelegableAuthInfoDAO[OA
         db.withTransaction { implicit connection =>
           SQL(
             """
-              | DELETE FROM user_oauth2_info
+              | DELETE FROM user_oauth1_info
               |   WHERE
               |   provider_id = {providerId}
               |   AND user_id = {userId}

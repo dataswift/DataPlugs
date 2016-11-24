@@ -5,8 +5,8 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CommonSocialProfile
+import org.hatdex.dataplug.dao.UserDAO
 import org.hatdex.dataplug.models.User
-import org.hatdex.dataplug.services.dao.UserDAO
 import play.api.libs.concurrent.Execution.Implicits._
 
 import scala.concurrent.Future

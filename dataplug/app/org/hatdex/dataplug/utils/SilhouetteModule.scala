@@ -31,8 +31,8 @@ import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepo
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.codingwell.scalaguice.ScalaModule
+import org.hatdex.dataplug.dao.{ OAuth1InfoDAOImpl, OAuth2InfoDAOImpl, UserDAO, UserDAOImpl }
 import org.hatdex.dataplug.services.{ UserService, UserServiceImpl }
-import org.hatdex.dataplug.services.dao.{ OAuth1InfoDAOImpl, OAuth2InfoDAOImpl, UserDAO, UserDAOImpl }
 import play.api.Configuration
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.ws.WSClient
@@ -46,6 +46,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
    * Configures the module.
    */
   def configure() {
+    bind[JwtIdentityVerification].to[IdentityVerificationCachedImpl]
     bind[Silhouette[PhataAuthenticationEnvironment]].to[SilhouetteProvider[PhataAuthenticationEnvironment]]
     //    bind[UnsecuredErrorHandler].to[CustomUnsecuredErrorHandler]
     //    bind[SecuredErrorHandler].to[CustomSecuredErrorHandler]

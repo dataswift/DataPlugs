@@ -1,0 +1,51 @@
+@import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+@import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointVariantChoice
+@(socialProviders: SocialProviderRegistry,
+        endpointvariants: Option[Seq[ApiEndpointVariantChoice]],
+        signupForm: Form[List[String]])(implicit user: org.hatdex.dataplug.models.User, request: RequestHeader, messages: Messages)
+
+@import b3.vertical.fieldConstructor
+@import org.hatdex.dataplug.controllers.routes
+
+@org.hatdex.dataplug.views.html.templates.main(Messages("sign.in.title")) {
+
+    @if(socialProviders.providers.nonEmpty) {
+        <h1>Networks already linked:</h1>
+        <div class="social-providers">
+        @for(p <- socialProviders.providers if user.linkedUsers.map(_.providerId).contains(p.id)) {
+            <a href="@routes.SocialAuthController.authenticate(p.id)" class="provider @p.id" title="@Messages(p.id)">
+                <div class="social-link">
+                    <i class="fa fa-@p.id.toLowerCase"></i>
+                </div>
+            </a>
+            @endpointvariants.map { variants =>
+                @b3.form(org.hatdex.dataplugCalendar.controllers.routes.Application.processSignups) {
+                    <fieldset>
+                        @helper.CSRF.formField
+
+                        @for((variant, index) <- variants.zipWithIndex) {
+                            @b3.checkbox(signupForm(s"endpointVariants[$index]"), '_text -> variant.description, 'value -> variant.key, 'checked -> variant.active)
+                        }
+                        @b3.submit() {
+                            @Messages("connect")
+                        }
+                    </fieldset>
+                }
+            }
+        }
+        </div>
+
+        <h1>Networks available:</h1>
+        <div class="social-providers">
+            <div>
+            @for(p <- socialProviders.providers if p.id != "clef") {
+                <a href="@routes.SocialAuthController.authenticate(p.id)" class="provider @p.id" title="@Messages(p.id)">
+                    <div class="social-link">
+                        <i class="fa fa-@p.id.toLowerCase"></i>
+                    </div>
+                </a>
+            }
+            </div>
+        </div>
+    }
+}

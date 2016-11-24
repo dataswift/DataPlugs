@@ -1,0 +1,6 @@
+@(field: Field, options: Seq[(String, Any)], args: (Symbol, Any)*)(implicit fc: b3.B3FieldConstructor, messages: Messages)
+@checkboxGroupWithContent(field, bs.Args.withDefault(args, '_hiddenValue -> options.headOption.map(_._1)): _*) { implicit extraInfo =>
+    @options.map { v =>
+        @checkboxGroupOption(v._1, v._2)
+    }
+}(fc, messages)

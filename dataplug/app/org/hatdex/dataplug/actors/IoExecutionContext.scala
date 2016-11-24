@@ -5,7 +5,7 @@
  *  Written by Andrius Aucinas <andrius.aucinas@hatdex.org>, 10 2016
  */
 
-package org.hatdex.bulletin.actors
+package org.hatdex.dataplug.actors
 
 import java.util.concurrent.Executors
 

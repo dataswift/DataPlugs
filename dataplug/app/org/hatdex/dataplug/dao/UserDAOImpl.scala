@@ -1,4 +1,4 @@
-package org.hatdex.dataplug.services.dao
+package org.hatdex.dataplug.dao
 
 import javax.inject.{ Inject, Singleton }
 
@@ -6,7 +6,7 @@ import anorm.SqlParser._
 import anorm.{ Macro, ResultSetParser, RowParser, _ }
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
-import org.hatdex.bulletin.actors.IoExecutionContext
+import org.hatdex.dataplug.actors.IoExecutionContext
 import org.hatdex.dataplug.models.User
 import play.api.Logger
 import play.api.db.{ DBApi, Database, NamedDatabase }

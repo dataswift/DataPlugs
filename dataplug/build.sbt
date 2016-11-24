@@ -39,3 +39,5 @@ maintainer in Docker := maintainer.value
 version in Docker := version.value
 dockerExposedPorts := Seq(9000)
 dockerBaseImage := "java:8"
+
+javaOptions in Test += "-Dconfig.file=conf/application.test.conf"
