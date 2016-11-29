@@ -6,12 +6,12 @@ import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import org.hatdex.dataplug.apiInterfaces.authProviders.OAuth2TokenHelperSpec
 import org.hatdex.dataplug.models.User
 import org.hatdex.dataplug.services.UserService
-import org.hatdex.dataplug.testkit.{DataPlugEndpointInterfaceTestHelper, TestModule}
+import org.hatdex.dataplug.testkit.{ DataPlugEndpointInterfaceTestHelper, TestModule }
 import org.hatdex.dataplugCalendar.apiInterfaces.GoogleCalendarList
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
 import org.specs2.specification.BeforeAfterAll
-import play.api.{Configuration, Logger}
+import play.api.{ Configuration, Logger }
 import play.api.inject._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient

@@ -1,5 +1,7 @@
 package org.hatdex.dataplug.actors
 
+import java.util.UUID
+
 import akka.actor.{ Actor, ActorLogging, ActorRef, Props }
 import akka.pattern.pipe
 import org.hatdex.dataplug.actors.DataPlugManagerActor._
@@ -7,8 +9,11 @@ import org.hatdex.dataplug.apiInterfaces._
 import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointVariant
 import org.hatdex.dataplug.models.HatClientCredentials
 import org.hatdex.dataplug.services.DataPlugEndpointService
+import org.hatdex.dataplug.utils.Mailer
+import org.hatdex.marketsquare.api.services.MarketsquareClient
 import play.api.Configuration
 import play.api.libs.concurrent.InjectedActorSupport
+import play.api.libs.ws.WSClient
 
 import scala.concurrent.ExecutionContext
 
@@ -18,7 +23,9 @@ class PhataDataPlugVariantSyncer(
     apiEndpointVariant: ApiEndpointVariant,
     configuration: Configuration,
     hatClientFactory: InjectedHatClientActor.Factory,
+    wsClient: WSClient,
     val dataplugEndpointService: DataPlugEndpointService,
+    val mailer: Mailer,
     val executionContext: ExecutionContext) extends Actor with ActorLogging with InjectedActorSupport with DataPlugManagerOperations {
 
   val scheduler = context.system.scheduler
@@ -32,7 +39,22 @@ class PhataDataPlugVariantSyncer(
   implicit val ec = executionContext
 
   var state: DataPlugSyncState = DataPlugIdle
-  var hatClient: ActorRef = createHatClientActor(phata, HatClientCredentials("dataplug", "password"))
+
+  val msClient = new MarketsquareClient(
+    wsClient,
+    configuration.getString("service.marketsquare.address").get,
+    configuration.getString("service.marketsquare.scheme").get)
+
+  msClient.dataplugConnectHat(
+    configuration.getString("service.marketsquare.accessToken").get,
+    UUID.fromString(configuration.getString("service.marketsquare.dataplugId").get),
+    phata)
+
+  var hatClient: ActorRef = createHatClientActor(
+    phata,
+    HatClientCredentials(
+      configuration.getString("service.hatCredentials.username").get,
+      configuration.getString("service.hatCredentials.password").get))
 
   def receive: Receive = {
     case Fetch(endpointCall, retries) =>
@@ -48,6 +70,11 @@ class PhataDataPlugVariantSyncer(
     case SyncingFailed(error) =>
       log.debug(s"FAILED Received by $phata-${apiEndpointVariant.endpoint.name}-${apiEndpointVariant.variant}: $error")
       state = DataPlugFailed
+
+      mailer.serverExceptionNotifyInternal(
+        s"FAILED Received by $phata-${apiEndpointVariant.endpoint.name}-${apiEndpointVariant.variant}: $error",
+        new RuntimeException(error))
+
       context.parent ! Failed(apiEndpointVariant, phata, error)
       context stop self
     case message =>
@@ -68,6 +95,11 @@ class PhataDataPlugVariantSyncer(
     case SyncingFailed(error) =>
       log.debug(s"FAILED Received by $phata-${apiEndpointVariant.endpoint.name}-${apiEndpointVariant.variant}: $error")
       state = DataPlugFailed
+
+      mailer.serverExceptionNotifyInternal(
+        s"FAILED Received by $phata-${apiEndpointVariant.endpoint.name}-${apiEndpointVariant.variant}: $error",
+        new RuntimeException(error))
+
       context.parent ! Failed(apiEndpointVariant, phata, error)
       context stop self
     case message =>
@@ -88,8 +120,10 @@ object PhataDataPlugVariantSyncer {
     apiEndpointVariant: ApiEndpointVariant,
     configuration: Configuration,
     hatClientFactory: InjectedHatClientActor.Factory,
+    wsClient: WSClient,
     dataplugEndpointService: DataPlugEndpointService,
+    mailer: Mailer,
     executionContext: ExecutionContext): Props =
     Props(new PhataDataPlugVariantSyncer(phata, endpointInterface, apiEndpointVariant,
-      configuration, hatClientFactory, dataplugEndpointService, executionContext))
+      configuration, hatClientFactory, wsClient, dataplugEndpointService, mailer, executionContext))
 }

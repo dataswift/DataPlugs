@@ -44,5 +44,17 @@ class Mailer @Inject() (configuration: play.api.Configuration, ms: MailService)
         bodyText = views.html.mails.emailServerThrowable(request, exception).toString())
     }
   }
+
+  def serverExceptionNotifyInternal(message: String, exception: Throwable): Unit = {
+    // wrap any errors
+    Try {
+      val emailFrom = configuration.getString("play.mailer.from").get
+      val adminEmails = configuration.getStringSeq("administrators").getOrElse(Seq())
+      ms.sendEmailAsync(adminEmails: _*)(
+        subject = s"MarketSquare Production server error: $message",
+        bodyHtml = views.html.mails.emailServerThrowableInternal(message, exception),
+        bodyText = views.html.mails.emailServerThrowableInternal(message, exception).toString())
+    }
+  }
 }
 

@@ -13,6 +13,7 @@ import akka.pattern.pipe
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import org.hatdex.dataplug.models.{ HatClientCredentials, JwtToken }
+import org.hatdex.hat.api.models.{ ApiDataRecord, ApiDataTable, ApiDataValue, ApiRecordValues }
 import org.hatdex.hat.api.services.HatClient
 import org.joda.time.{ DateTime, Duration }
 import play.api.Logger
@@ -26,11 +27,19 @@ object HatClientActor {
   def props(ws: WSClient, hat: String, config: Config, credentials: HatClientCredentials): Props =
     Props(new HatClientActor(ws, hat, config, credentials))
 
-  sealed trait AuthMessage
+  sealed trait DataOperationMessage
 
-  case class FetchDataDebit(id: UUID)
+  case class FetchDataDebit(id: UUID) extends DataOperationMessage
+
+  case class FindDataTable(name: String, source: String) extends DataOperationMessage
+
+  case class CreateDataTable(tableStructure: ApiDataTable) extends DataOperationMessage
+
+  case class PostData(data: Seq[ApiRecordValues]) extends DataOperationMessage
 
   case class FetchingFailed(message: String)
+
+  sealed trait AuthMessage
 
   private case class Connected(token: String, jwtToken: JwtToken) extends AuthMessage
 
@@ -53,7 +62,7 @@ class HatClientActor(ws: WSClient, hat: String, config: Config, credentials: Hat
       case (false, false) => "http://"
     }
   }
-  val logger = Logger(s"[actor] ${self.path.name}")
+  val logger = Logger(s"HatClientActor")
   // Use the actor's dispatcher as execution context for api calls
   implicit val ec: ExecutionContext = context.dispatcher
   val hatSecure = config.getOrElse("dexter.secure", false)
@@ -81,20 +90,23 @@ class HatClientActor(ws: WSClient, hat: String, config: Config, credentials: Hat
             Connected(token, jwtToken)
           }
           else {
-            logger.warn(s"Token validation for $hat failed")
-            Unauthorized("Token validation failed")
+            val message = s"Token validation for $hat failed"
+            logger.warn(message)
+            Unauthorized(message)
           }
         } recover {
           case e =>
-            logger.warn(s"Token parsing for $hat failed")
-            Unauthorized("Token parsing failed")
+            val message = s"Token parsing for $hat failed"
+            logger.warn(message)
+            Unauthorized(message)
         }
         // There will always be a response to send back
         maybeResponse.get
       } recover {
         case e =>
-          logger.error(s"Connecting to $hat failed: $e", e)
-          Unauthorized(s"Connecting to $hat failed: $e")
+          val message = s"Connecting to $hat failed: $e"
+          logger.error(message, e)
+          Unauthorized(message)
       }
       authResponse pipeTo self
 
@@ -119,9 +131,8 @@ class HatClientActor(ws: WSClient, hat: String, config: Config, credentials: Hat
       //      unstashAll()
       context.become(unauthenticated)
 
-    case msg: FetchDataDebit =>
-      logger.debug(s"Stashing FetchDataDebit message for $hat")
-      logger.debug(s"Fetch sender: $sender")
+    case msg: DataOperationMessage =>
+      logger.debug(s"Stashing message $msg for $hat")
       stash()
       self ! Connect
 
@@ -134,10 +145,42 @@ class HatClientActor(ws: WSClient, hat: String, config: Config, credentials: Hat
       logger.debug(s"Fetching Data Debit $ddid for $hat")
       val ddValues = hatClient.dataDebitValues(maybeToken.get, ddid) recover {
         case e =>
-          logger.error(s"Could not fetch Data Debit $ddid values: ${e.getMessage}", e)
-          FetchingFailed(s"Could not fetch Data Debit $ddid values: ${e.getMessage}")
+          val message = s"Could not fetch Data Debit $ddid values: ${e.getMessage}"
+          logger.error(message, e)
+          FetchingFailed(message)
       }
       ddValues pipeTo sender
+
+    case FindDataTable(name, source) =>
+      logger.debug(s"Finding Data Table for $hat")
+      val table = hatClient.dataTableByName(maybeToken.get, name, source) recover {
+        case e =>
+          val message = s"Could not find Data Table $name:$source values: ${e.getMessage}"
+          logger.error(message, e)
+          FetchingFailed(message)
+      }
+      table pipeTo sender
+
+    case CreateDataTable(tableStructure) =>
+      logger.debug(s"Finding Data Table for $hat")
+      val table = hatClient.createDataTable(maybeToken.get, tableStructure) recover {
+        case e =>
+          val message = s"Could not create Data Table $tableStructure values: ${e.getMessage}"
+          logger.error(message, e)
+          FetchingFailed(message)
+      }
+      table pipeTo sender
+
+    case PostData(data) =>
+      logger.debug(s"Posting Data for $hat: ${data.mkString("\n")}")
+      val table = hatClient.createBatchRecords(maybeToken.get, data) recover {
+        case e =>
+          val message = s"Could not post data $data values: ${e.getMessage}"
+          logger.error(message, e)
+          FetchingFailed(message)
+      }
+      table pipeTo sender
+
     case Disconnected =>
       logger.debug(s"HAT $hat connection expired, disconnected becoming normal and reconnecting!")
       self ! Connect

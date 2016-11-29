@@ -1,0 +1,25 @@
+@(message: String, throwable: Throwable)
+<html>
+    <head><meta charset="utf-8"></head>
+    <body>
+        <p>Hello admin,</p>
+        <p>DataPlug encountered an error: @message</p>
+
+        <p>Details:</p>
+
+        <p>@throwable.getMessage</p>
+
+        <ul>
+        @Html(throwable.getStackTrace.mkString("<li>", "</li><li>", "</li>"))
+        </ul>
+
+        @Option(throwable.getCause).map { cause =>
+            Caused by:
+            <ul>
+                @cause.getStackTrace.mkString("<li>", "</li><li>", "</li>")
+            </ul>
+        }
+
+        <p>DataPlugSystems</p>
+    </body>
+</html>

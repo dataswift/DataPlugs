@@ -3,6 +3,7 @@ package org.hatdex.dataplug.actors
 import akka.actor.{ ActorRef, Scheduler }
 import akka.event.LoggingAdapter
 import akka.pattern.after
+import akka.util.Timeout
 import org.hatdex.dataplug.apiInterfaces._
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointVariant, DataPlugFetchContinuation, DataPlugFetchNextSync }
 import org.hatdex.dataplug.services.DataPlugEndpointService
@@ -41,7 +42,7 @@ trait DataPlugManagerOperations {
     endpointInterface: DataPlugEndpointInterface,
     variant: ApiEndpointVariant, phata: String,
     fetchEndpoint: ApiEndpointCall, retries: Int, hatClient: ActorRef): Future[PhataDataPlugVariantSyncerMessage] = {
-
+    implicit val fetchTimeout: Timeout = 10.seconds;
     endpointInterface.fetch(fetchEndpoint, phata, hatClient) map {
       case DataPlugFetchContinuation(continuation) =>
         dataplugEndpointService.saveEndpointStatus(phata, variant, fetchEndpoint, success = true, Some("continuation continued"))

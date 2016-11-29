@@ -3,13 +3,18 @@ package org.hatdex.dataplug.apiInterfaces
 import java.net.URLEncoder
 
 import akka.actor.ActorRef
+import akka.pattern.ask
+import akka.util.Timeout
+import org.hatdex.dataplug.actors.HatClientActor
 import org.hatdex.dataplug.apiInterfaces.authProviders.RequestAuthenticator
 import org.hatdex.dataplug.apiInterfaces.models._
-import org.hatdex.hat.api.models.ApiDataRecord
+import org.hatdex.dataplug.utils.Mailer
+import org.hatdex.hat.api.models.{ ApiDataRecord, ApiDataTable, ApiRecordValues }
 import org.joda.time.DateTime
 import play.api.Logger
+import play.api.cache.CacheApi
 import play.api.http.Status._
-import play.api.libs.json.JsValue
+import play.api.libs.json.{ JsArray, JsValue, Json }
 import play.api.libs.ws.{ WSClient, WSResponse }
 
 import scala.concurrent.duration.FiniteDuration
@@ -20,9 +25,17 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
   val refreshInterval: FiniteDuration
   protected val wsClient: WSClient
   protected val sourceName: String
-  protected val quietTranslationErrors: Boolean
   protected val logger: Logger
   val defaultApiEndpoint: ApiEndpointCall
+  val cacheApi: CacheApi
+  val mailer: Mailer
+
+  protected val apiEndpointTableStructures: Map[String, ApiEndpointTableStructure]
+
+  private lazy val apiTableStructures = apiEndpointTableStructures map {
+    case (k, v: ApiEndpointTableStructure) =>
+      k -> buildHATDataTableStructure(v.dummyEntity.toJson, sourceName, k).get
+  }
 
   /**
    * Fetch data from an API endpoint as per parametrised configuration, for a specific HAT client
@@ -32,7 +45,7 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
    * @param hatClient HAT client actor for specific HAT
    * @return Potentially updated set of parameters, e.g. with new timestamps
    */
-  def fetch(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext): Future[DataPlugFetchStep] = {
+  def fetch(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext, timeout: Timeout): Future[DataPlugFetchStep] = {
     val authenticatedFetchParameters = authenticateRequest(fetchParams, hatAddress)
 
     authenticatedFetchParameters flatMap { requestParameters =>
@@ -40,11 +53,21 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
     } flatMap { result =>
       result.status match {
         case OK =>
-          processResults(result.json, hatAddress, hatClientActor) map { _ =>
+          processResults(result.json, hatAddress, hatClientActor, fetchParams) map { _ =>
             buildContinuation(result.json, fetchParams)
               .map(DataPlugFetchContinuation)
               .getOrElse(DataPlugFetchNextSync(buildNextSync(result.json, fetchParams)))
+          } recoverWith {
+            case error =>
+              mailer.serverExceptionNotifyInternal(
+                s"""
+                   | Processing Response for HAT $hatAddress.
+                   | Fetch Parameters: $fetchParams.
+                   | Content: ${Json.prettyPrint(result.json)}
+          """.stripMargin, error)
+              Future.failed(error)
           }
+
         case UNAUTHORIZED =>
           logger.warn(s"Unauthorized request $fetchParams - ${result.status}: ${result.body}")
           Future.successful(DataPlugFetchNextSync(fetchParams))
@@ -57,7 +80,7 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
       }
     } recoverWith {
       case e =>
-        logger.warn(s"Error when querying api endpoint $fetchParams - ${e.getMessage}")
+        logger.warn(s"Error when querying api endpoint $fetchParams - ${e.getMessage}", e)
         Future.failed(e)
     }
   }
@@ -70,8 +93,6 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
       .withQueryString(params.queryParameters.toList: _*)
       .withHeaders(params.headers.toList: _*)
 
-    logger.debug(s"Sending WS request ${wsRequest.toString}")
-
     val response = params.method match {
       case ApiEndpointMethod.Get(_)        => wsRequest.get()
       case ApiEndpointMethod.Post(_, body) => wsRequest.post(body)
@@ -82,15 +103,57 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
     response
   }
 
-  protected def processResults(content: JsValue, hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext): Future[Unit] = {
-    buildHatDataRecord(content, sourceName, endpointName).flatMap { hatData =>
-      uploadHatData(hatData, hatClientActor)
+  protected def ensureDataTable(tableName: String, hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext, timeout: Timeout): Future[ApiDataTable] = {
+    val cacheKey = s"apitable:$hatAddress:$sourceName:$tableName"
+    val maybeCachedTable = cacheApi.get[ApiDataTable](cacheKey)
+    maybeCachedTable map { cachedTable =>
+      Future.successful(cachedTable)
+    } getOrElse {
+      (hatClientActor ? HatClientActor.FindDataTable(tableName, sourceName)).mapTo[ApiDataTable] map { tableFound =>
+        cacheApi.set(cacheKey, tableFound)
+        tableFound
+      } recoverWith {
+        case findError =>
+          logger.warn(s"Finding table failed: ${findError.getMessage}")
+          val tableStructure = apiTableStructures(tableName)
+          (hatClientActor ? HatClientActor.CreateDataTable(tableStructure)).mapTo[ApiDataTable]
+      }
     }
   }
 
-  protected def uploadHatData(data: Seq[ApiDataRecord], hatClientActor: ActorRef)(implicit ec: ExecutionContext): Future[Unit] = {
-    //hatClient ? HatClient.PostData(data)
-    throw new RuntimeException("Not implemented")
+  protected def processResults(content: JsValue, hatAddress: String, hatClientActor: ActorRef, fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Unit] = {
+    val eventualHatData = buildHatDataRecord(JsArray(Seq(content)), sourceName, endpointName, None, Map())
+
+    eventualHatData flatMap { hatData =>
+      uploadHatData(Seq(hatData), hatAddress, hatClientActor)
+    }
+
+  }
+
+  protected def ensureDataTables(hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext, timeout: Timeout): Future[Map[String, ApiDataTable]] = {
+    Future.sequence(apiTableStructures.map {
+      case (k, v) =>
+        ensureDataTable(k, hatAddress, hatClientActor)
+    }) map { tables =>
+      Map(tables.map { table =>
+        table.name -> table
+      }.toSeq: _*)
+    }
+  }
+
+  protected def uploadHatData(data: Seq[ApiDataRecord], hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext, timeout: Timeout): Future[Unit] = {
+    val dataRecords = data map { dataRecord =>
+      ApiRecordValues(
+        ApiDataRecord(None, None, lastUpdated = dataRecord.lastUpdated, name = dataRecord.name, None),
+        dataRecord.tables.map(tables => tables.flatMap(ApiDataTable.extractValues)).getOrElse(Seq())
+      )
+    }
+    if (dataRecords.nonEmpty) {
+      hatClientActor ? HatClientActor.PostData(dataRecords) map { case _ => () }
+    }
+    else {
+      Future.successful(())
+    }
   }
 
   /**

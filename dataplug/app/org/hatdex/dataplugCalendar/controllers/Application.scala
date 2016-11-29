@@ -67,7 +67,7 @@ class Application @Inject() (
       result <- googleCalendarListApiInterface.get(apiCall, user.userId, null)(ioEC)
       enabledVariants <- dataPlugEndpointService.enabledApiVariantChoices(user.userId)
     } yield {
-      Logger.info(s"Got calendars for $user: $result")
+      //      Logger.info(s"Got calendars for $user: $result")
       (result \ "items").as[Seq[JsValue]] map { calendar =>
         val calendarId = (calendar \ "id").as[String]
         val summary = (calendar \ "summary").as[String]

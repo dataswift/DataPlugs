@@ -13,6 +13,7 @@ import akka.pattern.{ Backoff, BackoffSupervisor }
 import org.hatdex.dataplug.apiInterfaces._
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointVariant }
 import org.hatdex.dataplug.services.DataPlugEndpointService
+import org.hatdex.dataplug.utils.Mailer
 import play.api.Configuration
 import play.api.libs.concurrent.InjectedActorSupport
 import play.api.libs.ws.WSClient
@@ -63,6 +64,7 @@ class DataPlugManagerActor @Inject() (
     ws: WSClient,
     configuration: Configuration,
     val dataplugEndpointService: DataPlugEndpointService,
+    val mailer: Mailer,
     hatClientFactory: InjectedHatClientActor.Factory) extends Actor with ActorLogging with InjectedActorSupport with DataPlugManagerOperations {
 
   import DataPlugManagerActor._
@@ -83,24 +85,29 @@ class DataPlugManagerActor @Inject() (
       dataPlugRegistry.get[DataPlugEndpointInterface](variant.endpoint.name).map { endpointInterface =>
         val actorKey = s"$phata-${variant.endpoint.name}-${variant.variant.getOrElse("").replace("#", "")}"
         log.warning(s"Starting actor fetch $actorKey")
-        startSyncerActor(phata, variant, endpointInterface, actorKey)
+        startSyncerActor(phata, variant, endpointInterface, actorKey).map {
+          case _ =>
+            context.system.scheduler.schedule(0.seconds, endpointInterface.refreshInterval) {
+              context.actorSelection(s"$actorKey-supervisor/$actorKey").resolveOne(5.seconds) flatMap { syncActor =>
+                log.error(s"Starting fetch for sync actor $actorKey")
+                val eventualFetchEndpointCall = dataplugEndpointService.retrieveLastSuccessfulEndpointVariant(
+                  phata, variant.endpoint.name, variant.variant) map { maybeEndpointVariant =>
+                  maybeEndpointVariant.flatMap(_.configuration).orElse(maybeEndpointCall)
+                }
 
-        context.system.scheduler.schedule(0.seconds, endpointInterface.refreshInterval) {
-          context.actorSelection(s"$actorKey-supervisor/$actorKey").resolveOne(5.seconds) flatMap { syncActor =>
-            log.error(s"Starting fetch for sync actor $actorKey")
-            val eventualFetchEndpointCall = dataplugEndpointService.retrieveLastSuccessfulEndpointVariant(
-              phata, variant.endpoint.name, variant.variant) map { maybeEndpointVariant =>
-              maybeEndpointVariant.flatMap(_.configuration).orElse(maybeEndpointCall)
+                eventualFetchEndpointCall.map(fetchEndpointCall => syncActor ! Fetch(fetchEndpointCall, 0))
+              } recover {
+                case e =>
+                  val message = s"Could not fetch for actor $actorKey - ${e.getMessage}"
+                  log.error(message)
+                  mailer.serverExceptionNotifyInternal(message, new RuntimeException(message))
+              }
             }
-
-            eventualFetchEndpointCall.map(fetchEndpointCall => syncActor ! Fetch(fetchEndpointCall, 0))
-          } recover {
-            case e =>
-              log.error(s"Could not fetch for actor $actorKey - ${e.getMessage}")
-          }
         }
       } getOrElse {
-        log.error(s"No such plug ${variant.endpoint.name} in DataPlug Registry")
+        val message = s"No such plug ${variant.endpoint.name} in DataPlug Registry"
+        log.error(message)
+        mailer.serverExceptionNotifyInternal(message, new RuntimeException(message))
       }
     case Stop(variant, phata) =>
       val actorKey = s"$phata-${variant.endpoint.name}-${variant.variant.getOrElse("").replace("#", "")}"
@@ -116,7 +123,7 @@ class DataPlugManagerActor @Inject() (
       case ActorNotFound(selection) =>
         log.warning(s"Starting syncer actor $actorKey with supervisor - no existing $selection")
         val syncerProps = PhataDataPlugVariantSyncer.props(phata, endpointInterface, variant,
-          configuration, hatClientFactory, dataplugEndpointService, executionContext)
+          configuration, hatClientFactory, ws, dataplugEndpointService, mailer, executionContext)
 
         val supervisor = BackoffSupervisor.props(
           Backoff.onStop(

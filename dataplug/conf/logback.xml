@@ -25,10 +25,10 @@
   <logger name="JwtPhataAuthenticatedAction" level="INFO" />
   <logger name="JwtPhataAwareAction" level="INFO" />
 
-  <logger name="org.hatdex.hat.api.services.HatClient" level="INFO" />
+  <logger name="org.hatdex.hat.api.services.HatClient" level="DEBUG" />
   <logger name="NetworkUpdateService" level="INFO"/>
   <logger name="FacebookPostService" level="DEBUG"/>
-  <logger name="[actor] hat-client-actor" level="INFO" />
+  <logger name="HatClientActor" level="DEBUG" />
 
   <logger name="MarketsquareNoticeService" level="DEBUG"/>
   <logger name="JwtPhataAuthentication" level="DEBUG"/>
