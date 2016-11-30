@@ -5,11 +5,10 @@
  * Written by Andrius Aucinas <andrius.aucinas@hatdex.org>, 10 2016
  */
 
-package org.hatdex.dataplug.utils
+package org.hatdex.dataplug.modules
 
 import com.google.inject.name.Named
 import com.google.inject.{ AbstractModule, Provides }
-import com.mohiva.play.silhouette.api.actions.{ SecuredErrorHandler, UnsecuredErrorHandler }
 import com.mohiva.play.silhouette.api.crypto._
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services._
@@ -18,21 +17,18 @@ import com.mohiva.play.silhouette.api.{ Environment, EventBus, Silhouette, Silho
 import com.mohiva.play.silhouette.crypto.{ JcaCookieSigner, JcaCookieSignerSettings, JcaCrypter, JcaCrypterSettings }
 import com.mohiva.play.silhouette.impl.authenticators._
 import com.mohiva.play.silhouette.impl.providers._
-import com.mohiva.play.silhouette.impl.providers.oauth1._
 import com.mohiva.play.silhouette.impl.providers.oauth1.secrets.{ CookieSecretProvider, CookieSecretSettings }
-import com.mohiva.play.silhouette.impl.providers.oauth1.services.PlayOAuth1Service
-import com.mohiva.play.silhouette.impl.providers.oauth2._
 import com.mohiva.play.silhouette.impl.providers.oauth2.state.{ CookieStateProvider, CookieStateSettings }
-import com.mohiva.play.silhouette.impl.services._
 import com.mohiva.play.silhouette.impl.util._
 import com.mohiva.play.silhouette.password.BCryptPasswordHasher
-import com.mohiva.play.silhouette.persistence.daos.{ DelegableAuthInfoDAO, InMemoryAuthInfoDAO }
+import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
 import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepository
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.dataplug.dao.{ OAuth1InfoDAOImpl, OAuth2InfoDAOImpl, UserDAO, UserDAOImpl }
 import org.hatdex.dataplug.services.{ UserService, UserServiceImpl }
+import org.hatdex.dataplug.utils.{ IdentityVerificationCachedImpl, JwtIdentityVerification, PhataAuthenticationEnvironment }
 import play.api.Configuration
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.ws.WSClient
@@ -93,30 +89,6 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
       Seq(),
       eventBus
     )
-  }
-
-  /**
-   * Provides the social provider registry.
-   *
-   * @param facebookProvider The Facebook provider implementation.
-   * @param googleProvider The Google provider implementation.
-   * @param clefProvider The Clef provider implementation.
-   * @param twitterProvider The Twitter provider implementation.
-   * @param xingProvider The Xing provider implementation.
-   * @param yahooProvider The Yahoo provider implementation.
-   * @return The Silhouette environment.
-   */
-  @Provides
-  def provideSocialProviderRegistry(
-    facebookProvider: FacebookProvider,
-    googleProvider: GoogleProvider,
-    twitterProvider: TwitterProvider): SocialProviderRegistry = {
-
-    SocialProviderRegistry(Seq(
-      googleProvider,
-      facebookProvider,
-      twitterProvider
-    ))
   }
 
   /**
@@ -273,56 +245,5 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   @Provides
   def providePasswordHasherRegistry(passwordHasher: PasswordHasher): PasswordHasherRegistry = {
     new PasswordHasherRegistry(passwordHasher)
-  }
-
-  /**
-   * Provides the Facebook provider.
-   *
-   * @param httpLayer The HTTP layer implementation.
-   * @param stateProvider The OAuth2 state provider implementation.
-   * @param configuration The Play configuration.
-   * @return The Facebook provider.
-   */
-  @Provides
-  def provideFacebookProvider(
-    httpLayer: HTTPLayer,
-    stateProvider: OAuth2StateProvider,
-    configuration: Configuration): FacebookProvider = {
-
-    new FacebookProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.facebook"))
-  }
-
-  /**
-   * Provides the Google provider.
-   *
-   * @param httpLayer The HTTP layer implementation.
-   * @param stateProvider The OAuth2 state provider implementation.
-   * @param configuration The Play configuration.
-   * @return The Google provider.
-   */
-  @Provides
-  def provideGoogleProvider(
-    httpLayer: HTTPLayer,
-    stateProvider: OAuth2StateProvider,
-    configuration: Configuration): GoogleProvider = {
-    new GoogleProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.google"))
-  }
-
-  /**
-   * Provides the Twitter provider.
-   *
-   * @param httpLayer The HTTP layer implementation.
-   * @param tokenSecretProvider The token secret provider implementation.
-   * @param configuration The Play configuration.
-   * @return The Twitter provider.
-   */
-  @Provides
-  def provideTwitterProvider(
-    httpLayer: HTTPLayer,
-    tokenSecretProvider: OAuth1TokenSecretProvider,
-    configuration: Configuration): TwitterProvider = {
-
-    val settings = configuration.underlying.as[OAuth1Settings]("silhouette.twitter")
-    new TwitterProvider(httpLayer, new PlayOAuth1Service(settings), tokenSecretProvider, settings)
   }
 }

@@ -1,5 +1,7 @@
 @(title: String, menubarContent: Html = Html(""), styles: Html = Html(""), scripts: Html = Html(""), modals: Html = Html(""), meta: Html = Html(""))(content: Html)
 
+@import org.hatdex.dataplug.controllers.routes
+
 @navbarContent = {
   <ul class="nav navbar-nav navbar-right">
     <li><a href="http://www.hatdex.org/notables/" target="_blank">About DATAPLUG</a></li>
@@ -9,8 +11,8 @@
 }
 
 @allScripts = {
-  <script src="@routes.Assets.versioned("js/jquery.js")"></script>
-  <script src="@routes.Assets.versioned("js/bootstrap.min.js")"></script>
+  <script src="@routes.Assets.at("js/jquery.js")"></script>
+  <script src="@routes.Assets.at("js/bootstrap.min.js")"></script>
   @scripts
 }
 
@@ -20,10 +22,10 @@
     <title>@title</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     @meta
-    <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/haticon.png")">
-    <link href="@routes.Assets.versioned("webfonts/ss-glyphish-outlined.css")" rel="stylesheet" />
+    <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/haticon.png")">
+    <link href="@routes.Assets.at("webfonts/ss-glyphish-outlined.css")" rel="stylesheet" />
     <link href='https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300,300italic,700' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/main.css")">
+    <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")">
     @styles
   </head>
   <body>

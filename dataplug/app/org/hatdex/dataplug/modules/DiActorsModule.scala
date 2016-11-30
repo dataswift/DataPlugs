@@ -8,13 +8,15 @@
 package org.hatdex.dataplug.modules
 
 import com.google.inject.AbstractModule
+import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.dataplug.actors.DataPlugManagerActor
+import org.hatdex.dataplug.controllers.{ DataPlugViewSet, DataPlugViewSetDefault }
 import play.api.libs.concurrent.AkkaGuiceSupport
 
-class DiActorsModule extends AbstractModule with AkkaGuiceSupport {
+class DiActorsModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
 
   def configure = {
     bindActor[DataPlugManagerActor]("dataPlugManager")
-    bind(classOf[org.hatdex.commonPlay.utils.Mailer]).to(classOf[org.hatdex.dataplug.utils.Mailer])
+    bind[org.hatdex.commonPlay.utils.Mailer].to[org.hatdex.dataplug.utils.Mailer]
   }
 }
