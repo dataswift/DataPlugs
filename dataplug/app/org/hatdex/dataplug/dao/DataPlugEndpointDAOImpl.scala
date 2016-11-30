@@ -8,7 +8,6 @@ import anorm.{ RowParser, _ }
 import org.hatdex.dataplug.actors.IoExecutionContext
 import org.hatdex.dataplug.apiInterfaces.models._
 import org.hatdex.dataplug.models.User
-import play.api.Logger
 import play.api.db.{ Database, NamedDatabase }
 import play.api.libs.json.Json
 
@@ -62,7 +61,7 @@ class DataPlugEndpointDAOImpl @Inject() (@NamedDatabase("default") db: Database)
       "dataplug_user.endpoint_configuration")
 
   implicit private val apiEndpointVariantWithPhataParser: RowParser[(String, ApiEndpointVariant)] =
-    SqlParser.str("dataplug_endpoint.phata") ~
+    SqlParser.str("dataplug_user.phata") ~
       apiEndpointVariantParser map {
         case phata ~ endpointVariant =>
           (phata, endpointVariant)

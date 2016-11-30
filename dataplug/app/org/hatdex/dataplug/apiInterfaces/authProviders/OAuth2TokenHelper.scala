@@ -39,11 +39,9 @@ class OAuth2TokenHelper @Inject() (
     } orElse {
       socialProviderRegistry.get[OAuth2Provider](loginInfo.providerID) match {
         case Some(p: OAuth2Provider) =>
-          Logger.info(s"OAuth2Provider for $loginInfo, $refreshToken")
           implicit val provider = p
           val settings = configuration.underlying.as[OAuth2SettingsExtended](s"silhouette.${loginInfo.providerID}")
           settings.refreshURL.map({ url =>
-            Logger.info(s"Refresh URL $url")
             val encodedAuth = Base64.encodeBase64(Codec.toUTF8(s"${p.settings.clientID}:${p.settings.clientSecret}")).toString
             val params = Seq(
               "client_id" -> p.settings.clientID,
@@ -51,7 +49,6 @@ class OAuth2TokenHelper @Inject() (
               "grant_type" -> "refresh_token",
               "refresh_token" -> refreshToken) ++ p.settings.scope.map({ "scope" -> _ })
             val body = params.map { p => p._1 + "=" + p._2 }.mkString("&")
-            Logger.info(s"Querying token with URL $url,${settings.refreshHeaders}, BODY $body")
             val eventualToken = wsClient.url(url)
               .withHeaders("Authorization" -> encodedAuth)
               .withHeaders(settings.refreshHeaders.toSeq: _*)
@@ -81,7 +78,6 @@ class OAuth2TokenHelper @Inject() (
    * @return The OAuth2 info on success, otherwise a failure.
    */
   protected def buildInfo(response: WSResponse)(implicit provider: OAuth2Provider): Try[OAuth2Info] = {
-    Logger.info(s"OAuth2 refresh response ${response.json}")
     response.json.validate[OAuth2Info].asEither.fold(
       error => Failure(new UnexpectedResponseException(InvalidInfoFormat.format(provider.id, error))),
       info => Success(info))
