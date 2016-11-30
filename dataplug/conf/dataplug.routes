@@ -8,6 +8,6 @@ GET         /authenticate/hat              org.hatdex.dataplug.controllers.HatLo
 POST        /signin/hat                    org.hatdex.dataplug.controllers.HatLoginController.signinHat
 GET         /authenticate/:provider        org.hatdex.dataplug.controllers.SocialAuthController.authenticate(provider)
 
-GET         /api/tickle                    org.hatdex.dataplug.controllers.Api.tickle(hat: String)
-GET         /api/status                    org.hatdex.dataplug.controllers.Api.status(hat: String)
-GET         /api/permissions               org.hatdex.dataplug.controllers.Api.permissions(hat: String)
+GET         /api/tickle                    org.hatdex.dataplug.controllers.Api.tickle
+GET         /api/status                    org.hatdex.dataplug.controllers.Api.status
+GET         /api/permissions               org.hatdex.dataplug.controllers.Api.permissions

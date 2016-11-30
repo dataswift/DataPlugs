@@ -44,15 +44,6 @@ class DataPlugEndpointDAOImpl @Inject() (@NamedDatabase("default") db: Database)
       "dataplug_endpoint.description",
       "dataplug_endpoint.details")
 
-  implicit private val apiEndpointStatusParser: RowParser[ApiEndpointStatus] =
-    Macro.parser[ApiEndpointStatus](
-      "log_dataplug_user.phata",
-      "log_dataplug_user.dataplug_endpoint",
-      "log_dataplug_user.endpoint",
-      "log_dataplug_user.created",
-      "log_dataplug_user.successful",
-      "log_dataplug_user.message")
-
   implicit private val apiEndpointVariantParser: RowParser[ApiEndpointVariant] =
     Macro.parser[ApiEndpointVariant](
       "dataplug_user.dataplug_endpoint",
@@ -66,6 +57,15 @@ class DataPlugEndpointDAOImpl @Inject() (@NamedDatabase("default") db: Database)
         case phata ~ endpointVariant =>
           (phata, endpointVariant)
       }
+
+  implicit private val apiEndpointStatusParser: RowParser[ApiEndpointStatus] =
+    Macro.parser[ApiEndpointStatus](
+      "log_dataplug_user.phata",
+      "log_dataplug_user.dataplug_endpoint",
+      "log_dataplug_user.endpoint_configuration",
+      "log_dataplug_user.created",
+      "log_dataplug_user.successful",
+      "log_dataplug_user.message")
 
   /**
    * Retrieves a user that matches the specified ID.
@@ -216,9 +216,22 @@ class DataPlugEndpointDAOImpl @Inject() (@NamedDatabase("default") db: Database)
           SQL(
             """
               | SELECT * FROM log_dataplug_user
-              |   WHERE phata = {phata}
-              |     AND dataplug_endpoint = {dataplug_endpoint}
-              |     AND endpoint_variant = {variant}
+              |   JOIN (
+              |       SELECT phata, dataplug_endpoint, endpoint_variant, MAX(created) AS created
+              |         FROM log_dataplug_user
+              |         GROUP BY (phata, dataplug_endpoint, endpoint_variant)) ld2
+              |     ON log_dataplug_user.phata = ld2.phata
+              |       AND log_dataplug_user.dataplug_endpoint=ld2.dataplug_endpoint
+              |       AND log_dataplug_user.endpoint_variant = ld2.endpoint_variant
+              |       AND log_dataplug_user.created = ld2.created
+              |   JOIN dataplug_user
+              |     ON dataplug_user.dataplug_endpoint = log_dataplug_user.dataplug_endpoint
+              |       AND dataplug_user.phata = log_dataplug_user.phata
+              |       AND dataplug_user.endpoint_variant = log_dataplug_user.endpoint_variant
+              |   JOIN dataplug_endpoint ON dataplug_user.dataplug_endpoint = dataplug_endpoint.name
+              | WHERE dataplug_user.phata = {phata}
+              |     AND dataplug_user.dataplug_endpoint = {dataplug_endpoint}
+              |     AND dataplug_user.endpoint_variant = {variant}
               | ORDER BY created DESC
               | LIMIT 1
             """.stripMargin)
@@ -227,6 +240,41 @@ class DataPlugEndpointDAOImpl @Inject() (@NamedDatabase("default") db: Database)
               'dataplug_endpoint -> plugName,
               'variant -> variant)
             .as(apiEndpointStatusParser.singleOpt)
+        }
+      }
+    }
+  }
+
+  /**
+   * Fetches endpoint status for a given phata and plug endpoint
+   *
+   * @param phata The user phata.
+   * @return The available API endpoint configurations
+   */
+  def listCurrentEndpointStatuses(phata: String): Future[Seq[ApiEndpointStatus]] = {
+    Future {
+      blocking {
+        db.withConnection { implicit connection =>
+          SQL(
+            """
+              | SELECT * FROM log_dataplug_user
+              |   JOIN (
+              |       SELECT phata, dataplug_endpoint, endpoint_variant, MAX(created) AS created
+              |         FROM log_dataplug_user
+              |         GROUP BY (phata, dataplug_endpoint, endpoint_variant)) ld2
+              |     ON log_dataplug_user.phata = ld2.phata
+              |       AND log_dataplug_user.dataplug_endpoint=ld2.dataplug_endpoint
+              |       AND log_dataplug_user.endpoint_variant = ld2.endpoint_variant
+              |       AND log_dataplug_user.created = ld2.created
+              |   JOIN dataplug_user
+              |     ON dataplug_user.dataplug_endpoint = log_dataplug_user.dataplug_endpoint
+              |       AND dataplug_user.phata = log_dataplug_user.phata
+              |       AND dataplug_user.endpoint_variant = log_dataplug_user.endpoint_variant
+              |   JOIN dataplug_endpoint ON dataplug_user.dataplug_endpoint = dataplug_endpoint.name
+              | WHERE dataplug_user.phata = {phata}
+            """.stripMargin)
+            .on('phata -> phata)
+            .as(apiEndpointStatusParser.*)
         }
       }
     }

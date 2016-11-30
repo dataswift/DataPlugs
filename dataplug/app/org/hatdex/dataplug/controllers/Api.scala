@@ -10,6 +10,8 @@ package org.hatdex.dataplug.controllers
 import javax.inject.{ Inject, Named }
 
 import akka.actor.{ ActorRef, ActorSystem }
+import org.hatdex.dataplug.apiInterfaces.models.JsonProtocol
+import org.hatdex.dataplug.services.{ DataPlugEndpointService, DataplugSyncerActorManager }
 import org.hatdex.dataplug.utils.{ JwtPhataAuthenticatedAction, JwtPhataAwareAction }
 import play.api.Logger
 import play.api.i18n.MessagesApi
@@ -24,17 +26,25 @@ class Api @Inject() (
     messagesApi: MessagesApi,
     configuration: play.api.Configuration,
     tokenUserAwareAction: JwtPhataAwareAction,
-    tokenUserAuthenticatedAction: JwtPhataAuthenticatedAction) extends Controller {
+    tokenUserAuthenticatedAction: JwtPhataAuthenticatedAction,
+    dataPlugEndpointService: DataPlugEndpointService,
+    syncerActorManager: DataplugSyncerActorManager) extends Controller {
 
-  def tickle(hat: String): Action[AnyContent] = tokenUserAuthenticatedAction.async { implicit request =>
-    Future.successful(InternalServerError(Json.toJson(Map("message" -> "Not Implemented", "error" -> "Not implemented"))))
+  def tickle: Action[AnyContent] = tokenUserAuthenticatedAction.async { implicit request =>
+    syncerActorManager.runPhataActiveVariantChoices(request.identity.userId) map {
+      case _ =>
+        Ok(Json.toJson(Map("message" -> "Tickled")))
+    }
   }
 
-  def status(hat: String): Action[AnyContent] = tokenUserAuthenticatedAction.async { implicit request =>
-    Future.successful(InternalServerError(Json.toJson(Map("message" -> "Not Implemented", "error" -> "Not implemented"))))
+  import JsonProtocol.endpointStatusFormat
+  def status: Action[AnyContent] = tokenUserAuthenticatedAction.async { implicit request =>
+    dataPlugEndpointService.listCurrentEndpointStatuses(request.identity.userId) map { apiEndpointStatuses =>
+      Ok(Json.toJson(apiEndpointStatuses))
+    }
   }
 
-  def permissions(hat: String): Action[AnyContent] = tokenUserAuthenticatedAction.async { implicit request =>
+  def permissions: Action[AnyContent] = tokenUserAuthenticatedAction.async { implicit request =>
     Future.successful(InternalServerError(Json.toJson(Map("message" -> "Not Implemented", "error" -> "Not implemented"))))
   }
 

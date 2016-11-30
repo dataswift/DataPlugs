@@ -82,6 +82,15 @@ class DataPlugEndpointServiceImpl @Inject() (dataPlugEndpointDao: DataPlugEndpoi
   }
 
   /**
+   * Fetches endpoint status for a given phata and plug endpoint
+   *
+   * @param phata The user phata.
+   * @return The available API endpoint configurations
+   */
+  def listCurrentEndpointStatuses(phata: String): Future[Seq[ApiEndpointStatus]] =
+    dataPlugEndpointDao.listCurrentEndpointStatuses(phata)
+
+  /**
    * Saves endpoint status for a given phata and plug endpoint
    *
    * @param phata The user phata.
