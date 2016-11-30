@@ -8,6 +8,7 @@ import anorm.{ RowParser, _ }
 import org.hatdex.dataplug.actors.IoExecutionContext
 import org.hatdex.dataplug.apiInterfaces.models._
 import org.hatdex.dataplug.models.User
+import play.api.Logger
 import play.api.db.{ Database, NamedDatabase }
 import play.api.libs.json.Json
 
@@ -186,7 +187,7 @@ class DataPlugEndpointDAOImpl @Inject() (@NamedDatabase("default") db: Database)
             """
               | INSERT INTO log_dataplug_user
               |   (phata, dataplug_endpoint, endpoint_configuration, endpoint_variant, created, successful, message)
-              | VALUES ({phata}, {dataplug_endpoint}, {endpoint}, {variant}, {created}, {successful}, {message})
+              | VALUES ({phata}, {dataplugEndpoint}, {endpoint}::JSONB, {variant}, {created}, {successful}, {message})
             """.stripMargin)
             .on(
               'phata -> phata,
