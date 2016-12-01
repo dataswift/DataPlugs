@@ -7,8 +7,9 @@
 @import org.hatdex.dataplug.controllers.routes
 
 @templates.main(Messages("sign.in.title")) {
-    <fieldset class="col-md-6 col-md-offset-3">
-        <legend>@Messages("sign.in.credentials")</legend>
+    <h2 class="signin-header">@Messages("signin.hat.header")</h2>
+    <fieldset class="signin col-md-6 col-md-offset-3">
+        <legend>@Messages("signin.hat.info")</legend>
         @b3.form(action = routes.HatLoginController.signinHat()) {
             @helper.CSRF.formField
 
@@ -16,9 +17,9 @@
                 '_label -> Messages("field.hataddress"),
                 'placeholder -> "yourhat.hubofallthings.net",
                 'autofocus -> true,
-                '_help -> "You will be taken to your personal HAT page. For security reasons, your HAT password can only be entered at that page.")
+                '_help -> Messages("signin.hat.hint"))
 
-            @b3.submit('class -> "btn btn-red btn-block") {
+            @b3.submit('class -> "btn btn-block btn-dataplug") {
                 @Messages("signin.hat.signin")
             }
         }

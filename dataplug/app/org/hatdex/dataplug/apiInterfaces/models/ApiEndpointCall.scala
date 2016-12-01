@@ -31,7 +31,7 @@ case class ApiEndpointCall(
   url: String,
   path: String,
   method: ApiEndpointMethod.EndpointMethod,
-  pathParameters: Map[String, String],
+  pathParameters: Map[String, String], // for pathParameter name=value replaces [name] in path (/[name]/...)
   queryParameters: Map[String, String],
   headers: Map[String, String])
 

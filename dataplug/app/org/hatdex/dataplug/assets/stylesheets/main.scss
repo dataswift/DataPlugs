@@ -1,5 +1,6 @@
 @import "bootstrap";
-
+@import "awesome-bootstrap-checkbox";
+@import "fontawesome/variables";
 
 $base-white: white;
 $base-black: black;
@@ -7,13 +8,15 @@ $base-color: rgb(188, 51, 51); /*rgb(233, 58, 63);*/
 $base-active-color: rgb(17, 134, 117);
 $text-light: white;
 $text-dark: lighten(black, 20%);
-$base-background-color: #535353;
+$base-background-color: #262626;
+$base-rump: #009688;
 
 body {
   font-family: 'Open Sans Regular', sans-serif;
   font-size: 11px;
   font-weight: 500;
   background: white;
+  min-width: 480px;
 }
 
 h1, h2, h3, h4, h5 {
@@ -66,7 +69,125 @@ h1, h2, h3, h4, h5 {
 }
 
 .content-main {
-  background: lighten(#2d2d2d, 80%);
+  background-color: $base-background-color;
+  color: $base-white;
+
+  h2 {
+    margin-top: 1.25em;
+    margin-bottom: 0;
+    text-align: center;
+  }
+}
+
+/* Common component styling */
+
+input[type="text"] {
+  background-color: fade_out($base-white, 0.9);
+  border: 1px solid fade_out($base-white, 0.7);
+  border-radius: 0;
+  font-size: 1.5em;
+  height: 3em;
+  -webkit-transition-duration: 0.5s;
+  transition-duration: 0.5s;
+  color: #cccccc;
+
+  &:hover {
+    background-color: fade_out($base-white, 0.7);
+    border: 1px solid fade_out($base-white, 0.5);
+  }
+
+  &:focus {
+    background-color: $base-white;
+    color: $base-black;
+  }
+}
+
+.btn-dataplug {
+  background-color: $base-rump;
+  border-radius: 0;
+  color: $base-white;
+  font-family: 'Open Sans Condensed', sans-serif;
+  font-size: 1.25em;
+  text-transform: uppercase;
+  padding: 1em;
+
+  &:hover {
+    background-color: darken($base-rump, 10%);
+    color: $base-white;
+  }
+}
+
+.signin {
+  color: $base-white;
+  font-family: "Open Sans Regular", sans-serif;
+  margin-top: 3em;
+  margin-bottom: 10%;
+
+  label {
+    font-size: 1.5em;
+  }
+
+  .form-group {
+    margin-top: 2em;
+    margin-bottom: 3em;
+  }
+
+  .help-block {
+    color: $base-white;
+  }
+}
+
+legend {
+  color: $base-white;
+  font-size: 1.25em;
+  border: none;
+}
+
+.checkbox {
+  label {
+    font-size: 1.25em;
+  }
+}
+
+.social-link {
+  display: inline-block;
+  font-size: 2.5em;
+  width: 1.5em;
+  color: $base-rump;
+
+  &:hover {
+    color: darken($base-rump, 10%);
+  }
+}
+
+.connected-networks,
+.available-networks  {
+  margin: 2em;
+  text-align: center;
+}
+
+.synchronisation-options {
+  margin-top: 2em;
+  text-align: center;
+
+  fieldset {
+    text-align: left;
+    margin-left: 30%;
+  }
+
+  .btn-dataplug {
+    width: 60%;
+  }
+}
+
+.alert {
+  font-size: 1.25em;
+  width: 60%;
+  margin: auto;
+
+  .close {
+    opacity: .5;
+  }
 }
 
 @import "headerFooter";
