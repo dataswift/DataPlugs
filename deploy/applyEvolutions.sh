@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 
-## declare an array of evolutions
-declare -a evolutions=("1" "data")
-
 jdbcurl=$JDBCURL
 dbuser=$DBUSER
 dbpass=$DBPASS
+
+runEvolutions() {
+
+local key CONTEXTS TASK
 
 # Use > 1 to consume two arguments per pass in the loop (e.g. each
 # argument has a corresponding value to go with it).
@@ -34,7 +35,9 @@ shift # past argument or value
 done
 echo "Running Evolutions on $CONTEXTS contexts, task $TASK"
 
-CLASSPATH=postgresql-9.4.1208.jre6.jar
+CLASSPATH="${SOURCE}/postgresql-9.4.1208.jre6.jar"
+
+echo "Classpath ${CLASSPATH}"
 
 if [[ $TASK == 'dropAll' ]]; then
    echo "Drop All"
@@ -78,3 +81,4 @@ else
       fi
   fi
 fi
+}
