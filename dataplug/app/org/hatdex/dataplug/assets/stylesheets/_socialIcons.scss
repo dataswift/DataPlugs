@@ -8,6 +8,13 @@
 }
 
 a div.social-link {
+  color: $base-white;
+
+  &:hover {
+    color: white;
+    opacity: 0.4;
+  }
+
   &.web {
     background: #9C0;
   }
@@ -68,7 +75,7 @@ a div.social-link {
     background: #069;
   }
 
-  &.google-plus {
+  &.google-plus, &.google {
     background: #dd4b39;
   }
 }

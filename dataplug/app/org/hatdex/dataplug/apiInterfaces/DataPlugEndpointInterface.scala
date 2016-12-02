@@ -20,15 +20,50 @@ import play.api.libs.ws.{ WSClient, WSResponse }
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ ExecutionContext, Future }
 
-trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthenticator {
+trait DataPlugApiEndpointClient {
   val endpointName: String
-  val refreshInterval: FiniteDuration
   protected val wsClient: WSClient
   protected val sourceName: String
   protected val logger: Logger
   val defaultApiEndpoint: ApiEndpointCall
   val cacheApi: CacheApi
   val mailer: Mailer
+
+  /**
+   * Build api endpoint parameters for a new data request. Most Plugs will need to overwrite
+   *
+   * @param params API endpoint parameters generic (stateless) for the endpoint
+   * @return Potentially updated set of parameters, e.g. with new timestamps
+   */
+  def buildFetchParameters(params: Option[ApiEndpointCall])(implicit ec: ExecutionContext): Future[ApiEndpointCall] = {
+    Future.successful(params getOrElse defaultApiEndpoint)
+  }
+
+  protected def buildRequest(params: ApiEndpointCall): Future[WSResponse] = {
+    val path = params.pathParameters.foldLeft(params.path) { (path, parameter) =>
+      path.replace(s"[${parameter._1}]", URLEncoder.encode(parameter._2, "UTF-8"))
+    }
+    val wsRequest = wsClient.url(params.url + path)
+      .withQueryString(params.queryParameters.toList: _*)
+      .withHeaders(params.headers.toList: _*)
+
+    val response = params.method match {
+      case ApiEndpointMethod.Get(_)        => wsRequest.get()
+      case ApiEndpointMethod.Post(_, body) => wsRequest.post(body)
+      case ApiEndpointMethod.Delete(_)     => wsRequest.delete()
+      case ApiEndpointMethod.Put(_, body)  => wsRequest.put(body)
+    }
+
+    response
+  }
+}
+
+trait DataPlugOptionsCollector extends RequestAuthenticator with DataPlugApiEndpointClient {
+  def get(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext): Future[Seq[ApiEndpointVariantChoice]]
+}
+
+trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthenticator with DataPlugApiEndpointClient {
+  val refreshInterval: FiniteDuration
 
   protected val apiEndpointTableStructures: Map[String, ApiEndpointTableStructure]
 
@@ -85,24 +120,6 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
     }
   }
 
-  protected def buildRequest(params: ApiEndpointCall): Future[WSResponse] = {
-    val path = params.pathParameters.foldLeft(params.path) { (path, parameter) =>
-      path.replace(s"[${parameter._1}]", URLEncoder.encode(parameter._2, "UTF-8"))
-    }
-    val wsRequest = wsClient.url(params.url + path)
-      .withQueryString(params.queryParameters.toList: _*)
-      .withHeaders(params.headers.toList: _*)
-
-    val response = params.method match {
-      case ApiEndpointMethod.Get(_)        => wsRequest.get()
-      case ApiEndpointMethod.Post(_, body) => wsRequest.post(body)
-      case ApiEndpointMethod.Delete(_)     => wsRequest.delete()
-      case ApiEndpointMethod.Put(_, body)  => wsRequest.put(body)
-    }
-
-    response
-  }
-
   protected def ensureDataTable(tableName: String, hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext, timeout: Timeout): Future[ApiDataTable] = {
     val cacheKey = s"apitable:$hatAddress:$sourceName:$tableName"
     val maybeCachedTable = cacheApi.get[ApiDataTable](cacheKey)
@@ -127,7 +144,6 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
     eventualHatData flatMap { hatData =>
       uploadHatData(Seq(hatData), hatAddress, hatClientActor)
     }
-
   }
 
   protected def ensureDataTables(hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext, timeout: Timeout): Future[Map[String, ApiDataTable]] = {
@@ -154,16 +170,6 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
     else {
       Future.successful(())
     }
-  }
-
-  /**
-   * Build api endpoint parameters for a new data request. Most Plugs will need to overwrite
-   *
-   * @param params API endpoint parameters generic (stateless) for the endpoint
-   * @return Potentially updated set of parameters, e.g. with new timestamps
-   */
-  def buildFetchParameters(params: Option[ApiEndpointCall])(implicit ec: ExecutionContext): Future[ApiEndpointCall] = {
-    Future.successful(params getOrElse defaultApiEndpoint)
   }
 
   /**

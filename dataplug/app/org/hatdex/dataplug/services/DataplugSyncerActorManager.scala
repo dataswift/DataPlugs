@@ -3,17 +3,22 @@ package org.hatdex.dataplug.services
 import javax.inject.{ Inject, Named }
 
 import akka.actor.ActorRef
-import com.mohiva.play.silhouette.api.LoginInfo
+import com.mohiva.play.silhouette.api.{ LoginInfo, Provider }
 import com.mohiva.play.silhouette.api.services.IdentityService
-import com.mohiva.play.silhouette.impl.providers.CommonSocialProfile
+import com.mohiva.play.silhouette.impl.providers.{ CommonSocialProfile, SocialProvider, SocialProviderRegistry }
 import org.hatdex.dataplug.actors.DataPlugManagerActor.{ Start, Stop }
+import org.hatdex.dataplug.apiInterfaces.{ DataPlugOptionsCollector, DataPlugOptionsCollectorRegistry }
 import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointVariantChoice
 import org.hatdex.dataplug.models.User
 import play.api.Logger
 
 import scala.concurrent.{ ExecutionContext, Future }
 
-class DataplugSyncerActorManager @Inject() (dataPlugEndpointService: DataPlugEndpointService, @Named("dataPlugManager") dataPlugManagerActor: ActorRef) {
+class DataplugSyncerActorManager @Inject() (
+    socialProviderRegistry: SocialProviderRegistry,
+    dataPlugEndpointService: DataPlugEndpointService,
+    optionsCollectionRegistry: DataPlugOptionsCollectorRegistry,
+    @Named("dataPlugManager") dataPlugManagerActor: ActorRef) {
 
   def updateApiVariantChoices(user: User, variantChoices: Seq[ApiEndpointVariantChoice])(implicit ec: ExecutionContext): Future[Unit] = {
     dataPlugEndpointService.updateApiVariantChoices(user.userId, variantChoices) map {
@@ -57,6 +62,30 @@ class DataplugSyncerActorManager @Inject() (dataPlugEndpointService: DataPlugEnd
         Logger.error(s"Could not retrieve endpoints to sync: ${e.getMessage}")
         Future.failed(e)
     }
+  }
+
+  def currentProviderApiVariantChoices(user: User, providerName: String)(implicit executionContext: ExecutionContext): Future[Seq[ApiEndpointVariantChoice]] = {
+    val socialProvider = socialProviderRegistry.get[SocialProvider](providerName)
+
+    val optionsCollectors = socialProvider.map { provider =>
+      optionsCollectionRegistry.getSeqProvider[provider.type, DataPlugOptionsCollector]
+    } getOrElse Seq()
+
+    val optionsLists = optionsCollectors.map { collector =>
+      for {
+        apiCall <- collector.buildFetchParameters(None)
+        choices <- collector.get(apiCall, user.userId, null)
+        enabledVariants <- dataPlugEndpointService.enabledApiVariantChoices(user.userId)
+      } yield {
+        choices.map { choice =>
+          choice.copy(
+            active = enabledVariants.exists(v => v.variant.variant == choice.variant.variant),
+            variant = enabledVariants.find(_.key == choice.key).map(_.variant).getOrElse(choice.variant))
+        }
+      }
+    }
+
+    Future.sequence(optionsLists).map(_.flatten)
   }
 
 }
