@@ -19,23 +19,18 @@
 
   <logger name="ch.qos.logback" level="WARN" />
   <logger name="play" level="INFO" />
-  <logger name="application" level="DEBUG" />
+  <logger name="application" level="INFO" />
   <logger name="DatabaseNotableStore" level="INFO" />
   <logger name="BulletinService" level="INFO" />
   <logger name="JwtPhataAuthenticatedAction" level="INFO" />
   <logger name="JwtPhataAwareAction" level="INFO" />
 
-  <logger name="org.hatdex.hat.api.services.HatClient" level="DEBUG" />
+  <logger name="org.hatdex.hat.api.services.HatClient" level="INFO" />
   <logger name="NetworkUpdateService" level="INFO"/>
-  <logger name="FacebookPostService" level="DEBUG"/>
-  <logger name="HatClientActor" level="DEBUG" />
+  <logger name="HatClientActor" level="INFO" />
 
-  <logger name="MarketsquareNoticeService" level="DEBUG"/>
   <logger name="JwtPhataAuthentication" level="DEBUG"/>
-  <logger name="HatLoginController" level="DEBUG"/>
-  <logger name="GoogleCalendarInterface" level="DEBUG"/>
-
-
+  <logger name="HatLoginController" level="INFO"/>
 
   <root level="WARN">
     <appender-ref ref="ASYNCSTDOUT" />

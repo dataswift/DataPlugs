@@ -43,16 +43,16 @@ class OAuth2TokenHelper @Inject() (
           val settings = configuration.underlying.as[OAuth2SettingsExtended](s"silhouette.${loginInfo.providerID}")
           settings.refreshURL.map({ url =>
             val encodedAuth = Base64.encodeBase64(Codec.toUTF8(s"${p.settings.clientID}:${p.settings.clientSecret}")).toString
-            val params = Seq(
-              "client_id" -> p.settings.clientID,
-              "client_secret" -> p.settings.clientSecret,
-              "grant_type" -> "refresh_token",
-              "refresh_token" -> refreshToken) ++ p.settings.scope.map({ "scope" -> _ })
-            val body = params.map { p => p._1 + "=" + p._2 }.mkString("&")
+            val params = Map(
+              "client_id" -> Seq(p.settings.clientID),
+              "client_secret" -> Seq(p.settings.clientSecret),
+              "grant_type" -> Seq("refresh_token"),
+              "refresh_token" -> Seq(refreshToken)) ++ p.settings.scope.map({ "scope" -> Seq(_) })
+
             val eventualToken = wsClient.url(url)
               .withHeaders("Authorization" -> encodedAuth)
               .withHeaders(settings.refreshHeaders.toSeq: _*)
-              .post(body)
+              .post(params)
               .flatMap(resp => Future.fromTry(buildInfo(resp)))
 
             eventualToken.map {

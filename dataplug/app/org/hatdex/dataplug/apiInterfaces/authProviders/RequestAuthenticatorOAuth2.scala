@@ -35,6 +35,7 @@ trait RequestAuthenticatorOAuth2 extends RequestAuthenticator {
           logger.debug("No refresh token, trying what we have")
           Future.successful(authInfo)
         }
+      //        Future.successful(authInfo)
     }
 
     eventualAuthInfo map { authInfo =>

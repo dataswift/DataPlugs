@@ -33,11 +33,11 @@ case $key in
 esac
 shift # past argument or value
 done
-echo "Running Evolutions on $CONTEXTS contexts, task $TASK"
+(>&2 echo "Running Evolutions on $CONTEXTS contexts, task $TASK")
 
 CLASSPATH="${SOURCE}/postgresql-9.4.1208.jre6.jar"
 
-echo "Classpath ${CLASSPATH}"
+(>&2 echo "Classpath ${CLASSPATH}")
 
 if [[ $TASK == 'dropAll' ]]; then
    echo "Drop All"
@@ -61,8 +61,9 @@ else
               --defaultSchemaName=public \
               rollbackCount 1
   else
+    if [[ $TASK == 'update' ]]; then
       if [[ $CONTEXTS == '' ]]; then
-        echo "Must specify evolution contexts via -c or --contexts: 'structures', 'data', 'testdata' or a combination of those"
+        (>&2 echo "Must specify evolution contexts via -c or --contexts: 'structures', 'data', 'testdata' or a combination of those")
       else
         ## now loop through the above array
         for i in "${evolutions[@]}"
@@ -79,6 +80,23 @@ else
           update
         done
       fi
+    else
+      if [[ $TASK == 'updateSQL' ]]; then
+        for i in "${evolutions[@]}"
+        do
+           (>&2 echo "Evolution $i.sql")
+           liquibase --changeLogFile=$i.sql \
+          --contexts=$CONTEXTS \
+          --username=$dbuser \
+          --password=$dbpass \
+          --url=$jdbcurl \
+          --classpath=$CLASSPATH \
+          --liquibaseSchemaName=public \
+          --defaultSchemaName=public \
+          updateSQL
+        done
+      fi
+    fi
   fi
 fi
 }

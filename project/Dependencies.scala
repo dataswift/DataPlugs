@@ -48,6 +48,7 @@ object Dependencies {
         val jdbc = "com.typesafe.play" %% "play-jdbc" % version
         val postgres = "org.postgresql" % "postgresql" % "9.4-1206-jdbc4"
         val anorm = "com.typesafe.play" %% "anorm" % "2.5.2"
+        val liquibase = "org.liquibase" % "liquibase-maven-plugin" % "3.5.1"
       }
 
       object Utils {

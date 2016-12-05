@@ -27,7 +27,7 @@ class Mailer @Inject() (configuration: play.api.Configuration, ms: MailService)
       val emailFrom = configuration.getString("play.mailer.from").get
       val adminEmails = configuration.getStringSeq("administrators").getOrElse(Seq())
       ms.sendEmailAsync(adminEmails: _*)(
-        subject = s"MarketSquare Production server errorr #${exception.id}",
+        subject = s"DataPlug Production server errorr #${exception.id}",
         bodyHtml = views.html.mails.emailServerError(request, exception),
         bodyText = views.html.mails.emailServerError(request, exception).toString())
     }
@@ -39,7 +39,7 @@ class Mailer @Inject() (configuration: play.api.Configuration, ms: MailService)
       val emailFrom = configuration.getString("play.mailer.from").get
       val adminEmails = configuration.getStringSeq("administrators").getOrElse(Seq())
       ms.sendEmailAsync(adminEmails: _*)(
-        subject = s"MarketSquare Production server error: ${exception.getMessage} for ${request.path + request.rawQueryString}",
+        subject = s"DataPlug Production server error: ${exception.getMessage} for ${request.path + request.rawQueryString}",
         bodyHtml = views.html.mails.emailServerThrowable(request, exception),
         bodyText = views.html.mails.emailServerThrowable(request, exception).toString())
     }
@@ -51,7 +51,7 @@ class Mailer @Inject() (configuration: play.api.Configuration, ms: MailService)
       val emailFrom = configuration.getString("play.mailer.from").get
       val adminEmails = configuration.getStringSeq("administrators").getOrElse(Seq())
       ms.sendEmailAsync(adminEmails: _*)(
-        subject = s"MarketSquare Production server error: $message",
+        subject = s"DataPlug Production server error: $message",
         bodyHtml = views.html.mails.emailServerThrowableInternal(message, exception),
         bodyText = views.html.mails.emailServerThrowableInternal(message, exception).toString())
     }
