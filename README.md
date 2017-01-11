@@ -40,14 +40,30 @@ You will also need to extend project build settings to include the new plug, ple
 
 ## How to run a DataPlug
 
-Configure your environment with:
+Configure your environment variables with:
 
-- `JDBCURL` - JDBC Database URL
-- `DBUSER` - Database Username
-- `DBPASS` - Database Password
-- `DATAPLUG` - Dataplug name - must correspond to the directory dataplug is in
+- `APPLICATION_SECRET` - application secret
+- `MAILER_USER` - mailer system username
+- `MAILER_PASSWORD` - mailer system password
+- `HAT_USER` - username of the dedicated dataplug account on HATs
+- `HAT_PASSWORD` - password of the dedicated dataplug account on HATs
+- `MS_DATAPLUG_ID` - dataplug ID on MarketSquare registry
+- `MS_ACCESS_TOKEN` - access token for MarketSquare
+- `SERVICES_SECRET` - shared secret for HATDeX's HAT services
+- `DATABASE_URL` - database URL
+- `DATABASE_USER` - database username
+- `DATABASE_PASSWORD` - database password
+- `COOKIE_SIGNER_KEY` - cookie signer key
+- `CRYPTER_KEY` - crypter key
 
-You can then run a dataplug locally by excuting
+#### Twitter-specific variables
+- `TWITTER_CONSUMER_KEY` - Twitter app's consumer key
+- `TWITTER_CONSUMER_SECRET` - Twitter app's consumer secret
+
+You can then run a dataplug locally by executing
 
     ./deploy/run.sh
-
+    
+    OR
+    
+    sbt "project dataplug-{providerName}" "run"
