@@ -1,0 +1,44 @@
+<!--
+  ~ Copyright (C) HAT Data Exchange Ltd - All Rights Reserved
+  ~  Unauthorized copying of this file, via any medium is strictly prohibited
+  ~  Proprietary and confidential
+  ~  Written by Andrius Aucinas <andrius.aucinas@hatdex.org>, 10 2016
+  -->
+
+<configuration>
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <target>System.out</target>
+    <encoder>
+      <pattern>[%-5level] [%date{MM/dd/YYYY HH:mm:ss}] %logger{1} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="ASYNCSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
+    <appender-ref ref="STDOUT" />
+  </appender>
+
+  <logger name="ch.qos.logback" level="WARN" />
+  <logger name="play" level="DEBUG" />
+  <logger name="application" level="DEBUG" />
+  <logger name="DatabaseNotableStore" level="DEBUG" />
+  <logger name="BulletinService" level="DEBUG" />
+  <logger name="JwtPhataAuthenticatedAction" level="DEBUG" />
+  <logger name="JwtPhataAwareAction" level="DEBUG" />
+
+  <logger name="org.hatdex.hat.api.services.HatClient" level="DEBUG" />
+  <logger name="NetworkUpdateService" level="DEBUG"/>
+  <logger name="HatClientActor" level="DEBUG" />
+
+  <logger name="MarketsquareNoticeService" level="DEBUG"/>
+  <logger name="JwtPhataAuthentication" level="DEBUG"/>
+  <logger name="HatLoginController" level="DEBUG"/>
+  <logger name="TwitterTweetInterface" level="DEBUG"/>
+  <logger name="TwitterStatusUpdateInterface" level="DEBUG"/>
+  <logger name="SchemaMigration" level="DEBUG" />
+
+
+  <root level="WARN">
+    <appender-ref ref="ASYNCSTDOUT" />
+  </root>
+
+</configuration>

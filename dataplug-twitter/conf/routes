@@ -1,0 +1,16 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+
+GET         /dataplug/assets/*file         org.hatdex.dataplug.controllers.Assets.at(path="/public/lib/dataplug", file)
+
+GET         /                              org.hatdex.dataplugTwitter.controllers.Application.index
+POST        /connect                       org.hatdex.dataplugTwitter.controllers.Application.processSignups
+GET         /authenticate/hat              org.hatdex.dataplug.controllers.HatLoginController.authHat
+POST        /signin/hat                    org.hatdex.dataplug.controllers.HatLoginController.signinHat
+GET         /authenticate/:provider        org.hatdex.dataplug.controllers.SocialAuthController.authenticate(provider)
+
+GET         /api/tickle                    org.hatdex.dataplug.controllers.Api.tickle
+GET         /api/status                    org.hatdex.dataplugTwitter.controllers.Api.status
+GET         /api/permissions               org.hatdex.dataplug.controllers.Api.permissions
+POST        /api/content                   org.hatdex.dataplugTwitter.controllers.Api.create
+DELETE      /api/content/:id               org.hatdex.dataplugTwitter.controllers.Api.delete(id: String)
