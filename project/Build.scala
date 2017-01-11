@@ -34,17 +34,6 @@ object Build extends Build {
       commonPlay % "compile->compile;test->test")
   )
 
-  lazy val dataplugCalendar = Project(
-    id = "dataplug-calendar",
-    base = file("dataplug-calendar"),
-    dependencies = Seq(
-      hatClientPlay % "compile->compile;test->test",
-      marketsquareClientPlay % "compile->compile;test->test",
-      commonPlay % "compile->compile;test->test",
-      dataplug % "compile->compile;test->test"),
-    aggregate = Seq(dataplug)
-  )
-
   val root = Project(
     id = "dataplug-project",
     base = file("."),
@@ -52,8 +41,7 @@ object Build extends Build {
       commonPlay,
       hatClientPlay,
       marketsquareClientPlay,
-      dataplug,
-      dataplugCalendar
+      dataplug
     ),
     settings = Defaults.coreDefaultSettings ++
       // APIDoc.settings ++

@@ -79,7 +79,7 @@ class HatLoginController @Inject() (
     AuthForms.signinHatForm.bindFromRequest.fold(
       formWithErrors => Future.successful(BadRequest(dataPlugViewSet.signIn(AuthForms.signinHatForm))),
       address => {
-        val hatHost = address.stripPrefix("http://").stripPrefix("https://").replaceAll("[^A-Za-z0-9.]", "")
+        val hatHost = address.stripPrefix("http://").stripPrefix("https://").replaceAll("[^A-Za-z0-9.:]", "")
 
         val redirectUrl = routes.HatLoginController.authHat().absoluteURL(configuration.getBoolean("service.secure").getOrElse(false))
 

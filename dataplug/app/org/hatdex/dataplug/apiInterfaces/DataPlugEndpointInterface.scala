@@ -27,7 +27,9 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
 
   private lazy val apiTableStructures = apiEndpointTableStructures map {
     case (k, v: ApiEndpointTableStructure) =>
-      k -> buildHATDataTableStructure(v.dummyEntity.toJson, sourceName, k).get
+      val generatedStructure = buildHATDataTableStructure(v.dummyEntity.toJson, sourceName, k).get
+      logger.trace(s"Generated API endpoint table structure from $v to $generatedStructure")
+      k -> generatedStructure
   }
 
   /**
@@ -122,7 +124,8 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
         dataRecord.tables.map(tables => tables.flatMap(ApiDataTable.extractValues)).getOrElse(Seq())
       )
     }
-    if (dataRecords.nonEmpty) {
+
+    if (dataRecords.nonEmpty) { // set the predicate to false to prevent posting to HAT
       hatClientActor ? HatClientActor.PostData(dataRecords) map { case _ => () }
     }
     else {

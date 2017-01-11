@@ -29,7 +29,7 @@ trait DataPlugApiEndpointClient {
     Future.successful(params getOrElse defaultApiEndpoint)
   }
 
-  protected def buildRequest(params: ApiEndpointCall): Future[WSResponse] = {
+  protected def buildRequest(params: ApiEndpointCall)(implicit ec: ExecutionContext): Future[WSResponse] = {
     val path = params.pathParameters.foldLeft(params.path) { (path, parameter) =>
       path.replace(s"[${parameter._1}]", URLEncoder.encode(parameter._2, "UTF-8"))
     }

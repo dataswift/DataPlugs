@@ -95,9 +95,21 @@ CREATE TABLE log_dataplug_user (
   message                VARCHAR
 );
 
+CREATE TABLE shared_notables (
+  id           VARCHAR   NOT NULL PRIMARY KEY,
+  created_time TIMESTAMP NOT NULL DEFAULT now(),
+  phata        VARCHAR   NOT NULL,
+  posted       BOOLEAN   NOT NULL,
+  posted_time  TIMESTAMP,
+  provider_id  VARCHAR,
+  deleted      BOOLEAN   NOT NULL,
+  deleted_time TIMESTAMP
+);
+
 --rollback DROP TABLE log_dataplug_user;
 --rollback DROP SEQUENCE log_dataplug_seq_id;
 --rollback DROP TABLE dataplug_user;
 --rollback DROP SEQUENCE dataplug_user_link_seq;
 --rollback DROP TABLE dataplug_endpoint;
 --rollback DROP SEQUENCE dataplug_endpoint_seq;
+--rollback DROP TABLE shared_notables;

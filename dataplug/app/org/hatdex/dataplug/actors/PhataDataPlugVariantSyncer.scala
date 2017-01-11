@@ -48,7 +48,13 @@ class PhataDataPlugVariantSyncer(
   msClient.dataplugConnectHat(
     configuration.getString("service.marketsquare.accessToken").get,
     UUID.fromString(configuration.getString("service.marketsquare.dataplugId").get),
-    phata)
+    phata) map {
+      case _ =>
+        log.warning(s"MarketSquare connected dataplug ${configuration.getString("service.marketsquare.dataplugId").get} to HAT $phata")
+    } onFailure {
+      case e =>
+        log.error(s"MarketSquare Error connecting dataplug ${configuration.getString("service.marketsquare.dataplugId").get} to HAT $phata: ${e.getMessage}")
+    }
 
   var hatClient: ActorRef = createHatClientActor(
     phata,
