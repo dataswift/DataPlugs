@@ -169,6 +169,6 @@ object TwitterTweetInterface {
     "/1.1/statuses/user_timeline.json",
     ApiEndpointMethod.Get("Get"),
     Map(),
-    Map("count" -> "5", "trim_user" -> "true"),
+    Map("count" -> "200"),
     Map())
 }

@@ -140,6 +140,32 @@ case class TwitterCoordinates(
   `type`: String
 )
 
+case class TwitterUserShort(
+  id: Long,
+  name: String,
+  screen_name: String,
+  followers_count: Int,
+  friends_count: Int,
+  listed_count: Int,
+  favourites_count: Int,
+  statuses_count: Int,
+  lang: String
+)
+
+object TwitterUserShort {
+  val dummyEntity = TwitterUserShort(
+    123.toLong,
+    "Larry",
+    "larryb",
+    5,
+    120,
+    2,
+    5,
+    1000,
+    "en"
+  )
+}
+
 // TODO: solve the table name collision in the embedded tweets.
 
 //case class TwitterEmbeddedTweet(
@@ -206,7 +232,8 @@ case class TwitterTweet(
     //retweeted_status: Option[TwitterEmbeddedTweet],
     source: String,
     text: String,
-    truncated: Boolean
+    truncated: Boolean,
+    user: TwitterUserShort
 ) extends ApiEndpointTableStructure {
   val dummyEntity = TwitterTweet.dummyEntity
 
@@ -228,6 +255,7 @@ object TwitterTweet extends ApiEndpointTableStructure {
   implicit val boundingBoxFormat = Json.format[TwitterBoundingBox]
   implicit val placeFormat = Json.format[TwitterPlace]
   implicit val coordinatesFormat = Json.format[TwitterCoordinates]
+  implicit val userShortFormat = Json.format[TwitterUserShort]
 
   implicit val tweetFormat = Json.format[TwitterTweet]
 
@@ -251,7 +279,8 @@ object TwitterTweet extends ApiEndpointTableStructure {
     true,
     "source",
     "actual tweet text",
-    false)
+    false,
+    TwitterUserShort.dummyEntity)
 
   def toJson: JsValue = Json.toJson(dummyEntity)
 }
