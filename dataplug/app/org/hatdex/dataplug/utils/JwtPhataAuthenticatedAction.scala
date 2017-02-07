@@ -55,7 +55,6 @@ class JwtPhataAuthenticatedAction @Inject() (
   }
 
   def validateJwtToken(token: String): Future[Option[User]] = {
-    val expectedSubject = "hat"
     val expectedResources = configuration.getStringSeq("auth.allowedResources").get
     val expectedAccessCope = "validate"
     val maybeSignedJWT = Try(SignedJWT.parse(token))
@@ -63,7 +62,6 @@ class JwtPhataAuthenticatedAction @Inject() (
     maybeSignedJWT.map { signedJWT =>
       val claimSet = signedJWT.getJWTClaimsSet
       val fresh = claimSet.getExpirationTime.after(DateTime.now().toDate)
-      val subjectMatches = claimSet.getSubject == expectedSubject
       val resourceMatches = Option(claimSet.getClaim("resource").asInstanceOf[String]).map { resource =>
         expectedResources.exists(er => resource.startsWith(er))
       } getOrElse {
@@ -71,12 +69,12 @@ class JwtPhataAuthenticatedAction @Inject() (
       }
       val accessScopeMatches = Option(claimSet.getClaim("accessScope")).contains(expectedAccessCope)
 
-      if (fresh && subjectMatches && resourceMatches && accessScopeMatches) {
+      if (fresh && resourceMatches && accessScopeMatches) {
         val identity = User("hatlogin", claimSet.getIssuer, List())
         identityVerification.verifiedIdentity(identity, signedJWT)
       }
       else {
-        logger.debug(s"JWT token validation failed: fresh - $fresh, subject - $subjectMatches, resource - $resourceMatches, scope - $accessScopeMatches")
+        logger.debug(s"JWT token validation failed: fresh - $fresh, resource - $resourceMatches, scope - $accessScopeMatches")
         Future(None)
       }
     } getOrElse {
