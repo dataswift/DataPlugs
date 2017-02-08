@@ -67,3 +67,7 @@ You can then run a dataplug locally by executing
     OR
     
     sbt "project dataplug-{providerName}" "run"
+    
+## License
+This code is licensed under the Mozilla Public License Version 2.0. 
+Please read the LICENSE.md file for further details.
