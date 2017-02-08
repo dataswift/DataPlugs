@@ -7,7 +7,6 @@
 
 package org.hatdex.dataplugTwitter.apiInterfaces
 
-import akka.actor.ActorRef
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider
@@ -16,11 +15,11 @@ import org.hatdex.dataplug.apiInterfaces.authProviders.RequestAuthenticatorOAuth
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
-import org.hatdex.dataplugTwitter.models.{ TwitterStatusUpdate, TwitterTweet }
+import org.hatdex.dataplugTwitter.models.{ TwitterStatusUpdate }
 import play.api.Logger
 import play.api.cache.CacheApi
 import play.api.http.Status._
-import play.api.libs.json.{ JsObject, JsValue, Json }
+import play.api.libs.json.Json
 import play.api.libs.ws.{ WSClient, WSResponse }
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -47,9 +46,8 @@ class TwitterStatusUpdateInterface @Inject() (
   )
 
   def post(hatAddress: String, content: String)(implicit ec: ExecutionContext): Future[TwitterStatusUpdate] = {
-    logger.debug(s"Message ---> $content <--- for $hatAddress has been accepted for posting.")
+    logger.info(s"Posting new tweet for $hatAddress")
 
-    //val postRequestBody: String = JsObject(Map("status" -> Json.toJson(content))).toString
     val requestParamsWithQueryParams = defaultApiEndpoint.copy(
       queryParameters = Map("status" -> content),
       pathParameters = Map("action" -> "update"))
@@ -69,7 +67,7 @@ class TwitterStatusUpdateInterface @Inject() (
   }
 
   def delete(hatAddress: String, providerId: String)(implicit ec: ExecutionContext): Future[Unit] = {
-    logger.debug(s"Deleting tweet $providerId for $hatAddress.")
+    logger.info(s"Deleting tweet $providerId for $hatAddress.")
 
     val fetchParams = defaultApiEndpoint.copy(
       pathParameters = Map("action" -> "destroy", "id" -> providerId),

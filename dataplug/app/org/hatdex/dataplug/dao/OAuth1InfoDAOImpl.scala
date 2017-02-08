@@ -7,6 +7,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.OAuth1Info
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
 import org.hatdex.dataplug.actors.IoExecutionContext
+import org.hatdex.dataplug.utils.Mailer
 import play.api.db.{ Database, _ }
 
 import scala.concurrent.{ Future, blocking }
@@ -15,7 +16,7 @@ import scala.concurrent.{ Future, blocking }
  * The DAO to store the OAuth2 information.
  */
 @Singleton
-class OAuth1InfoDAOImpl @Inject() (@NamedDatabase("default") db: Database) extends DelegableAuthInfoDAO[OAuth1Info] {
+class OAuth1InfoDAOImpl @Inject() (@NamedDatabase("default") db: Database, mailer: Mailer) extends DelegableAuthInfoDAO[OAuth1Info] {
   implicit val ec = IoExecutionContext.ioThreadPool
 
   private def loginInfoParser(table: String): RowParser[LoginInfo] =
@@ -141,6 +142,7 @@ class OAuth1InfoDAOImpl @Inject() (@NamedDatabase("default") db: Database) exten
    * @return A future to wait for the process to be completed.
    */
   def remove(loginInfo: LoginInfo): Future[Unit] = {
+    mailer.serverExceptionNotifyInternal(s"Deleting oauth1 token", new RuntimeException(s"Deleting oauth1 token for $loginInfo"))
     Future {
       blocking {
         db.withTransaction { implicit connection =>

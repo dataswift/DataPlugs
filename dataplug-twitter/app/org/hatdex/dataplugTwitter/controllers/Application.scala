@@ -16,8 +16,9 @@ import org.hatdex.commonPlay.models.auth.forms.AuthForms
 import org.hatdex.commonPlay.utils.FutureTransformations
 import org.hatdex.dataplug.actors.IoExecutionContext
 import org.hatdex.dataplug.controllers.DataPlugViewSet
-import org.hatdex.dataplug.services.DataplugSyncerActorManager
+import org.hatdex.dataplug.services.{ DataPlugEndpointService, DataplugSyncerActorManager }
 import org.hatdex.dataplug.utils.{ PhataAuthenticationEnvironment, SilhouettePhataAuthenticationController }
+import org.hatdex.dataplugTwitter.{ views => dataplugTwitterViews }
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
@@ -32,6 +33,7 @@ class Application @Inject() (
     socialProviderRegistry: SocialProviderRegistry,
     silhouette: Silhouette[PhataAuthenticationEnvironment],
     dataPlugViewSet: DataPlugViewSet,
+    dataPlugEndpointService: DataPlugEndpointService,
     syncerActorManager: DataplugSyncerActorManager,
     clock: Clock) extends SilhouettePhataAuthenticationController(silhouette, clock, configuration) {
 
@@ -43,23 +45,27 @@ class Application @Inject() (
     //    request.identity.get
     Logger.debug(s"Maybe user? ${request.identity}")
     request.identity.map { implicit user =>
-      val eventualCurrentVariantChoices = user.linkedUsers.find(_.providerId == "twitter") map { _ =>
-        syncerActorManager.currentProviderApiVariantChoices(user, "twitter")(ioEC)
-      } getOrElse {
-        Future.failed(new RuntimeException("User social account not linked"))
+      val eventualResult = for {
+        variantChoices <- syncerActorManager.currentProviderApiVariantChoices(user, "twitter")(ioEC)
+        apiEndpointStatuses <- dataPlugEndpointService.listCurrentEndpointStatuses(user.userId)
+      } yield {
+        if (apiEndpointStatuses.isEmpty) {
+          val selectedVariants = variantChoices.map(_.key).toList
+          processSignups(selectedVariants) map { _ =>
+            Ok(dataplugTwitterViews.html.complete(socialProviderRegistry))
+          }
+        }
+        else {
+          Future.successful(Ok(dataplugTwitterViews.html.disconnect(socialProviderRegistry)))
+        }
       }
 
-      eventualCurrentVariantChoices flatMap { variantChoices =>
-        Logger.debug(s"Initial variant choices $variantChoices")
-        val selectedVariants = variantChoices.map(_.key).toList
-        processSignups(selectedVariants) map { _ =>
-          Ok("goodbye")
+      eventualResult.flatMap(r => r)
+        .recover {
+          case e =>
+            Logger.debug(s"Twitter API cannot be accessed. Redirecting to Twitter OAuth service.")
+            Redirect(org.hatdex.dataplug.controllers.routes.SocialAuthController.authenticate("twitter"))
         }
-      } recover {
-        case e =>
-          Logger.debug(s"REDIRECT TO TWITTER")
-          Redirect(org.hatdex.dataplug.controllers.routes.SocialAuthController.authenticate("twitter"))
-      }
     } getOrElse {
       Future.successful(Ok(dataPlugViewSet.signIn(AuthForms.signinHatForm)))
     }

@@ -75,19 +75,19 @@ import play.api.libs.json._
 //  screen_name: String
 //)
 
-case class TwitterEntity( //  hashtags: Option[List[TwitterHashtag]], // Represents hashtags which have been parsed out of the Tweet text.
+//case class TwitterEntity(hashtags: Option[List[TwitterHashtag]], // Represents hashtags which have been parsed out of the Tweet text.
 //  media: Option[List[TwitterMedia]] // Represents media elements uploaded with the Tweet.
 //  urls: Option[List[TwitterURL]], // Represents URLs included in the text of a Tweet or within textual fields of a user object.
 //  user_mentions: Option[List[TwitterUserMention]] // Represents other Twitter users mentioned in the text of the Tweet.
-)
+//)
 //
-object TwitterEntity {
-  val dummyEntity = TwitterEntity( //  Some(List(TwitterHashtag("hashtag!"))),
-  //  Some(List())
-  //    Some(List(TwitterURL("display URL", "expanded url", "url"))),
-  //    Some(List(TwitterUserMention(12345.toLong, "mentioned username", "screen name of the user")))
-  )
-}
+//object TwitterEntity {
+//  val dummyEntity = TwitterEntity(Some(List(TwitterHashtag("hashtag!"))),
+//  Some(List())
+//    Some(List(TwitterURL("display URL", "expanded url", "url"))),
+//    Some(List(TwitterUserMention(12345.toLong, "mentioned username", "screen name of the user")))
+//  )
+//}
 
 case class TwitterPlaceAttributes(
   street_address: Option[String],
@@ -248,7 +248,7 @@ object TwitterTweet extends ApiEndpointTableStructure {
   //  implicit val hashtagFormat = Json.format[TwitterHashtag]
   //  implicit val urlFormat = Json.format[TwitterURL]
   //  implicit val userMentionFormat = Json.format[TwitterUserMention]
-  // implicit val entityFormat = Json.format[TwitterEntity]
+  //  implicit val entityFormat = Json.format[TwitterEntity]
   //  implicit val embeddedTweetFormat = Json.format[TwitterEmbeddedTweet]
 
   implicit val placeAttributesFormat = Json.format[TwitterPlaceAttributes]

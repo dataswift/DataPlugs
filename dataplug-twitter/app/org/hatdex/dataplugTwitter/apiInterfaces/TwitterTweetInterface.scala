@@ -52,7 +52,7 @@ class TwitterTweetInterface @Inject() (
 
   val defaultApiEndpoint = TwitterTweetInterface.defaultApiEndpoint
 
-  val refreshInterval = 5.minutes
+  val refreshInterval = 60.minutes
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     val maybeTweets = content.asOpt[JsArray]
@@ -156,7 +156,7 @@ class TwitterTweetInterface @Inject() (
   private def buildJsonRecord(tweet: TwitterTweet): JsArray = {
     val tweetJsonRecord = JsArray(List(JsObject(Map("tweets" -> Json.toJson(tweet)))))
 
-    logger.debug(s"Events: ${Json.prettyPrint(tweetJsonRecord)}")
+    logger.debug(s"Tweets: ${Json.prettyPrint(tweetJsonRecord)}")
 
     tweetJsonRecord
   }

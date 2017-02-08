@@ -18,23 +18,23 @@
   </appender>
 
   <logger name="ch.qos.logback" level="WARN" />
-  <logger name="play" level="DEBUG" />
-  <logger name="application" level="DEBUG" />
-  <logger name="DatabaseNotableStore" level="DEBUG" />
-  <logger name="BulletinService" level="DEBUG" />
-  <logger name="JwtPhataAuthenticatedAction" level="DEBUG" />
-  <logger name="JwtPhataAwareAction" level="DEBUG" />
+  <logger name="play" level="INFO" />
+  <logger name="application" level="INFO" />
+  <logger name="DatabaseNotableStore" level="INFO" />
+  <logger name="BulletinService" level="INFO" />
+  <logger name="JwtPhataAuthenticatedAction" level="INFO" />
+  <logger name="JwtPhataAwareAction" level="INFO" />
 
-  <logger name="org.hatdex.hat.api.services.HatClient" level="DEBUG" />
-  <logger name="NetworkUpdateService" level="DEBUG"/>
-  <logger name="HatClientActor" level="DEBUG" />
+  <logger name="org.hatdex.hat.api.services.HatClient" level="INFO" />
+  <logger name="NetworkUpdateService" level="INFO"/>
+  <logger name="HatClientActor" level="INFO" />
 
-  <logger name="MarketsquareNoticeService" level="DEBUG"/>
-  <logger name="JwtPhataAuthentication" level="DEBUG"/>
-  <logger name="HatLoginController" level="DEBUG"/>
-  <logger name="TwitterTweetInterface" level="DEBUG"/>
-  <logger name="TwitterStatusUpdateInterface" level="DEBUG"/>
-  <logger name="SchemaMigration" level="DEBUG" />
+  <logger name="MarketsquareNoticeService" level="INFO"/>
+  <logger name="JwtPhataAuthentication" level="INFO"/>
+  <logger name="HatLoginController" level="INFO"/>
+  <logger name="TwitterTweetInterface" level="INFO"/>
+  <logger name="TwitterStatusUpdateInterface" level="INFO"/>
+  <logger name="SchemaMigration" level="INFO" />
 
 
   <root level="WARN">

@@ -17,7 +17,7 @@ import org.hatdex.dataplugTwitter.apiInterfaces.TwitterStatusUpdateInterface
 import org.joda.time.DateTime
 import play.api.{ Configuration, Logger }
 import play.api.i18n.MessagesApi
-import play.api.libs.json.Json
+import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -82,19 +82,19 @@ class Api @Inject() (
               mns <- dataPlugNotablesService.find(notableShareRequest.notableId)
             } yield {
               logger.info(s"Found inserted notable: $mns")
-              Ok("Notable accepted for posting")
+              Ok(Json.toJson(Map("message" -> "Notable accepted for posting")))
             }
           }
           else {
-            Future.successful(BadRequest("Notable exists"))
+            Future.successful(BadRequest(generateResponseJson("Bad Request", "Notable already exists")))
           }
         }
       }
       else {
-        Future.successful(Unauthorized("Authentication failed"))
+        Future.successful(Unauthorized(generateResponseJson("Unauthorized", "Authentication failed")))
       }
     } getOrElse {
-      Future.successful(Unauthorized("Authentication token missing or malformed"))
+      Future.successful(Unauthorized(generateResponseJson("Unauthorized", "Authentication token missing or malformed")))
     }
   }
 
@@ -110,25 +110,30 @@ class Api @Inject() (
                 _ <- twitterStatusUpdateInterface.delete(status.phata, status.providerId.get)
                 maybeNotableStatus <- dataPlugNotablesService.save(status.copy(posted = false, deleted = true, deletedTime = Some(DateTime.now())))
               } yield {
-                Ok("Deleted")
+                Ok(Json.toJson(Map("message" -> "Notable deleted.")))
               }
             }
             else if (status.posted && status.deleted) {
-              Future.successful(BadRequest("Already deleted"))
+              Future.successful(BadRequest(generateResponseJson("Bad request", "Already deleted")))
             }
             else {
-              Future.successful(BadRequest("Could not complete requested action"))
+              Future.successful(BadRequest(generateResponseJson("Bad request", "Could not complete requested action")))
             }
           case None =>
-            Future.successful(BadRequest("Notable not found"))
+            Future.successful(BadRequest(generateResponseJson("Bad request", "Notable not found")))
         }
       }
       else {
-        Future.successful(Unauthorized("Authentication failed"))
+        Future.successful(Unauthorized(generateResponseJson("Unauthorized", "Authentication failed")))
       }
     } getOrElse {
-      Future.successful(Unauthorized("Authentication token missing or malformed"))
+      Future.successful(Unauthorized(generateResponseJson("Unauthorized", "Authentication token missing or malformed")))
     }
   }
 
+  private def generateResponseJson(message: String, error: String): JsValue =
+    Json.toJson(Map(
+      "message" -> message,
+      "error" -> error
+    ))
 }
