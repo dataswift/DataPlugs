@@ -1,9 +1,3 @@
-[submodule "marketsquare-client-scala-play"]
-	path = marketsquare-client-scala-play
-	url = git@github.com:Hub-of-all-Things/marketsquare-client-scala-play.git
-[submodule "hat-client-scala-play"]
-	path = hat-client-scala-play
-	url = git@github.com:Hub-of-all-Things/hat-client-scala-play.git
 [submodule "commonPlay"]
 	path = commonPlay
 	url = git@github.com:Hub-of-all-Things/commonPlay.git

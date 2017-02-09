@@ -19,11 +19,17 @@ object Dependencies {
     "Atlassian Releases" at "https://maven.atlassian.com/public/",
     "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases",
     "Sonatype snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/",
-    Resolver.jcenterRepo
+    "HAT Library Artifacts Releases" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com",
+    "HAT Library Artifacts Snapshots" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-snapshots.hubofallthings.com"
   )
 
 
   object Library {
+    object HATDeX {
+      private val version = "2.2.0"
+      val hatClient = "org.hatdex" %% "hat-client-scala-play" % version
+      val marketsquareClient = "org.hatdex" %% "marketsquare-client-scala-play" % version
+    }
 
     object Play {
       val version = play.core.PlayVersion.current
