@@ -87,7 +87,7 @@ class TwitterStatusUpdateInterface @Inject() (
       authInfo <- eventualAuthInfo
       result <- wsClient.url("https://upload.twitter.com/1.1/media/upload.json")
         .sign(oauth1service.sign(authInfo))
-        .post(Source(FilePart("media", "filename", Option("application/octet-stream"), body) :: List()))
+        .post(Source(FilePart("media", "filename", None, body) :: List()))
     } yield {
       result status match {
         case OK =>
