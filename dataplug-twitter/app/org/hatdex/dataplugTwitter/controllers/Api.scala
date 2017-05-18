@@ -78,7 +78,7 @@ class Api @Inject() (
           if (!maybeNotableStatus.exists(_.posted)) {
             val sharedNotable = maybeNotableStatus.getOrElse(notableShareRequest.dataPlugSharedNotable)
             for {
-              statusUpdate <- twitterStatusUpdateInterface.post(notableShareRequest.hatDomain, notableShareRequest.message)
+              statusUpdate <- twitterStatusUpdateInterface.post(notableShareRequest.hatDomain, notableShareRequest)
               notableStatus <- dataPlugNotablesService.save(sharedNotable.copy(posted = true, postedTime = Some(DateTime.now()), providerId = Some(statusUpdate.id_str)))
               mns <- dataPlugNotablesService.find(notableShareRequest.notableId)
             } yield {

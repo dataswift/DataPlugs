@@ -13,7 +13,7 @@ import java.net.URLEncoder
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth1.services.PlayOAuth1Service
-import com.mohiva.play.silhouette.impl.providers.{ OAuth1Info, OAuth1Provider, OAuth2Info, OAuth2Provider }
+import com.mohiva.play.silhouette.impl.providers.{ OAuth1Info, OAuth1Provider }
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
 import org.hatdex.dataplug.services.UserService
 import play.api.Logger
@@ -50,8 +50,6 @@ trait RequestAuthenticatorOAuth1 extends RequestAuthenticator {
     val wsRequest = wsClient.url(params.url + path)
       .withQueryString(params.queryParameters.toList: _*)
       .withHeaders(params.headers.toList: _*)
-
-    logger.warn(s"Making request $wsRequest")
 
     val response = eventualAuthInfo flatMap { authInfo =>
       val signedRequest = wsRequest.sign(oauth1service.sign(authInfo))

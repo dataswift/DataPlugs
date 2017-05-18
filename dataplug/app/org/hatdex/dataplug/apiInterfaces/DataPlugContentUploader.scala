@@ -9,11 +9,12 @@
 package org.hatdex.dataplug.apiInterfaces
 
 import org.hatdex.dataplug.apiInterfaces.authProviders.RequestAuthenticator
+import org.hatdex.dataplug.apiInterfaces.models.DataPlugNotableShareRequest
 
 import scala.concurrent.{ ExecutionContext, Future }
 
 trait DataPlugContentUploader extends RequestAuthenticator with DataPlugApiEndpointClient {
-  def post(hatAddress: String, message: String)(implicit ec: ExecutionContext): Future[AnyRef]
+  def post(hatAddress: String, message: DataPlugNotableShareRequest)(implicit ec: ExecutionContext): Future[AnyRef]
 
   //def delete(hatAddress: String, notableId: String)(implicit ec: ExecutionContext): Future[AnyRef]
 }

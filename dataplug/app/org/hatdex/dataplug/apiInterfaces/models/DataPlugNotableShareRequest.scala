@@ -13,7 +13,8 @@ import play.api.libs.json._
 case class DataPlugNotableShareRequest(
     message: String,
     hatDomain: String,
-    notableId: String
+    notableId: String,
+    photo: Option[String]
 ) {
   implicit val notableShareRequestFormat = DataPlugNotableShareRequest.notableShareRequestFormat
 
