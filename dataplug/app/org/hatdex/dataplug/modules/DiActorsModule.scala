@@ -10,7 +10,7 @@ package org.hatdex.dataplug.modules
 
 import com.google.inject.AbstractModule
 import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.dataplug.actors.DataPlugManagerActor
+import org.hatdex.dataplug.actors.{ DataPlugManagerActor, DataPlugSyncDispatcherActor }
 import org.hatdex.dataplug.controllers.{ DataPlugViewSet, DataPlugViewSetDefault }
 import play.api.libs.concurrent.AkkaGuiceSupport
 
@@ -18,6 +18,7 @@ class DiActorsModule extends AbstractModule with ScalaModule with AkkaGuiceSuppo
 
   def configure = {
     bindActor[DataPlugManagerActor]("dataPlugManager")
+    bindActor[DataPlugSyncDispatcherActor]("syncDispatcher")
     bind[org.hatdex.commonPlay.utils.Mailer].to[org.hatdex.dataplug.utils.Mailer]
   }
 }

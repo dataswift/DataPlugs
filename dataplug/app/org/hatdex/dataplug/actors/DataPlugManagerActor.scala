@@ -1,17 +1,21 @@
 /*
- * Copyright (C) 2016 HAT Data Exchange Ltd - All Rights Reserved
+ * Copyright (C) 2017 HAT Data Exchange Ltd - All Rights Reserved
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- * Written by Andrius Aucinas <andrius.aucinas@hatdex.org>, 10 2016
+ * Written by Augustinas Markevicius <augustinas.markevicius@hatdex.org> 5, 2017
  */
 
 package org.hatdex.dataplug.actors
 
-import javax.inject.Inject
+import javax.inject.{ Inject, Named }
 
+import akka.NotUsed
 import akka.actor.{ Actor, ActorLogging, ActorNotFound, ActorRef, PoisonPill }
-import akka.pattern.{ Backoff, BackoffSupervisor }
+import akka.pattern.{ Backoff, BackoffSupervisor, pipe }
+import akka.stream.{ ActorMaterializer, OverflowStrategy, ThrottleMode }
+import akka.stream.scaladsl.{ Sink, Source }
+import org.hatdex.dataplug.actors.DataPlugSyncDispatcherActor.Sync
 import org.hatdex.dataplug.apiInterfaces._
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointVariant }
 import org.hatdex.dataplug.services.DataPlugEndpointService
@@ -62,15 +66,18 @@ object DataPlugManagerActor {
 }
 
 class DataPlugManagerActor @Inject() (
-    dataPlugRegistry: DataPlugRegistry,
-    ws: WSClient,
-    configuration: Configuration,
-    val dataplugEndpointService: DataPlugEndpointService,
-    val mailer: Mailer,
-    hatClientFactory: InjectedHatClientActor.Factory) extends Actor with ActorLogging with InjectedActorSupport with DataPlugManagerOperations {
+  dataPlugRegistry: DataPlugRegistry,
+  ws: WSClient,
+  configuration: Configuration,
+  val dataplugEndpointService: DataPlugEndpointService,
+  val mailer: Mailer,
+  @Named("syncDispatcher") syncDispatcher: ActorRef,
+  hatClientFactory: InjectedHatClientActor.Factory)
+    extends Actor with ActorLogging with InjectedActorSupport with DataPlugManagerOperations {
 
   import DataPlugManagerActor._
 
+  private implicit val materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = context.dispatcher
   val scheduler = context.system.scheduler
 
@@ -82,29 +89,26 @@ class DataPlugManagerActor @Inject() (
 
   val dataPlugSyncActors: mutable.Map[String, ActorRef] = mutable.Map()
 
+  val throttledSyncActor = Source.actorRef(bufferSize = 1000, OverflowStrategy.dropNew)
+    .throttle(elements = 15, per = 15.minutes, maximumBurst = 10, ThrottleMode.Shaping)
+    .to(Sink.actorRef(syncDispatcher, NotUsed))
+    .run()
+
   def receive: Receive = {
     case Start(variant, phata, maybeEndpointCall) =>
       dataPlugRegistry.get[DataPlugEndpointInterface](variant.endpoint.name).map { endpointInterface =>
         val actorKey = s"$phata-${variant.endpoint.name}-${variant.variant.getOrElse("").replace("#", "")}"
         log.warning(s"Starting actor fetch $actorKey")
-        startSyncerActor(phata, variant, endpointInterface, actorKey).map {
-          case _ =>
-            context.system.scheduler.schedule(0.seconds, endpointInterface.refreshInterval) {
-              context.actorSelection(s"$actorKey-supervisor/$actorKey").resolveOne(5.seconds) flatMap { syncActor =>
-                log.error(s"Starting fetch for sync actor $actorKey")
-                val eventualFetchEndpointCall = dataplugEndpointService.retrieveLastSuccessfulEndpointVariant(
-                  phata, variant.endpoint.name, variant.variant) map { maybeEndpointVariant =>
-                  maybeEndpointVariant.flatMap(_.configuration).orElse(maybeEndpointCall)
-                }
+        startSyncerActor(phata, variant, endpointInterface, actorKey).map { syncerActor =>
+          context.system.scheduler.schedule(0.seconds, endpointInterface.refreshInterval) {
 
-                eventualFetchEndpointCall.map(fetchEndpointCall => syncActor ! Fetch(fetchEndpointCall, 0))
-              } recover {
-                case e =>
-                  val message = s"Could not fetch for actor $actorKey - ${e.getMessage}"
-                  log.error(message)
-                  mailer.serverExceptionNotifyInternal(message, new RuntimeException(message))
-              }
+            val eventualFetchEndpointCall = dataplugEndpointService.retrieveLastSuccessfulEndpointVariant(
+              phata, variant.endpoint.name, variant.variant) map { maybeEndpointVariant =>
+              maybeEndpointVariant.flatMap(_.configuration).orElse(maybeEndpointCall)
             }
+
+            eventualFetchEndpointCall.map(Sync(syncerActor.path, _)) pipeTo throttledSyncActor
+          }
         }
       } getOrElse {
         val message = s"No such plug ${variant.endpoint.name} in DataPlug Registry"
