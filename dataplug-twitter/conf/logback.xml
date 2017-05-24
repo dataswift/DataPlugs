@@ -29,6 +29,7 @@
   <logger name="org.hatdex.hat.api.services.HatClient" level="INFO" />
   <logger name="NetworkUpdateService" level="INFO"/>
   <logger name="HatClientActor" level="INFO" />
+  <logger name="SyncerActorManager" level="INFO" />
 
   <logger name="MarketsquareNoticeService" level="INFO"/>
   <logger name="JwtPhataAuthentication" level="INFO"/>
