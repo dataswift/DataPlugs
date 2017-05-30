@@ -32,13 +32,23 @@ object Build extends Build {
     aggregate = Seq(dataplug)
   )
 
+  lazy val dataplugGoogleCalendar = Project(
+    id = "dataplug-google-calendar",
+    base = file("dataplug-google-calendar"),
+    dependencies = Seq(
+      commonPlay % "compile->compile;test->test",
+      dataplug % "compile->compile;test->test"),
+    aggregate = Seq(dataplug)
+  )
+
   val root = Project(
     id = "dataplug-project",
     base = file("."),
     aggregate = Seq(
       commonPlay,
       dataplug,
-      dataplugTwitter
+      dataplugTwitter,
+      dataplugGoogleCalendar
     ),
     settings = Defaults.coreDefaultSettings ++
       // APIDoc.settings ++
