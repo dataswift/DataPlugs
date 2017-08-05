@@ -19,6 +19,7 @@ import org.hatdex.hat.api.models.{ ApiDataRecord, ApiDataTable, ApiDataValue, Ap
 import org.hatdex.hat.api.services.HatClient
 import org.joda.time.{ DateTime, Duration }
 import play.api.Logger
+import play.api.libs.json.JsArray
 import play.api.libs.ws.WSClient
 
 import scala.concurrent.ExecutionContext
@@ -38,6 +39,8 @@ object HatClientActor {
   case class CreateDataTable(tableStructure: ApiDataTable) extends DataOperationMessage
 
   case class PostData(data: Seq[ApiRecordValues]) extends DataOperationMessage
+
+  case class PostDataV2(namespace: String, endpoint: String, data: JsArray) extends DataOperationMessage
 
   case class FetchingFailed(message: String)
 
@@ -176,6 +179,16 @@ class HatClientActor(ws: WSClient, hat: String, config: Config, credentials: Hat
     case PostData(data) =>
       logger.debug(s"Posting Data for $hat: ${data.mkString("\n")}")
       val table = hatClient.createBatchRecords(maybeToken.get, data) recover {
+        case e =>
+          val message = s"Could not post data $data values: ${e.getMessage}"
+          logger.error(message, e)
+          FetchingFailed(message)
+      }
+      table pipeTo sender
+
+    case PostDataV2(namespace, endpoint, data) =>
+      logger.debug(s"Posting Data for $hat using v2 API: ${data.toString}")
+      val table = hatClient.saveData(maybeToken.get, namespace, endpoint, data) recover {
         case e =>
           val message = s"Could not post data $data values: ${e.getMessage}"
           logger.error(message, e)

@@ -23,10 +23,12 @@ import play.api.Logger
 import play.api.cache.CacheApi
 import play.api.http.Status._
 import play.api.libs.json.{ JsArray, JsValue, Json }
+import play.api.libs.json.Reads.verifying
 import play.api.libs.ws.{ WSClient, WSResponse }
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.Try
 
 trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthenticator with DataPlugApiEndpointClient {
   val refreshInterval: FiniteDuration
@@ -35,7 +37,7 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
 
   private lazy val apiTableStructures = apiEndpointTableStructures map {
     case (k, v: ApiEndpointTableStructure) =>
-      val generatedStructure = buildHATDataTableStructure(v.dummyEntity.toJson, sourceName, k).get
+      val generatedStructure = buildHATDataTableStructure(v.dummyEntity.toJson, namespace, k).get
       logger.trace(s"Generated API endpoint table structure from $v to $generatedStructure")
       k -> generatedStructure
   }
@@ -89,12 +91,12 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
   }
 
   protected def ensureDataTable(tableName: String, hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext, timeout: Timeout): Future[ApiDataTable] = {
-    val cacheKey = s"apitable:$hatAddress:$sourceName:$tableName"
+    val cacheKey = s"apitable:$hatAddress:$namespace:$tableName"
     val maybeCachedTable = cacheApi.get[ApiDataTable](cacheKey)
     maybeCachedTable map { cachedTable =>
       Future.successful(cachedTable)
     } getOrElse {
-      (hatClientActor ? HatClientActor.FindDataTable(tableName, sourceName)).mapTo[ApiDataTable] map { tableFound =>
+      (hatClientActor ? HatClientActor.FindDataTable(tableName, namespace)).mapTo[ApiDataTable] map { tableFound =>
         cacheApi.set(cacheKey, tableFound)
         tableFound
       } recoverWith {
@@ -107,11 +109,7 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
   }
 
   protected def processResults(content: JsValue, hatAddress: String, hatClientActor: ActorRef, fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Unit] = {
-    val eventualHatData = buildHatDataRecord(JsArray(Seq(content)), sourceName, endpointName, None, Map())
-
-    eventualHatData flatMap { hatData =>
-      uploadHatData(Seq(hatData), hatAddress, hatClientActor)
-    }
+    uploadHatData(namespace, endpoint, content, hatAddress, hatClientActor)
   }
 
   protected def ensureDataTables(hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext, timeout: Timeout): Future[Map[String, ApiDataTable]] = {
@@ -125,21 +123,34 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
     }
   }
 
-  protected def uploadHatData(data: Seq[ApiDataRecord], hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext, timeout: Timeout): Future[Unit] = {
-    val dataRecords = data map { dataRecord =>
-      ApiRecordValues(
-        ApiDataRecord(None, None, lastUpdated = dataRecord.lastUpdated, name = dataRecord.name, None),
-        dataRecord.tables.map(tables => tables.flatMap(ApiDataTable.extractValues)).getOrElse(Seq())
-      )
-    }
+  protected def uploadHatData(
+    namespace: String,
+    endpoint: String,
+    data: JsValue,
+    hatAddress: String,
+    hatClientActor: ActorRef)(implicit ec: ExecutionContext, timeout: Timeout): Future[Unit] = {
 
-    if (dataRecords.nonEmpty) { // set the predicate to false to prevent posting to HAT
-      hatClientActor ? HatClientActor.PostData(dataRecords) map { case _ => () }
-    }
-    else {
-      Future.successful(())
+    data match {
+      case v: JsArray =>
+        if (v.value.nonEmpty) { // set the predicate to false to prevent posting to HAT
+          hatClientActor ? HatClientActor.PostDataV2(namespace, endpoint, v) map { case _ => () }
+        }
+        else {
+          Future.successful(())
+        }
+      case v: JsValue =>
+        hatClientActor ? HatClientActor.PostDataV2(namespace, endpoint, JsArray(Seq(v))) map { case _ => () }
     }
   }
+
+  /**
+   * Validates whether dataset meets minimum field requirements by trying to cast it into a case class
+   *
+   * @param rawData JSON value of data to be validated
+   * @return Try block - successful if the data matches minimum structure requirements
+   */
+
+  protected def validateMinDataStructure(rawData: JsValue): Try[JsArray]
 
   /**
    * Extract timestamp of data record to be stored in the HAT - HAT allows timestamp fields to

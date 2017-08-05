@@ -30,7 +30,7 @@ case class DataPlugOptionsCollectorRegistry(collectors: Seq[(Provider, DataPlugO
    * @param id The ID of the provider to return.
    * @return Some social provider or None if no provider for the given ID could be found.
    */
-  def get[T <: DataPlugOptionsCollector: ClassTag](name: String): Option[T] = getSeq[T].find(_.endpointName == name)
+  def get[T <: DataPlugOptionsCollector: ClassTag](name: String): Option[T] = getSeq[T].find(_.endpoint == name)
 
   /**
    * Gets a list of providers that match a certain type.

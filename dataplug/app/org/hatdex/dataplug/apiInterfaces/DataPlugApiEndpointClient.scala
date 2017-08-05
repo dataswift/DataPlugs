@@ -19,9 +19,9 @@ import play.api.libs.ws.{ WSClient, WSResponse }
 import scala.concurrent.{ ExecutionContext, Future }
 
 trait DataPlugApiEndpointClient {
-  val endpointName: String
+  val endpoint: String
   protected val wsClient: WSClient
-  protected val sourceName: String
+  protected val namespace: String
   protected val logger: Logger
   val defaultApiEndpoint: ApiEndpointCall
   val cacheApi: CacheApi
