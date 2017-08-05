@@ -39,8 +39,8 @@ class TwitterFriendInterface @Inject() (
     val mailer: Mailer,
     val provider: TwitterProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth1 {
 
-  val sourceName: String = "twitter"
-  val endpointName: String = "friends"
+  val namespace: String = "twitter"
+  val endpoint: String = "friends"
   protected val logger: Logger = Logger("TwitterFriendsInterface")
 
   protected val apiEndpointTableStructures: Map[String, ApiEndpointTableStructure] = Map(
@@ -49,7 +49,7 @@ class TwitterFriendInterface @Inject() (
 
   val defaultApiEndpoint = TwitterFriendInterface.defaultApiEndpoint
 
-  val refreshInterval = 5.minutes
+  val refreshInterval = 24.hours
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     val maybeUsers = (content \ "users").asOpt[JsArray]
@@ -106,10 +106,7 @@ class TwitterFriendInterface @Inject() (
     }
   }
 
-  def buildNextSync(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
-
-    params
-  }
+  def buildNextSync(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = params
 
   override protected def buildRequest(params: ApiEndpointCall)(implicit ec: ExecutionContext): Future[WSResponse] =
     super[RequestAuthenticatorOAuth1].buildRequest(params)
@@ -120,49 +117,29 @@ class TwitterFriendInterface @Inject() (
     hatClientActor: ActorRef,
     fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Unit] = {
 
-    val rawFriends = (content \ "users").as[JsArray] // Tweets returned by the API call
-
-    // Shape results into HAT data records
-    val resultsPosted = for {
-      users <- FutureTransformations.transform(parseUsers(rawFriends)) // Parse tweets into strongly-typed structures
-      tableStructures <- ensureDataTables(hatAddress, hatClientActor) // Ensure HAT data tables have been created
-      apiDataRecords <- Future.sequence(users.map(convertTwitterUserToHat(_, tableStructures)))
-      posted <- uploadHatData(apiDataRecords, hatAddress, hatClientActor) // Upload the data
+    for {
+      users <- FutureTransformations.transform(validateMinDataStructure(content)) // Parse tweets into strongly-typed structures
+      _ <- uploadHatData(namespace, endpoint, users, hatAddress, hatClientActor) // Upload the data
     } yield {
-      debug(content, users)
-      posted
-    }
-
-    resultsPosted
-  }
-
-  private def convertTwitterUserToHat(user: TwitterUser, tableStructures: Map[String, ApiDataTable]): Future[ApiDataRecord] = {
-    val plainDataForRecords = buildJsonRecord(user)
-    val recordTimestamp = Some(new DateTime(user.created_at))
-    buildHatDataRecord(plainDataForRecords, sourceName, user.id.toString, recordTimestamp, tableStructures)
-  }
-
-  private def debug(content: JsValue, tweets: Seq[TwitterUser]): Unit = {
-    // Calendar information returned by the API call
-  }
-
-  private def parseUsers(items: JsArray): Try[List[TwitterUser]] = {
-    items.validate[List[TwitterUser]] match {
-      case s: JsSuccess[List[TwitterUser]] =>
-        Success(s.get)
-      case e: JsError =>
-        val error = new RuntimeException(s"Error parsing event values: $e")
-        logger.error(s"Error parsing event values: $e - ${items.toString()}")
-        Failure(error)
+      logger.debug(s"Successfully synced new records for HAT $hatAddress")
     }
   }
 
-  private def buildJsonRecord(user: TwitterUser): JsArray = {
-    val userJsonRecord = JsArray(List(JsObject(Map("friends" -> Json.toJson(user)))))
-
-    logger.debug(s"Events: ${Json.prettyPrint(userJsonRecord)}")
-
-    userJsonRecord
+  def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
+    (rawData \ "users").toOption.map {
+      case data: JsArray if data.validate[List[TwitterUser]].isSuccess =>
+        logger.debug(s"Validated JSON object:\n${data.toString}")
+        Success(data)
+      case data: JsArray =>
+        logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")
+        Failure(new RuntimeException(s"Error validating data, some of the required fields missing."))
+      case _ =>
+        logger.error(s"Error parsing JSON object: ${rawData.toString}")
+        Failure(new RuntimeException(s"Error parsing JSON object."))
+    }.getOrElse {
+      logger.error(s"Error parsing JSON object: ${rawData.toString}")
+      Failure(new RuntimeException(s"Error parsing JSON object."))
+    }
   }
 
 }

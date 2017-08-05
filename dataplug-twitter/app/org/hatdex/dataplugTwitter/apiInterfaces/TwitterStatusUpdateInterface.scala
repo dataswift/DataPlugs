@@ -38,8 +38,8 @@ class TwitterStatusUpdateInterface @Inject() (
     val provider: TwitterProvider) extends DataPlugContentUploader with RequestAuthenticatorOAuth1 {
 
   protected val logger: Logger = Logger("TwitterStatusUpdateInterface")
-  val sourceName: String = "twitter"
-  val endpointName: String = "status_update"
+  val namespace: String = "twitter"
+  val endpoint: String = "status_update"
 
   val defaultApiEndpoint = ApiEndpointCall(
     "https://api.twitter.com",

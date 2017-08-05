@@ -43,8 +43,8 @@ class TwitterTweetInterface @Inject() (
 
   // JSON type formatters
 
-  val sourceName: String = "twitter"
-  val endpointName: String = "tweets"
+  val namespace: String = "twitter"
+  val endpoint: String = "tweets"
   protected val logger: Logger = Logger("TwitterTweetsInterface")
 
   protected val apiEndpointTableStructures: Map[String, ApiEndpointTableStructure] = Map(
@@ -111,55 +111,26 @@ class TwitterTweetInterface @Inject() (
     hatClientActor: ActorRef,
     fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Unit] = {
 
-    val rawTweets = content.as[JsArray] // Tweets returned by the API call
-
-    // Shape results into HAT data records
-    val resultsPosted = for {
-      tweets <- FutureTransformations.transform(parseTweets(rawTweets)) // Parse tweets into strongly-typed structures
-      tableStructures <- ensureDataTables(hatAddress, hatClientActor) // Ensure HAT data tables have been created
-      apiDataRecords <- Future.sequence(tweets.map(convertTwitterTweetToHat(_, tableStructures)))
-      posted <- uploadHatData(apiDataRecords, hatAddress, hatClientActor) // Upload the data
+    for {
+      tweets <- FutureTransformations.transform(validateMinDataStructure(content))
+      _ <- uploadHatData(namespace, endpoint, tweets, hatAddress, hatClientActor)
     } yield {
-      debug(content, tweets)
-      posted
-    }
-
-    resultsPosted
-  }
-
-  private def convertTwitterTweetToHat(tweet: TwitterTweet, tableStructures: Map[String, ApiDataTable]): Future[ApiDataRecord] = {
-    val plainDataForRecords = buildJsonRecord(tweet)
-    val format = DateTimeFormat.forPattern("EEE MMM dd HH:mm:ss Z yyyy").withLocale(Locale.ENGLISH)
-    val recordTimestamp = Some(format.parseDateTime(tweet.created_at))
-    buildHatDataRecord(plainDataForRecords, sourceName, tweet.id.toString, recordTimestamp, tableStructures)
-  }
-
-  private def debug(content: JsValue, tweets: Seq[TwitterTweet]): Unit = {
-    // Tweets returned by the API call
-    val tweets = content.as[JsArray]
-
-    logger.debug(
-      s"""Received following tweets:
-          | - last updated $tweets""")
-  }
-
-  private def parseTweets(items: JsArray): Try[List[TwitterTweet]] = {
-    items.validate[List[TwitterTweet]] match {
-      case s: JsSuccess[List[TwitterTweet]] =>
-        Success(s.get)
-      case e: JsError =>
-        val error = new RuntimeException(s"Error parsing event values: $e")
-        logger.error(s"Error parsing event values: $e - ${items.toString()}")
-        Failure(error)
+      logger.debug(s"Successfully synced new records for HAT $hatAddress")
     }
   }
 
-  private def buildJsonRecord(tweet: TwitterTweet): JsArray = {
-    val tweetJsonRecord = JsArray(List(JsObject(Map("tweets" -> Json.toJson(tweet)))))
-
-    logger.debug(s"Tweets: ${Json.prettyPrint(tweetJsonRecord)}")
-
-    tweetJsonRecord
+  def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
+    rawData match {
+      case data: JsArray if data.validate[List[TwitterTweet]].isSuccess =>
+        logger.debug(s"Validated JSON object:\n${data.toString}")
+        Success(data)
+      case data: JsArray =>
+        logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")
+        Failure(new RuntimeException(s"Error validating data, some of the required fields missing."))
+      case _ =>
+        logger.error(s"Error parsing JSON object: ${rawData.toString}")
+        Failure(new RuntimeException(s"Error parsing JSON object."))
+    }
   }
 
 }

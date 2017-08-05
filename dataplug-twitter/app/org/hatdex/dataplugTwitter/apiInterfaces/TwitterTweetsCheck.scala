@@ -37,8 +37,8 @@ class TwitterTweetsCheck @Inject() (
     val mailer: Mailer,
     val provider: TwitterProvider) extends DataPlugOptionsCollector with RequestAuthenticatorOAuth1 {
 
-  val sourceName: String = "twitter"
-  val endpointName: String = "tweets"
+  val namespace: String = "twitter"
+  val endpoint: String = "tweets"
   protected val logger: Logger = Logger("TwitterTweetsInterface")
 
   val defaultApiEndpoint = ApiEndpointCall(

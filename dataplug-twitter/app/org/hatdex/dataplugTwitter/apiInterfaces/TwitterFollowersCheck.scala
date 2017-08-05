@@ -36,8 +36,8 @@ class TwitterFollowersCheck @Inject() (
     val mailer: Mailer,
     val provider: TwitterProvider) extends DataPlugOptionsCollector with RequestAuthenticatorOAuth1 {
 
-  val sourceName: String = "twitter"
-  val endpointName: String = "followers"
+  val namespace: String = "twitter"
+  val endpoint: String = "followers"
   protected val logger: Logger = Logger("TwitterFollowersInterface")
 
   val defaultApiEndpoint = ApiEndpointCall(
