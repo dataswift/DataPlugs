@@ -18,7 +18,7 @@ import com.mohiva.play.silhouette.impl.providers.OAuth2Provider._
 import com.mohiva.play.silhouette.impl.providers.{ OAuth2Info, OAuth2Provider, SocialProviderRegistry }
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import org.apache.commons.codec.binary.Base64
+import com.mohiva.play.silhouette.api.crypto.Base64
 import play.api.cache.CacheApi
 import play.api.{ Configuration, Logger }
 import play.api.libs.ws.{ WSClient, WSResponse }
@@ -50,15 +50,21 @@ class OAuth2TokenHelper @Inject() (
           implicit val provider = p
           val settings = configuration.underlying.as[OAuth2SettingsExtended](s"silhouette.${loginInfo.providerID}")
           settings.refreshURL.map({ url =>
-            val encodedAuth = Base64.encodeBase64(Codec.toUTF8(s"${p.settings.clientID}:${p.settings.clientSecret}")).toString
+            val encodedAuth = Base64.encode(s"${settings.clientID}:${settings.clientSecret}")
             val params = Map(
               "client_id" -> Seq(p.settings.clientID),
               "client_secret" -> Seq(p.settings.clientSecret),
               "grant_type" -> Seq("refresh_token"),
               "refresh_token" -> Seq(refreshToken)) ++ p.settings.scope.map({ "scope" -> Seq(_) })
 
+            val authHeader = p.settings.customProperties
+              .get("authorization_header_prefix")
+              .map(_ + " ")
+              .getOrElse("")
+              .concat(encodedAuth)
+
             val eventualToken = wsClient.url(url)
-              .withHeaders("Authorization" -> encodedAuth)
+              .withHeaders("Authorization" -> authHeader)
               .withHeaders(settings.refreshHeaders.toSeq: _*)
               .post(params)
               .flatMap(resp => Future.fromTry(buildInfo(resp)))
