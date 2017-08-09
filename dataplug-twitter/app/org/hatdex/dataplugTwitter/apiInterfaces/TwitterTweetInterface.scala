@@ -22,8 +22,6 @@ import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMe
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugTwitter.models._
-import org.hatdex.hat.api.models.{ ApiDataRecord, ApiDataTable }
-import org.joda.time.format.DateTimeFormat
 import play.api.Logger
 import play.api.cache.CacheApi
 import play.api.libs.json._
@@ -46,10 +44,6 @@ class TwitterTweetInterface @Inject() (
   val namespace: String = "twitter"
   val endpoint: String = "tweets"
   protected val logger: Logger = Logger("TwitterTweetsInterface")
-
-  protected val apiEndpointTableStructures: Map[String, ApiEndpointTableStructure] = Map(
-    "tweets" -> TwitterTweet
-  )
 
   val defaultApiEndpoint = TwitterTweetInterface.defaultApiEndpoint
 

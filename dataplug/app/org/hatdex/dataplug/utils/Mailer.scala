@@ -30,7 +30,7 @@ class Mailer @Inject() (configuration: play.api.Configuration, ms: MailService)
     Try {
       val emailFrom = configuration.getString("play.mailer.from").get
       ms.sendEmailAsync(adminEmails: _*)(
-        subject = s"DataPlug $plugName server error: #${exception.id}",
+        subject = s"DataPlug $plugName server error: #${exception.getMessage}",
         bodyHtml = views.html.mails.emailServerError(request, exception),
         bodyText = views.html.mails.emailServerError(request, exception).toString())
     }
@@ -52,7 +52,7 @@ class Mailer @Inject() (configuration: play.api.Configuration, ms: MailService)
     Try {
       val emailFrom = configuration.getString("play.mailer.from").get
       ms.sendEmailAsync(adminEmails: _*)(
-        subject = s"DataPlug $plugName server error",
+        subject = s"DataPlug $plugName server error: ${exception.getMessage}",
         bodyHtml = views.html.mails.emailServerThrowableInternal(message, exception),
         bodyText = views.html.mails.emailServerThrowableInternal(message, exception).toString())
     }

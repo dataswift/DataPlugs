@@ -43,10 +43,6 @@ class TwitterFriendInterface @Inject() (
   val endpoint: String = "friends"
   protected val logger: Logger = Logger("TwitterFriendsInterface")
 
-  protected val apiEndpointTableStructures: Map[String, ApiEndpointTableStructure] = Map(
-    "friends" -> TwitterUser
-  )
-
   val defaultApiEndpoint = TwitterFriendInterface.defaultApiEndpoint
 
   val refreshInterval = 24.hours
