@@ -16,7 +16,7 @@
         @Option(throwable.getCause).map { cause =>
             Caused by:
             <ul>
-                @cause.getStackTrace.mkString("<li>", "</li><li>", "</li>")
+                @Html(cause.getStackTrace.mkString("<li>", "</li><li>", "</li>"))
             </ul>
         }
 

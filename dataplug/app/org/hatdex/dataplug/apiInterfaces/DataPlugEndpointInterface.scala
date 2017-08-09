@@ -33,15 +33,6 @@ import scala.util.Try
 trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthenticator with DataPlugApiEndpointClient {
   val refreshInterval: FiniteDuration
 
-  protected val apiEndpointTableStructures: Map[String, ApiEndpointTableStructure]
-
-  private lazy val apiTableStructures = apiEndpointTableStructures map {
-    case (k, v: ApiEndpointTableStructure) =>
-      val generatedStructure = buildHATDataTableStructure(v.dummyEntity.toJson, namespace, k).get
-      logger.trace(s"Generated API endpoint table structure from $v to $generatedStructure")
-      k -> generatedStructure
-  }
-
   /**
    * Fetch data from an API endpoint as per parametrised configuration, for a specific HAT client
    *
@@ -90,37 +81,8 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
     }
   }
 
-  protected def ensureDataTable(tableName: String, hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext, timeout: Timeout): Future[ApiDataTable] = {
-    val cacheKey = s"apitable:$hatAddress:$namespace:$tableName"
-    val maybeCachedTable = cacheApi.get[ApiDataTable](cacheKey)
-    maybeCachedTable map { cachedTable =>
-      Future.successful(cachedTable)
-    } getOrElse {
-      (hatClientActor ? HatClientActor.FindDataTable(tableName, namespace)).mapTo[ApiDataTable] map { tableFound =>
-        cacheApi.set(cacheKey, tableFound)
-        tableFound
-      } recoverWith {
-        case findError =>
-          logger.warn(s"Finding table failed: ${findError.getMessage}")
-          val tableStructure = apiTableStructures(tableName)
-          (hatClientActor ? HatClientActor.CreateDataTable(tableStructure)).mapTo[ApiDataTable]
-      }
-    }
-  }
-
   protected def processResults(content: JsValue, hatAddress: String, hatClientActor: ActorRef, fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Unit] = {
     uploadHatData(namespace, endpoint, content, hatAddress, hatClientActor)
-  }
-
-  protected def ensureDataTables(hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext, timeout: Timeout): Future[Map[String, ApiDataTable]] = {
-    Future.sequence(apiTableStructures.map {
-      case (k, v) =>
-        ensureDataTable(k, hatAddress, hatClientActor)
-    }) map { tables =>
-      Map(tables.map { table =>
-        table.name -> table
-      }.toSeq: _*)
-    }
   }
 
   protected def uploadHatData(
