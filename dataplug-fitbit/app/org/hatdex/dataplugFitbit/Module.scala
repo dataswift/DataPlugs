@@ -11,9 +11,6 @@ import com.google.inject.{ AbstractModule, Provides }
 import com.mohiva.play.silhouette.api.Provider
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.providers._
-import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider
-import com.mohiva.play.silhouette.impl.providers.oauth1.services.PlayOAuth1Service
-import com.mohiva.play.silhouette.impl.providers.oauth2.{ FacebookProvider, GoogleProvider }
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.dataplug.actors.{ DataPlugManagerActor, InjectedHatClientActor }
 import org.hatdex.dataplug.apiInterfaces.{ DataPlugOptionsCollector, DataPlugOptionsCollectorRegistry, DataPlugRegistry }
@@ -22,7 +19,7 @@ import org.hatdex.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl }
 import org.hatdex.dataplug.services._
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import org.hatdex.dataplugFitbit.apiInterfaces.{ FitbitDayActivitySummaryInterface, FitbitProfileCheck }
+import org.hatdex.dataplugFitbit.apiInterfaces.{ FitbitDayActivitySummaryInterface, FitbitProfileCheck, FitbitProfileInterface }
 import org.hatdex.dataplugFitbit.controllers.DataPlugViewSetFitbit
 import org.hatdex.dataplugFitbit.apiInterfaces.authProviders.FitbitProvider
 import play.api.Configuration
@@ -58,10 +55,10 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
    */
   @Provides
   def provideDataPlugCollection(
-    fitbitDayActivitySummaryInterface: FitbitDayActivitySummaryInterface): DataPlugRegistry = {
+    fitbitProfileInterface: FitbitProfileInterface): DataPlugRegistry = {
 
     DataPlugRegistry(Seq(
-      fitbitDayActivitySummaryInterface
+      fitbitProfileInterface
     ))
   }
 

@@ -32,28 +32,28 @@
             }
 
             @endpointvariants.map { variants =>
-                @b3.form(org.hatdex.dataplugFinance.controllers.routes.Application.processSignups,
-                    'class -> "synchronisation-options") {
-                    <legend><h3>@Messages("setup.monzo.info")</h3></legend>
-                    <fieldset>
-                        @helper.CSRF.formField
+                @*@b3.form(org.hatdex.dataplugFitbit.controllers.routes.Application.processSignups,*@
+                    @*'class -> "synchronisation-options") {*@
+                    @*<legend><h3>@Messages("setup.monzo.info")</h3></legend>*@
+                    @*<fieldset>*@
+                        @*@helper.CSRF.formField*@
 
-                        @for((variant, index) <- variants.zipWithIndex) {
-                            <div class="form-group" id="endpointVariants_@(index)_field">
-                                <div class="checkbox checkbox-circle checkbox-rump">
-                                    <input type="checkbox" name="endpointVariants[@index]"
-                                    id="endpointVariants_@index"
-                                    value="@variant.key"
-                                        @("checked".when(variant.active))>
-                                    <label for="endpointVariants_@index">@variant.description</label>
-                                </div>
-                            </div>
-                        }
-                    </fieldset>
-                    @b3.submit('class -> "btn btn-dataplug") {
-                        @Messages("connect")
-                    }
-                }
+                        @*@for((variant, index) <- variants.zipWithIndex) {*@
+                            @*<div class="form-group" id="endpointVariants_@(index)_field">*@
+                                @*<div class="checkbox checkbox-circle checkbox-rump">*@
+                                    @*<input type="checkbox" name="endpointVariants[@index]"*@
+                                    @*id="endpointVariants_@index"*@
+                                    @*value="@variant.key"*@
+                                        @*@("checked".when(variant.active))>*@
+                                    @*<label for="endpointVariants_@index">@variant.description</label>*@
+                                @*</div>*@
+                            @*</div>*@
+                        @*}*@
+                    @*</fieldset>*@
+                    @*@b3.submit('class -> "btn btn-dataplug") {*@
+                        @*@Messages("connect")*@
+                    @*}*@
+                @*}*@
             }
 
             @if(socialProviders.providers.filterNot(p => user.linkedUsers.map(_.providerId).contains(p.id)).nonEmpty) {

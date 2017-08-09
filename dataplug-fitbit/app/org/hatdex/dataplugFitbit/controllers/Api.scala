@@ -33,10 +33,10 @@ class Api @Inject() (
   import JsonProtocol.endpointStatusFormat
   def status: Action[AnyContent] = tokenUserAuthenticatedAction.async { implicit request =>
     // Check if the user has the required social profile linked
-    request.identity.linkedUsers.find(_.providerId == "google") map {
+    request.identity.linkedUsers.find(_.providerId == "fitbit") map {
       case _ =>
         val result = for {
-          _ <- syncerActorManager.currentProviderApiVariantChoices(request.identity, "google")(ioEC)
+          _ <- syncerActorManager.currentProviderApiVariantChoices(request.identity, "fitbit")(ioEC)
           apiEndpointStatuses <- dataPlugEndpointService.listCurrentEndpointStatuses(request.identity.userId)
         } yield {
           Ok(Json.toJson(apiEndpointStatuses))

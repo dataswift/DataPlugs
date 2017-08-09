@@ -65,7 +65,7 @@ class Application @Inject() (
       eventualResult.flatMap(r => r)
         .recover {
           case e =>
-            logger.debug("Fitbit API cannot be accessed. Redirecting to Twitter OAuth service.")
+            logger.debug("Fitbit API cannot be accessed. Redirecting to Fitbit OAuth service.")
             Redirect(org.hatdex.dataplug.controllers.routes.SocialAuthController.authenticate("fitbit"))
         }
     }.getOrElse {

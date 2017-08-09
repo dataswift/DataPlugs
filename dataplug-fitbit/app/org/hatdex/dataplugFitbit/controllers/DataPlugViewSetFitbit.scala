@@ -5,7 +5,7 @@ import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointVariantChoice
 import org.hatdex.dataplug.controllers.DataPlugViewSet
 import org.hatdex.dataplug.models.User
 import org.hatdex.dataplug.{ views => dataplugViews }
-import org.hatdex.dataplugHealth.{ views => dataplugHealth }
+import org.hatdex.dataplugFitbit.{ views => fitbitViews }
 import play.api.data.Form
 import play.api.i18n.Messages
 import play.api.mvc.{ Call, RequestHeader }
@@ -17,12 +17,12 @@ class DataPlugViewSetFitbit extends DataPlugViewSet {
     endpointVariants: Option[Seq[ApiEndpointVariantChoice]],
     variantsForm: Form[List[String]])(implicit request: RequestHeader, user: User, messages: Messages): Html = {
 
-    dataplugHealth.html.connect(socialProviderRegistry, endpointVariants, variantsForm)
+    fitbitViews.html.connect(socialProviderRegistry, endpointVariants, variantsForm)
   }
 
   def signIn(form: Form[String])(implicit request: RequestHeader, messages: Messages): Html =
     dataplugViews.html.signIn(form)
 
   def indexRedirect: Call =
-    org.hatdex.dataplugFinance.controllers.routes.Application.index()
+    org.hatdex.dataplugFitbit.controllers.routes.Application.index()
 }

@@ -45,12 +45,12 @@ class FitbitProfileCheck @Inject() (
         response.status match {
           case OK =>
             val variant = ApiEndpointVariant(
-              ApiEndpoint("dailyActivitySummary", "Summary of user's daily activities", None),
+              ApiEndpoint("profile", "User's Fitbit profile information", None),
               Some(""), Some(""),
-              Some(FitbitDayActivitySummaryInterface.defaultApiEndpoint)
+              Some(FitbitProfileInterface.defaultApiEndpoint)
             )
 
-            val choices = Seq(ApiEndpointVariantChoice("dailyActivitySummary", "Summary of user's daily activities", active = true, variant))
+            val choices = Seq(ApiEndpointVariantChoice("profile", "User's Fitbit profile information", active = true, variant))
 
             logger.info(s"API endpoint FitbitProfile validated for $hatAddress")
             Future.successful(choices)
