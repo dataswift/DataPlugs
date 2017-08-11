@@ -18,6 +18,7 @@ libraryDependencies ++= Seq(
   Library.Play.Db.postgres,
   Library.Play.Db.anorm,
   Library.Utils.pegdown,
+  Library.Utils.akkaHttp,
   filters
 )
 

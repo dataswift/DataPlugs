@@ -4,6 +4,6 @@
 
 INSERT INTO dataplug_endpoint (name, description, details)
 VALUES
-  ('dailyActivitySummary', 'Summary of user''s daily activities', null),
+  ('activity', 'User''s Fitbit activity list', 'sequence'),
   ('profile', 'User''s Fitbit profile information', 'snapshots')
   ON CONFLICT (name) DO NOTHING;

@@ -36,6 +36,7 @@
   <logger name="SchemaMigration" level="INFO" />
 
   <logger name="FitbitProfileCheck" level="DEBUG" />
+  <logger name="FitbitActivityInterface" level="DEBUG" />
 
   <root level="WARN">
     <appender-ref ref="ASYNCSTDOUT" />
