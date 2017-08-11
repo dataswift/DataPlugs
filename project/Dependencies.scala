@@ -82,6 +82,7 @@ object Dependencies {
 
     object Utils {
       val pegdown = "org.pegdown" % "pegdown" % "1.6.0"
+      val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.0.9"
     }
 
     val scalaGuice = "net.codingwell" %% "scala-guice" % "4.0.1"
