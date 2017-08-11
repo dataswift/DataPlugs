@@ -36,9 +36,9 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
   /**
    * Fetch data from an API endpoint as per parametrised configuration, for a specific HAT client
    *
-   * @param params API endpoint parameters generic (stateless) for the endpoint
+   * @param fetchParams API endpoint parameters generic (stateless) for the endpoint
    * @param hatAddress HAT Address (domain)
-   * @param hatClient HAT client actor for specific HAT
+   * @param hatClientActor HAT client actor for specific HAT
    * @return Potentially updated set of parameters, e.g. with new timestamps
    */
   def fetch(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext, timeout: Timeout): Future[DataPlugFetchStep] = {
