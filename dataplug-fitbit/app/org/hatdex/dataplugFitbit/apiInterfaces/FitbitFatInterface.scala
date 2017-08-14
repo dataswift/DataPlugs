@@ -11,7 +11,9 @@ import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMe
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugFitbit.apiInterfaces.authProviders.FitbitProvider
-import org.hatdex.dataplugFitbit.models.FitbitProfile
+import org.hatdex.dataplugFitbit.models.FitbitFat
+import org.joda.time.DateTime
+import org.joda.time.format.{ DateTimeFormat, DateTimeFormatter }
 import play.api.Logger
 import play.api.cache.CacheApi
 import play.api.libs.json._
@@ -21,7 +23,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
 
-class FitbitProfileInterface @Inject() (
+class FitbitFatInterface @Inject() (
     val wsClient: WSClient,
     val userService: UserService,
     val authInfoRepository: AuthInfoRepository,
@@ -31,19 +33,38 @@ class FitbitProfileInterface @Inject() (
     val provider: FitbitProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
 
   val namespace: String = "fitbit"
-  val endpoint: String = "profile"
-  protected val logger: Logger = Logger("FitbitProfileInterface")
+  val endpoint: String = "fat"
+  protected val logger: Logger = Logger("FitbitFatInterface")
 
-  val defaultApiEndpoint = FitbitProfileInterface.defaultApiEndpoint
+  val defaultApiEndpoint = FitbitFatInterface.defaultApiEndpoint
 
   val refreshInterval = 10.minutes
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
-    None
+    params.pathParameters.get("period").map {
+      // TODO: implement continuation logic for the initial sync
+      case "1m" => // Initial sync, can build further continuation if some records are found
+        None
+      case "1d" => // Non-inital sync, skip continuation
+        None
+    }.getOrElse {
+      logger.error(s"Continuation build failed. Could not find path parameter 'period'.")
+      None
+    }
   }
 
   def buildNextSync(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
-    params
+    logger.debug(s"Building next sync...")
+    val nextSyncDate = DateTime.now.plusDays(1).toString(FitbitFatInterface.apiDateFormat)
+    val nextPathParameters = params.copy(pathParameters = params.pathParameters + ("date" -> nextSyncDate, "period" -> "1d"))
+
+    nextPathParameters
+  }
+
+  override def buildFetchParameters(params: Option[ApiEndpointCall])(implicit ec: ExecutionContext): Future[ApiEndpointCall] = {
+    Future.successful(params getOrElse defaultApiEndpoint.copy(pathParameters =
+      defaultApiEndpoint.pathParameters + ("date" -> DateTime.now.toString(FitbitFatInterface.apiDateFormat))
+    ))
   }
 
   override protected def processResults(
@@ -61,10 +82,10 @@ class FitbitProfileInterface @Inject() (
   }
 
   def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
-    (rawData \ "user").toOption.map {
-      case data: JsObject if data.validate[FitbitProfile].isSuccess =>
+    (rawData \ "fat").toOption.map {
+      case data: JsArray if data.validate[List[FitbitFat]].isSuccess =>
         logger.debug(s"Validated JSON object:\n${data.toString}")
-        Success(JsArray(Seq(data)))
+        Success(data)
       case data: JsObject =>
         logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")
         Failure(new RuntimeException(s"Error validating data, some of the required fields missing."))
@@ -79,12 +100,14 @@ class FitbitProfileInterface @Inject() (
 
 }
 
-object FitbitProfileInterface {
+object FitbitFatInterface {
+  val apiDateFormat: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd")
+
   val defaultApiEndpoint = ApiEndpointCall(
     "https://api.fitbit.com",
-    "/1/user/-/profile.json",
+    "/1/user/-/body/log/fat/date/[date]/[period].json",
     ApiEndpointMethod.Get("Get"),
-    Map(),
+    Map("period" -> "1m"),
     Map(),
     Map())
 }

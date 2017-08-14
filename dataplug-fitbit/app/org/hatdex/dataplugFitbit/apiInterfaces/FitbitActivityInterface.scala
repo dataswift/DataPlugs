@@ -106,8 +106,8 @@ class FitbitActivityInterface @Inject() (
     fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Unit] = {
 
     for {
-      dayActivitySummary <- FutureTransformations.transform(validateMinDataStructure(content))
-      _ <- uploadHatData(namespace, endpoint, dayActivitySummary, hatAddress, hatClientActor) // Upload the data
+      validatedData <- FutureTransformations.transform(validateMinDataStructure(content))
+      _ <- uploadHatData(namespace, endpoint, validatedData, hatAddress, hatClientActor) // Upload the data
     } yield {
       logger.debug(s"Successfully synced new records for HAT $hatAddress")
     }

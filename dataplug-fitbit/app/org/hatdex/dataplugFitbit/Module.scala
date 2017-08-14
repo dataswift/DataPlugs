@@ -19,7 +19,7 @@ import org.hatdex.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl }
 import org.hatdex.dataplug.services._
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import org.hatdex.dataplugFitbit.apiInterfaces.{ FitbitActivityInterface, FitbitProfileCheck, FitbitProfileInterface, FitbitSleepInterface }
+import org.hatdex.dataplugFitbit.apiInterfaces._
 import org.hatdex.dataplugFitbit.controllers.DataPlugViewSetFitbit
 import org.hatdex.dataplugFitbit.apiInterfaces.authProviders.FitbitProvider
 import play.api.Configuration
@@ -57,10 +57,14 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   def provideDataPlugCollection(
     fitbitProfileInterface: FitbitProfileInterface,
     fitbitActivityInterface: FitbitActivityInterface,
-    fitbitSleepInterface: FitbitSleepInterface): DataPlugRegistry = {
+    fitbitSleepInterface: FitbitSleepInterface,
+    fitbitFatInterface: FitbitFatInterface,
+    fitbitWeightInterface: FitbitWeightInterface,
+    fitbitLifetimeStatsInterface: FitbitLifetimeStatsInterface): DataPlugRegistry = {
 
     DataPlugRegistry(Seq(
-      fitbitProfileInterface, fitbitActivityInterface, fitbitSleepInterface
+      fitbitActivityInterface, fitbitSleepInterface, fitbitFatInterface, fitbitWeightInterface,
+      fitbitProfileInterface, fitbitLifetimeStatsInterface
     ))
   }
 

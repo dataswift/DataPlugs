@@ -11,7 +11,7 @@ import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMe
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugFitbit.apiInterfaces.authProviders.FitbitProvider
-import org.hatdex.dataplugFitbit.models.FitbitProfile
+import org.hatdex.dataplugFitbit.models.FitbitLifetime
 import play.api.Logger
 import play.api.cache.CacheApi
 import play.api.libs.json._
@@ -21,7 +21,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
 
-class FitbitProfileInterface @Inject() (
+class FitbitLifetimeStatsInterface @Inject() (
     val wsClient: WSClient,
     val userService: UserService,
     val authInfoRepository: AuthInfoRepository,
@@ -31,10 +31,10 @@ class FitbitProfileInterface @Inject() (
     val provider: FitbitProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
 
   val namespace: String = "fitbit"
-  val endpoint: String = "profile"
-  protected val logger: Logger = Logger("FitbitProfileInterface")
+  val endpoint: String = "lifetime/stats"
+  protected val logger: Logger = Logger("FitbitLifetimeStatsInterface")
 
-  val defaultApiEndpoint = FitbitProfileInterface.defaultApiEndpoint
+  val defaultApiEndpoint = FitbitLifetimeStatsInterface.defaultApiEndpoint
 
   val refreshInterval = 10.minutes
 
@@ -61,8 +61,8 @@ class FitbitProfileInterface @Inject() (
   }
 
   def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
-    (rawData \ "user").toOption.map {
-      case data: JsObject if data.validate[FitbitProfile].isSuccess =>
+    rawData match {
+      case data: JsObject if data.validate[FitbitLifetime].isSuccess =>
         logger.debug(s"Validated JSON object:\n${data.toString}")
         Success(JsArray(Seq(data)))
       case data: JsObject =>
@@ -71,20 +71,18 @@ class FitbitProfileInterface @Inject() (
       case _ =>
         logger.error(s"Error parsing JSON object: ${rawData.toString}")
         Failure(new RuntimeException(s"Error parsing JSON object."))
-    }.getOrElse {
-      logger.error(s"Error parsing JSON object: ${rawData.toString}")
-      Failure(new RuntimeException(s"Error parsing JSON object."))
     }
   }
 
 }
 
-object FitbitProfileInterface {
+object FitbitLifetimeStatsInterface {
   val defaultApiEndpoint = ApiEndpointCall(
     "https://api.fitbit.com",
-    "/1/user/-/profile.json",
+    "/1/user/-/activities.json",
     ApiEndpointMethod.Get("Get"),
     Map(),
     Map(),
     Map())
 }
+

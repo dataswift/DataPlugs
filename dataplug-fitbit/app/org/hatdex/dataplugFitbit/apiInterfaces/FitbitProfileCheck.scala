@@ -62,10 +62,31 @@ class FitbitProfileCheck @Inject() (
               Some(FitbitSleepInterface.defaultApiEndpoint)
             )
 
+            val fatVariant = ApiEndpointVariant(
+              ApiEndpoint("fat", "Body fat percentage measurement", None),
+              Some(""), Some(""),
+              Some(FitbitFatInterface.defaultApiEndpoint)
+            )
+
+            val weightVariant = ApiEndpointVariant(
+              ApiEndpoint("weight", "Body weight and BMI measurement", None),
+              Some(""), Some(""),
+              Some(FitbitWeightInterface.defaultApiEndpoint)
+            )
+
+            val lifetimeVariant = ApiEndpointVariant(
+              ApiEndpoint("lifetime/stats", "User's Fitbit lifetime statistics", None),
+              Some(""), Some(""),
+              Some(FitbitLifetimeStatsInterface.defaultApiEndpoint)
+            )
+
             val choices = Seq(
               ApiEndpointVariantChoice("profile", "User's Fitbit profile information", active = true, profileVariant),
               ApiEndpointVariantChoice("activity", "User's Fitbit activity list", active = true, activityVariant),
-              ApiEndpointVariantChoice("sleep", "User's Fitbit activity list", active = true, sleepVariant)
+              ApiEndpointVariantChoice("sleep", "User's Fitbit activity list", active = true, sleepVariant),
+              ApiEndpointVariantChoice("fat", "Body fat percentage measurement", active = true, fatVariant),
+              ApiEndpointVariantChoice("weight", "Body weight and BMI measurement", active = true, weightVariant),
+              ApiEndpointVariantChoice("lifetime/stats", "User's Fitbit lifetime statistics", active = true, lifetimeVariant)
             )
 
             logger.info(s"API endpoint FitbitProfile validated for $hatAddress")
