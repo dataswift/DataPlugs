@@ -19,7 +19,7 @@ import org.hatdex.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl }
 import org.hatdex.dataplug.services._
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import org.hatdex.dataplugFitbit.apiInterfaces.{ FitbitActivityInterface, FitbitProfileCheck, FitbitProfileInterface }
+import org.hatdex.dataplugFitbit.apiInterfaces.{ FitbitActivityInterface, FitbitProfileCheck, FitbitProfileInterface, FitbitSleepInterface }
 import org.hatdex.dataplugFitbit.controllers.DataPlugViewSetFitbit
 import org.hatdex.dataplugFitbit.apiInterfaces.authProviders.FitbitProvider
 import play.api.Configuration
@@ -56,10 +56,11 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   @Provides
   def provideDataPlugCollection(
     fitbitProfileInterface: FitbitProfileInterface,
-    fitbitActivityInterface: FitbitActivityInterface): DataPlugRegistry = {
+    fitbitActivityInterface: FitbitActivityInterface,
+    fitbitSleepInterface: FitbitSleepInterface): DataPlugRegistry = {
 
     DataPlugRegistry(Seq(
-      fitbitProfileInterface, fitbitActivityInterface
+      fitbitProfileInterface, fitbitActivityInterface, fitbitSleepInterface
     ))
   }
 
@@ -75,7 +76,7 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   /**
    * Provides the social provider registry.
    *
-   * @param monzoProvider The Monzo provider implementation.
+   * @param fitbitProvider The Fitbit provider implementation.
    * @return The Silhouette environment.
    */
   @Provides

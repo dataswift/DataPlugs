@@ -8,11 +8,11 @@ import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import org.hatdex.commonPlay.utils.FutureTransformations
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
 import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
-import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
+import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod, ApiEndpointTableStructure }
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugFitbit.apiInterfaces.authProviders.FitbitProvider
-import org.hatdex.dataplugFitbit.models.FitbitSleep
+import org.hatdex.dataplugFitbit.models.FitbitActivity
 import org.joda.time.format.{ DateTimeFormat, DateTimeFormatter, ISODateTimeFormat }
 import play.api.Logger
 import play.api.cache.CacheApi
@@ -23,7 +23,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
 
-class FitbitSleepInterface @Inject() (
+class FitbitActivityInterface @Inject() (
     val wsClient: WSClient,
     val userService: UserService,
     val authInfoRepository: AuthInfoRepository,
@@ -33,10 +33,10 @@ class FitbitSleepInterface @Inject() (
     val provider: FitbitProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
 
   val namespace: String = "fitbit"
-  val endpoint: String = "sleep"
-  protected val logger: Logger = Logger("FitbitSleepInterface")
+  val endpoint: String = "activity"
+  protected val logger: Logger = Logger("FitbitActivityInterface")
 
-  val defaultApiEndpoint = FitbitSleepInterface.defaultApiEndpoint
+  val defaultApiEndpoint = FitbitActivityInterface.defaultApiEndpoint
 
   val refreshInterval = 10.minutes
 
@@ -106,16 +106,16 @@ class FitbitSleepInterface @Inject() (
     fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Unit] = {
 
     for {
-      sleeps <- FutureTransformations.transform(validateMinDataStructure(content))
-      _ <- uploadHatData(namespace, endpoint, sleeps, hatAddress, hatClientActor) // Upload the data
+      dayActivitySummary <- FutureTransformations.transform(validateMinDataStructure(content))
+      _ <- uploadHatData(namespace, endpoint, dayActivitySummary, hatAddress, hatClientActor) // Upload the data
     } yield {
       logger.debug(s"Successfully synced new records for HAT $hatAddress")
     }
   }
 
   def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
-    (rawData \ "sleep").toOption.map {
-      case data: JsArray if data.validate[List[FitbitSleep]].isSuccess =>
+    (rawData \ "activities").toOption.map {
+      case data: JsArray if data.validate[List[FitbitActivity]].isSuccess =>
         logger.debug(s"Validated JSON object:\n${data.toString}")
         Success(data)
       case data: JsObject =>
@@ -131,25 +131,25 @@ class FitbitSleepInterface @Inject() (
   }
 
   private def extractNextSyncTimestamp(content: JsValue): Option[String] = {
-    val maybeFirstActivityTimestamp = (content \ "sleep").asOpt[JsArray].flatMap { activityList =>
-      activityList.value.headOption.flatMap { firstActivity => (firstActivity \ "endTime").asOpt[String] }
+    val maybeFirstActivityTimestamp = (content \ "activities").asOpt[JsArray].flatMap { activityList =>
+      activityList.value.headOption.flatMap { firstActivity => (firstActivity \ "startTime").asOpt[String] }
     }
 
     maybeFirstActivityTimestamp.map { firstActivityTimestamp =>
       val timestamp = ISODateTimeFormat.dateTimeParser().parseDateTime(firstActivityTimestamp)
       val afterDate = timestamp.plusSeconds(1)
-      afterDate.toString(FitbitSleepInterface.apiDateFormat)
+      afterDate.toString(FitbitActivityInterface.apiDateFormat)
     }
   }
 
 }
 
-object FitbitSleepInterface {
+object FitbitActivityInterface {
   val apiDateFormat: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss")
 
   val defaultApiEndpoint = ApiEndpointCall(
     "https://api.fitbit.com",
-    "/1.2/user/-/sleep/list.json",
+    "/1/user/-/activities/list.json",
     ApiEndpointMethod.Get("Get"),
     Map(),
     Map("sort" -> "desc", "limit" -> "2", "offset" -> "0", "beforeDate" -> "today"),

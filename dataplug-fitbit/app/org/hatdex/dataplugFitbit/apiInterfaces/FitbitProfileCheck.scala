@@ -56,9 +56,16 @@ class FitbitProfileCheck @Inject() (
               Some(FitbitActivityInterface.defaultApiEndpoint)
             )
 
+            val sleepVariant = ApiEndpointVariant(
+              ApiEndpoint("sleep", "Fitbit sleep records", None),
+              Some(""), Some(""),
+              Some(FitbitSleepInterface.defaultApiEndpoint)
+            )
+
             val choices = Seq(
               ApiEndpointVariantChoice("profile", "User's Fitbit profile information", active = true, profileVariant),
-              ApiEndpointVariantChoice("activity", "User's Fitbit activity list", active = true, activityVariant)
+              ApiEndpointVariantChoice("activity", "User's Fitbit activity list", active = true, activityVariant),
+              ApiEndpointVariantChoice("sleep", "User's Fitbit activity list", active = true, sleepVariant)
             )
 
             logger.info(s"API endpoint FitbitProfile validated for $hatAddress")
