@@ -36,7 +36,7 @@ class FitbitLifetimeStatsInterface @Inject() (
 
   val defaultApiEndpoint = FitbitLifetimeStatsInterface.defaultApiEndpoint
 
-  val refreshInterval = 10.minutes
+  val refreshInterval = 24.hours
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     None

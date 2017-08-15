@@ -38,7 +38,7 @@ class FitbitSleepInterface @Inject() (
 
   val defaultApiEndpoint = FitbitSleepInterface.defaultApiEndpoint
 
-  val refreshInterval = 10.minutes
+  val refreshInterval = 24.hours
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     logger.debug("Building continuation...")

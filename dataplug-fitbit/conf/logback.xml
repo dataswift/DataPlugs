@@ -39,9 +39,9 @@
   <logger name="FitbitProfileInterface" level="DEBUG" />
   <logger name="FitbitActivityInterface" level="DEBUG" />
   <logger name="FitbitSleepInterface" level="DEBUG" />
-  <logger name="FitbitFatInterface" level="DEBUG" />
   <logger name="FitbitWeightInterface" level="DEBUG" />
   <logger name="FitbitLifetimeStatsInterface" level="DEBUG" />
+  <logger name="FitbitActivityDaySummaryInterface" level="DEBUG" />
 
   <root level="WARN">
     <appender-ref ref="ASYNCSTDOUT" />

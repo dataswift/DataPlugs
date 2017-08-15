@@ -4,6 +4,7 @@ import play.api.libs.json.{ Json, Reads }
 
 case class FitbitWeight(
   bmi: Option[Double],
+  fat: Option[Double],
   date: String,
   logId: Long,
   time: String,

@@ -3,7 +3,6 @@ package org.hatdex.dataplugFitbit.apiInterfaces
 import akka.actor.ActorRef
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import com.mohiva.play.silhouette.impl.providers.oauth2.GoogleProvider
 import org.hatdex.dataplug.apiInterfaces.DataPlugOptionsCollector
 import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpoint, _ }
@@ -13,7 +12,6 @@ import org.hatdex.dataplugFitbit.apiInterfaces.authProviders.FitbitProvider
 import play.api.Logger
 import play.api.cache.CacheApi
 import play.api.http.Status._
-import play.api.libs.json.JsValue
 import play.api.libs.ws.WSClient
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -62,12 +60,6 @@ class FitbitProfileCheck @Inject() (
               Some(FitbitSleepInterface.defaultApiEndpoint)
             )
 
-            val fatVariant = ApiEndpointVariant(
-              ApiEndpoint("fat", "Body fat percentage measurement", None),
-              Some(""), Some(""),
-              Some(FitbitFatInterface.defaultApiEndpoint)
-            )
-
             val weightVariant = ApiEndpointVariant(
               ApiEndpoint("weight", "Body weight and BMI measurement", None),
               Some(""), Some(""),
@@ -80,13 +72,19 @@ class FitbitProfileCheck @Inject() (
               Some(FitbitLifetimeStatsInterface.defaultApiEndpoint)
             )
 
+            val activitySummaryVariant = ApiEndpointVariant(
+              ApiEndpoint("activity/day/summary", "Summary of user's activity throughout the day", None),
+              Some(""), Some(""),
+              Some(FitbitActivityDaySummaryInterface.defaultApiEndpoint)
+            )
+
             val choices = Seq(
               ApiEndpointVariantChoice("profile", "User's Fitbit profile information", active = true, profileVariant),
               ApiEndpointVariantChoice("activity", "User's Fitbit activity list", active = true, activityVariant),
               ApiEndpointVariantChoice("sleep", "User's Fitbit activity list", active = true, sleepVariant),
-              ApiEndpointVariantChoice("fat", "Body fat percentage measurement", active = true, fatVariant),
               ApiEndpointVariantChoice("weight", "Body weight and BMI measurement", active = true, weightVariant),
-              ApiEndpointVariantChoice("lifetime/stats", "User's Fitbit lifetime statistics", active = true, lifetimeVariant)
+              ApiEndpointVariantChoice("lifetime/stats", "User's Fitbit lifetime statistics", active = true, lifetimeVariant),
+              ApiEndpointVariantChoice("activity/day/summary", "Summary of user's activity throughout the day", active = true, activitySummaryVariant)
             )
 
             logger.info(s"API endpoint FitbitProfile validated for $hatAddress")

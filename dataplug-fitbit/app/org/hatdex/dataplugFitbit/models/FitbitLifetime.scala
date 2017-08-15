@@ -13,7 +13,6 @@ object FitbitBestDetail {
 
 case class FitbitLifetimeDetail(
   distance: Double,
-  floors: Int,
   steps: Long
 )
 
@@ -23,7 +22,6 @@ object FitbitLifetimeDetail {
 
 case class FitbitBestDetailGroup(
   distance: FitbitBestDetail,
-  floors: FitbitBestDetail,
   steps: FitbitBestDetail
 )
 

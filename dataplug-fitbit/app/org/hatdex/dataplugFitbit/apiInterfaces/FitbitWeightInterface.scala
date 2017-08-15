@@ -38,33 +38,37 @@ class FitbitWeightInterface @Inject() (
 
   val defaultApiEndpoint = FitbitWeightInterface.defaultApiEndpoint
 
-  val refreshInterval = 10.minutes
+  val refreshInterval = 24.hours
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
-    params.pathParameters.get("period").map {
-      // TODO: implement continuation logic for the initial sync
-      case "1m" => // Initial sync, can build further continuation if some records are found
-        None
-      case "1d" => // Non-inital sync, skip continuation
-        None
-    }.getOrElse {
-      logger.error(s"Continuation build failed. Could not find path parameter 'period'.")
-      None
-    }
+    None
   }
 
   def buildNextSync(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
-    logger.debug(s"Building next sync...")
-    val nextSyncDate = DateTime.now.plusDays(1).toString(FitbitWeightInterface.apiDateFormat)
-    val nextPathParameters = params.copy(pathParameters = params.pathParameters + ("date" -> nextSyncDate, "period" -> "1d"))
+    val nextSyncDate = DateTime.now.toString(FitbitWeightInterface.apiDateFormat)
+    val nextPathParameters = params.copy(pathParameters = params.pathParameters + ("date" -> nextSyncDate))
 
     nextPathParameters
   }
 
   override def buildFetchParameters(params: Option[ApiEndpointCall])(implicit ec: ExecutionContext): Future[ApiEndpointCall] = {
-    Future.successful(params getOrElse defaultApiEndpoint.copy(pathParameters =
-      defaultApiEndpoint.pathParameters + ("date" -> DateTime.now.toString(FitbitWeightInterface.apiDateFormat))
-    ))
+    logger.debug(s"Custom building fetch params: \n $params")
+
+    val finalFetchParams = params.map { p =>
+      p.pathParameters.get("date").map { _ => p }.getOrElse {
+        val updatedParameters = p.pathParameters + ("date" -> DateTime.now.minusDays(1).toString(FitbitWeightInterface.apiDateFormat))
+        p.copy(pathParameters = updatedParameters)
+      }
+
+    }.getOrElse {
+      val updatedParameters = defaultApiEndpoint.pathParameters + ("date" -> DateTime.now.minusDays(1).toString(FitbitWeightInterface.apiDateFormat))
+
+      defaultApiEndpoint.copy(pathParameters = updatedParameters)
+    }
+
+    logger.debug(s"Final fetch parameters: \n $finalFetchParams")
+
+    Future.successful(finalFetchParams)
   }
 
   override protected def processResults(
@@ -105,9 +109,9 @@ object FitbitWeightInterface {
 
   val defaultApiEndpoint = ApiEndpointCall(
     "https://api.fitbit.com",
-    "/1/user/-/body/log/weight/date/[date]/[period].json",
+    "/1/user/-/body/log/weight/date/[date].json",
     ApiEndpointMethod.Get("Get"),
-    Map("period" -> "1m"),
+    Map(),
     Map(),
     Map())
 }
