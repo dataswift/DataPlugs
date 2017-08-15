@@ -97,7 +97,7 @@ class DataPlugManagerActor @Inject() (
   def receive: Receive = {
     case Start(variant, phata, maybeEndpointCall) =>
       dataPlugRegistry.get[DataPlugEndpointInterface](variant.endpoint.name).map { endpointInterface =>
-        val actorKey = s"$phata-${variant.endpoint.name}-${variant.variant.getOrElse("").replace("#", "")}"
+        val actorKey = s"$phata-${variant.endpoint.name}-${variant.variant.getOrElse("").replace("#", "")}".replace("/", "_")
         log.warning(s"Starting actor fetch $actorKey")
         startSyncerActor(phata, variant, endpointInterface, actorKey).map { syncerActor =>
           context.system.scheduler.schedule(0.seconds, endpointInterface.refreshInterval) {
@@ -116,7 +116,7 @@ class DataPlugManagerActor @Inject() (
         mailer.serverExceptionNotifyInternal(message, new RuntimeException(message))
       }
     case Stop(variant, phata) =>
-      val actorKey = s"$phata-${variant.endpoint.name}-${variant.variant.getOrElse("").replace("#", "")}"
+      val actorKey = s"$phata-${variant.endpoint.name}-${variant.variant.getOrElse("").replace("#", "")}".replace("/", "_")
       log.warning(s"Stopping actor $actorKey")
       // Kill any actors that are syncing this dataplug variant for phata
       context.actorSelection(actorKey) ! PoisonPill
