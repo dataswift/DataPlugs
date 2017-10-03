@@ -18,7 +18,7 @@ import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointVariant
 import org.hatdex.dataplug.models.HatClientCredentials
 import org.hatdex.dataplug.services.DataPlugEndpointService
 import org.hatdex.dataplug.utils.Mailer
-import org.hatdex.marketsquare.api.services.MarketsquareClient
+import org.hatdex.dex.api.services.DexClient
 import play.api.Configuration
 import play.api.libs.concurrent.InjectedActorSupport
 import play.api.libs.ws.WSClient
@@ -48,20 +48,20 @@ class PhataDataPlugVariantSyncer(
 
   var state: DataPlugSyncState = DataPlugIdle
 
-  val msClient = new MarketsquareClient(
+  val dexClient = new DexClient(
     wsClient,
-    configuration.getString("service.marketsquare.address").get,
-    configuration.getString("service.marketsquare.scheme").get)
+    configuration.getString("service.dex.address").get,
+    configuration.getString("service.dex.scheme").get)
 
-  msClient.dataplugConnectHat(
-    configuration.getString("service.marketsquare.accessToken").get,
-    UUID.fromString(configuration.getString("service.marketsquare.dataplugId").get),
+  dexClient.dataplugConnectHat(
+    configuration.getString("service.dex.accessToken").get,
+    UUID.fromString(configuration.getString("service.dex.dataplugId").get),
     phata) map {
       case _ =>
-        log.warning(s"MarketSquare connected dataplug ${configuration.getString("service.marketsquare.dataplugId").get} to HAT $phata")
+        log.warning(s"MarketSquare connected dataplug ${configuration.getString("service.dex.dataplugId").get} to HAT $phata")
     } onFailure {
       case e =>
-        log.error(s"MarketSquare Error connecting dataplug ${configuration.getString("service.marketsquare.dataplugId").get} to HAT $phata: ${e.getMessage}")
+        log.error(s"MarketSquare Error connecting dataplug ${configuration.getString("service.dex.dataplugId").get} to HAT $phata: ${e.getMessage}")
     }
 
   var hatClient: ActorRef = createHatClientActor(

@@ -3,9 +3,9 @@
 set -e
 
 BUCKET="elasticbeanstalk-eu-west-1-974966015544"
-VERSION="CHANGEME"`git log --format="%H" -n 1`
-APPLICATION_NAME="CHANGEME"
-ENVIRONMENT_NAME="CHANGEME-stage-env"
+VERSION="fitbit"`git log --format="%H" -n 1`
+APPLICATION_NAME="fitbit"
+ENVIRONMENT_NAME="fitbit-stage-env"
 
 echo "Build"
 sbt "project CHANGEME" "docker:stage"

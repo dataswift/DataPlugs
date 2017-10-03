@@ -8,15 +8,12 @@ reusable libraries and structures for building such DataPlugs as well as
 examples of already built ones.
 
 The proposed implementation is built on the Scala/Play framework and
-has a few internal dependencies:
-
-- `commonPlay` as a set of various reusable blocks of code and libraries
-- `dataplug` the core components of any DataPlug
+contains a universal core component (`dataplug` subproject) for any DataPlug.
 
 It also relies on convenience API wrappers served as HAT Library Artifacts:
 
 - `hat-client-scala-play` as a Scala wrapper around the HAT HTTP API
-- `marketsquare-client-scala-play` as a Scala wrapper around the HATDeX MarketSquare HTTP API
+- `dex-client-scala-play` as a Scala wrapper around the HATDeX MarketSquare HTTP API
 
 ## DataPlug design
 
@@ -68,12 +65,9 @@ Server configuration can be customised by adjusting parameters in `conf/applicat
 
 The databplug can be run locally by executing
 
-    ./deploy/run.sh
-
-    OR
-
     sbt "project dataplug-{providerName}" "run"
 
 ## License
+
 This code is licensed under the Mozilla Public License Version 2.0.
 Please read the LICENSE.md file for further details.

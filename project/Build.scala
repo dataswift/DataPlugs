@@ -11,23 +11,15 @@ import sbt._
 
 object Build extends Build {
 
-  lazy val commonPlay = Project(
-    id = "common-play",
-    base = file("commonPlay")
-  )
-
   lazy val dataplug = Project(
     id = "dataplug",
-    base = file("dataplug"),
-    dependencies = Seq(
-      commonPlay % "compile->compile;test->test")
+    base = file("dataplug")
   )
 
   lazy val dataplugTwitter = Project(
     id = "dataplug-twitter",
     base = file("dataplug-twitter"),
     dependencies = Seq(
-      commonPlay % "compile->compile;test->test",
       dataplug % "compile->compile;test->test"),
     aggregate = Seq(dataplug)
   )
@@ -36,7 +28,6 @@ object Build extends Build {
     id = "dataplug-fitbit",
     base = file("dataplug-fitbit"),
     dependencies = Seq(
-      commonPlay % "compile->compile;test->test",
       dataplug % "compile->compile;test->test"
     ),
     aggregate = Seq(dataplug)
@@ -46,7 +37,6 @@ object Build extends Build {
     id = "dataplug-project",
     base = file("."),
     aggregate = Seq(
-      commonPlay,
       dataplug,
       dataplugTwitter,
       dataplugFitbit
