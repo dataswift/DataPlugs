@@ -60,7 +60,8 @@ class OAuth2TokenHelper @Inject() (
 
             val refreshQueryParams = if (settings.customProperties.getOrElse("parameters_location", "") == "query") {
               Map("grant_type" -> "refresh_token", "refresh_token" -> refreshToken)
-            } else {
+            }
+            else {
               Map()
             }
 

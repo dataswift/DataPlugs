@@ -7,6 +7,7 @@
 
 package org.hatdex.dataplugFitbit
 
+import akka.actor.{ ActorSystem, Scheduler }
 import com.google.inject.{ AbstractModule, Provides }
 import com.mohiva.play.silhouette.api.Provider
 import com.mohiva.play.silhouette.api.util.HTTPLayer
@@ -110,6 +111,11 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
     stateProvider: OAuth2StateProvider,
     configuration: Configuration): FitbitProvider = {
     new FitbitProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.fitbit"))
+  }
+
+  @Provides
+  def providesAkkaActorScheduler(actorSystem: ActorSystem): Scheduler = {
+    actorSystem.scheduler
   }
 
 }

@@ -191,7 +191,7 @@ class HatClientActor(ws: WSClient, hat: String, config: Config, credentials: Hat
       val savedData = hatClient.saveData(maybeToken.get, namespace, endpoint, data) recover {
         case e =>
           val message = s"Could not post data values: ${e.getMessage}"
-          logger.error(message, e)
+          logger.error(message)
           FetchingFailed(message)
       }
       savedData pipeTo sender

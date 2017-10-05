@@ -8,6 +8,7 @@
 
 package org.hatdex.dataplug.modules
 
+import akka.actor.{ ActorSystem, Scheduler }
 import com.google.inject.{ AbstractModule, Provides }
 import com.mohiva.play.silhouette.impl.providers._
 import net.codingwell.scalaguice.ScalaModule
@@ -55,5 +56,10 @@ class DataplugModule extends AbstractModule with ScalaModule with AkkaGuiceSuppo
   def provideSocialProviderRegistry(): SocialProviderRegistry = {
 
     SocialProviderRegistry(Seq())
+  }
+
+  @Provides
+  def providesAkkaActorScheduler(actorSystem: ActorSystem): Scheduler = {
+    actorSystem.scheduler
   }
 }
