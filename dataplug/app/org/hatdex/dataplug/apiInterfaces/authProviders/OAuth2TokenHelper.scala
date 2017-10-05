@@ -58,6 +58,12 @@ class OAuth2TokenHelper @Inject() (
               "grant_type" -> Seq("refresh_token"),
               "refresh_token" -> Seq(refreshToken)) ++ p.settings.scope.map({ "scope" -> Seq(_) })
 
+            val refreshQueryParams = if (settings.customProperties.getOrElse("parameters_location", "") == "query") {
+              Map("grant_type" -> "refresh_token", "refresh_token" -> refreshToken)
+            } else {
+              Map()
+            }
+
             val authHeader = p.settings.customProperties
               .get("authorization_header_prefix")
               .map(_ + " ")
@@ -67,6 +73,7 @@ class OAuth2TokenHelper @Inject() (
             val eventualToken = wsClient.url(url)
               .withHeaders("Authorization" -> authHeader)
               .withHeaders(settings.refreshHeaders.toSeq: _*)
+              .withQueryString(refreshQueryParams.toSeq: _*)
               .post(params)
               .flatMap(resp => Future.fromTry(buildInfo(resp)))
 

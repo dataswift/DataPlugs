@@ -10,12 +10,12 @@ package org.hatdex.dataplug.apiInterfaces.authProviders
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import com.mohiva.play.silhouette.impl.providers.{ OAuth2Info, OAuth2Provider }
+import com.mohiva.play.silhouette.impl.providers.{OAuth2Info, OAuth2Provider}
 import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointCall
 import org.hatdex.dataplug.services.UserService
 import play.api.Logger
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 
 trait RequestAuthenticatorOAuth2 extends RequestAuthenticator {
   type AuthInfoType = OAuth2Info
