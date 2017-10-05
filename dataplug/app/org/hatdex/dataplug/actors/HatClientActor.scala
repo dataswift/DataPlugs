@@ -178,23 +178,23 @@ class HatClientActor(ws: WSClient, hat: String, config: Config, credentials: Hat
 
     case PostData(data) =>
       logger.debug(s"Posting Data for $hat: ${data.mkString("\n")}")
-      val table = hatClient.createBatchRecords(maybeToken.get, data) recover {
+      val savedData = hatClient.createBatchRecords(maybeToken.get, data) recover {
         case e =>
           val message = s"Could not post data $data values: ${e.getMessage}"
           logger.error(message, e)
           FetchingFailed(message)
       }
-      table pipeTo sender
+      savedData pipeTo sender
 
     case PostDataV2(namespace, endpoint, data) =>
       logger.debug(s"Posting Data for $hat using v2 API: ${data.toString}")
-      val table = hatClient.saveData(maybeToken.get, namespace, endpoint, data) recover {
+      val savedData = hatClient.saveData(maybeToken.get, namespace, endpoint, data) recover {
         case e =>
-          val message = s"Could not post data $data values: ${e.getMessage}"
+          val message = s"Could not post data values: ${e.getMessage}"
           logger.error(message, e)
           FetchingFailed(message)
       }
-      table pipeTo sender
+      savedData pipeTo sender
 
     case Disconnected =>
       logger.debug(s"HAT $hat connection expired, disconnected becoming normal and reconnecting!")

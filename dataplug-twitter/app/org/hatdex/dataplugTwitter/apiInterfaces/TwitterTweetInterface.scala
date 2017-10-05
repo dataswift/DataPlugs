@@ -10,7 +10,7 @@ package org.hatdex.dataplugTwitter.apiInterfaces
 
 import java.util.Locale
 
-import akka.actor.ActorRef
+import akka.actor.{ ActorRef, Scheduler }
 import akka.util.Timeout
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
@@ -37,6 +37,7 @@ class TwitterTweetInterface @Inject() (
     val authInfoRepository: AuthInfoRepository,
     val cacheApi: CacheApi,
     val mailer: Mailer,
+    val scheduler: Scheduler,
     val provider: TwitterProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth1 {
 
   // JSON type formatters

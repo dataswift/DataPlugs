@@ -8,30 +8,25 @@
 
 package org.hatdex.dataplug.apiInterfaces
 
-import java.net.URLEncoder
-
-import akka.actor.ActorRef
+import akka.actor.{ ActorRef, Scheduler }
 import akka.pattern.ask
 import akka.util.Timeout
 import org.hatdex.dataplug.actors.HatClientActor
+import org.hatdex.dataplug.actors.HatClientActor.FetchingFailed
 import org.hatdex.dataplug.apiInterfaces.authProviders.RequestAuthenticator
 import org.hatdex.dataplug.apiInterfaces.models._
-import org.hatdex.dataplug.utils.Mailer
-import org.hatdex.hat.api.models.{ ApiDataRecord, ApiDataTable, ApiRecordValues }
+import org.hatdex.dataplug.utils.FutureRetries
 import org.joda.time.DateTime
-import play.api.Logger
-import play.api.cache.CacheApi
 import play.api.http.Status._
 import play.api.libs.json.{ JsArray, JsValue, Json }
-import play.api.libs.json.Reads.verifying
-import play.api.libs.ws.{ WSClient, WSResponse }
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Try
 
 trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthenticator with DataPlugApiEndpointClient {
   val refreshInterval: FiniteDuration
+  protected implicit val scheduler: Scheduler
 
   /**
    * Fetch data from an API endpoint as per parametrised configuration, for a specific HAT client
@@ -76,13 +71,14 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
       }
     } recoverWith {
       case e =>
-        logger.warn(s"Error when querying api endpoint $fetchParams - ${e.getMessage}", e)
+        logger.warn(s"Error when querying api endpoint $fetchParams - ${e.getMessage}")
         Future.failed(e)
     }
   }
 
   protected def processResults(content: JsValue, hatAddress: String, hatClientActor: ActorRef, fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Unit] = {
-    uploadHatData(namespace, endpoint, content, hatAddress, hatClientActor)
+    val retries: List[FiniteDuration] = FutureRetries.withJitter(List(20.seconds, 2.minutes, 5.minutes, 10.minutes), 0.2, 0.5)
+    FutureRetries.retry(uploadHatData(namespace, endpoint, content, hatAddress, hatClientActor), retries)
   }
 
   protected def uploadHatData(
@@ -92,16 +88,21 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
     hatAddress: String,
     hatClientActor: ActorRef)(implicit ec: ExecutionContext, timeout: Timeout): Future[Unit] = {
 
-    data match {
-      case v: JsArray =>
-        if (v.value.nonEmpty) { // set the predicate to false to prevent posting to HAT
-          hatClientActor ? HatClientActor.PostDataV2(namespace, endpoint, v) map { case _ => () }
+    val batchdata: JsArray = data match {
+      case v: JsArray => v
+      case v: JsValue => JsArray(Seq(v))
+    }
+
+    if (batchdata.value.nonEmpty) { // set the predicate to false to prevent posting to HAT
+      hatClientActor.?(HatClientActor.PostDataV2(namespace, endpoint, batchdata))
+        .map {
+          case FetchingFailed(message) => Future.failed(new RuntimeException(message))
+          case _: Seq[_]               => Future.successful(())
+          case _                       => Future.failed(new RuntimeException("Unrecognised message from the HAT Client Actor"))
         }
-        else {
-          Future.successful(())
-        }
-      case v: JsValue =>
-        hatClientActor ? HatClientActor.PostDataV2(namespace, endpoint, JsArray(Seq(v))) map { case _ => () }
+    }
+    else {
+      Future.successful(())
     }
   }
 

@@ -35,13 +35,8 @@
   <logger name="MonzoTransactionsInterface" level="DEBUG"/>
   <logger name="SchemaMigration" level="INFO" />
 
-  <logger name="FitbitProfileCheck" level="DEBUG" />
-  <logger name="FitbitProfileInterface" level="DEBUG" />
-  <logger name="FitbitActivityInterface" level="DEBUG" />
-  <logger name="FitbitSleepInterface" level="DEBUG" />
-  <logger name="FitbitWeightInterface" level="DEBUG" />
-  <logger name="FitbitLifetimeStatsInterface" level="DEBUG" />
-  <logger name="FitbitActivityDaySummaryInterface" level="DEBUG" />
+  <logger name="org.hatdex.dataplugFitbit.*" level="INFO" />
+  <logger name="org.hatdex.dataplug.apiInterfaces.authProviders" level="DEBUG" />
 
   <root level="WARN">
     <appender-ref ref="ASYNCSTDOUT" />

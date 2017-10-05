@@ -1,6 +1,6 @@
 package org.hatdex.dataplugFitbit.apiInterfaces
 
-import akka.actor.ActorRef
+import akka.actor.{ ActorRef, Scheduler }
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import org.hatdex.dataplug.apiInterfaces.DataPlugOptionsCollector
@@ -23,11 +23,12 @@ class FitbitProfileCheck @Inject() (
     val cacheApi: CacheApi,
     val tokenHelper: OAuth2TokenHelper,
     val mailer: Mailer,
+    val scheduler: Scheduler,
     val provider: FitbitProvider) extends DataPlugOptionsCollector with RequestAuthenticatorOAuth2 {
 
   val namespace: String = "fitbit"
   val endpoint: String = "profile"
-  protected val logger: Logger = Logger("FitbitProfileCheck")
+  protected val logger: Logger = Logger(this.getClass)
 
   val defaultApiEndpoint = ApiEndpointCall(
     "https://api.fitbit.com/1",

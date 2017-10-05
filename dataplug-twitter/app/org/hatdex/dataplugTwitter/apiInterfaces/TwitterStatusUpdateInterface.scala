@@ -8,6 +8,7 @@
 
 package org.hatdex.dataplugTwitter.apiInterfaces
 
+import akka.actor.Scheduler
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.google.inject.Inject

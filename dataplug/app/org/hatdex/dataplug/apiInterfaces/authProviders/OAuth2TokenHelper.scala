@@ -34,6 +34,7 @@ class OAuth2TokenHelper @Inject() (
     authInfoRepository: AuthInfoRepository,
     cache: CacheApi,
     socialProviderRegistry: SocialProviderRegistry) {
+  protected val logger = Logger(this.getClass)
 
   /**
    * Refreshes the OAuth2Info token at the refreshURL.
@@ -92,6 +93,7 @@ class OAuth2TokenHelper @Inject() (
    * @return The OAuth2 info on success, otherwise a failure.
    */
   protected def buildInfo(response: WSResponse)(implicit provider: OAuth2Provider): Try[OAuth2Info] = {
+    logger.debug(s"Validate OAuth2Info: ${response.json}")
     response.json.validate[OAuth2Info].asEither.fold(
       error => Failure(new UnexpectedResponseException(InvalidInfoFormat.format(provider.id, error))),
       info => Success(info))
