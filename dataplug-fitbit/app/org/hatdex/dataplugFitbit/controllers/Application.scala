@@ -51,7 +51,6 @@ class Application @Inject() (
         variantChoices <- syncerActorManager.currentProviderApiVariantChoices(user, "fitbit")(ioEC)
         apiEndpointStatuses <- dataPlugEndpointService.listCurrentEndpointStatuses(user.userId)
       } yield {
-        logger.error(s"booo $variantChoices \n $apiEndpointStatuses")
         if (apiEndpointStatuses.isEmpty) {
           processSignups(selectedVariants = variantChoices.map(_.copy(active = true))) map { _ =>
             Ok(fitbitViews.html.complete(socialProviderRegistry))
