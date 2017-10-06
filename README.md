@@ -65,7 +65,7 @@ Server configuration can be customised by adjusting parameters in `conf/applicat
 
 The databplug can be run locally by executing
 
-    sbt "project dataplug-{providerName}" "run"
+    sbt "project dataplug-{providerName}" -Dconfig.resource=application.dev.conf run
 
 ## License
 
