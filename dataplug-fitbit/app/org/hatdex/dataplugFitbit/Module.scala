@@ -13,7 +13,7 @@ import com.mohiva.play.silhouette.api.Provider
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.providers._
 import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.dataplug.actors.{ DataPlugManagerActor, InjectedHatClientActor }
+import org.hatdex.dataplug.actors.{ DataPlugManagerActor }
 import org.hatdex.dataplug.apiInterfaces.{ DataPlugOptionsCollector, DataPlugOptionsCollectorRegistry, DataPlugRegistry }
 import org.hatdex.dataplug.controllers.DataPlugViewSet
 import org.hatdex.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl }
@@ -44,7 +44,7 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
 
     bind[DataPlugViewSet].to[DataPlugViewSetFitbit]
 
-    bindActorFactory[InjectedHatClientActor, InjectedHatClientActor.Factory]
+    //    bindActorFactory[InjectedHatClientActor, InjectedHatClientActor.Factory]
     bindActor[DataPlugManagerActor]("dataplug-manager")
   }
 

@@ -12,7 +12,7 @@ import akka.actor.{ ActorSystem, Scheduler }
 import com.google.inject.{ AbstractModule, Provides }
 import com.mohiva.play.silhouette.impl.providers._
 import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.dataplug.actors.{ DataPlugManagerActor, InjectedHatClientActor }
+import org.hatdex.dataplug.actors.{ DataPlugManagerActor }
 import org.hatdex.dataplug.apiInterfaces.DataPlugRegistry
 import org.hatdex.dataplug.dao._
 import org.hatdex.dataplug.services._
@@ -32,7 +32,7 @@ class DataplugModule extends AbstractModule with ScalaModule with AkkaGuiceSuppo
     bind[DataPlugEndpointService].to[DataPlugEndpointServiceImpl]
     bind[DataPlugNotablesService].to[DataPlugNotablesServiceImpl]
 
-    bindActorFactory[InjectedHatClientActor, InjectedHatClientActor.Factory]
+    //    bindActorFactory[InjectedHatClientActor, InjectedHatClientActor.Factory]
     bindActor[DataPlugManagerActor]("dataplug-manager")
   }
 

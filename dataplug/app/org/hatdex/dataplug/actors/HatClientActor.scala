@@ -15,15 +15,15 @@ import akka.pattern.pipe
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import org.hatdex.dataplug.models.{ HatClientCredentials, JwtToken }
-import org.hatdex.hat.api.models.{ ApiDataRecord, ApiDataTable, ApiDataValue, ApiRecordValues }
+import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.services.HatClient
 import org.joda.time.{ DateTime, Duration }
 import play.api.Logger
 import play.api.libs.json.JsArray
 import play.api.libs.ws.WSClient
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Try
 
 object HatClientActor {
@@ -42,7 +42,9 @@ object HatClientActor {
 
   case class PostDataV2(namespace: String, endpoint: String, data: JsArray) extends DataOperationMessage
 
-  case class FetchingFailed(message: String)
+  case class DataSaved(data: Seq[EndpointData]) extends DataOperationMessage
+
+  case class FetchingFailed(message: String) extends DataOperationMessage
 
   sealed trait AuthMessage
 
@@ -60,7 +62,7 @@ class HatClientActor(ws: WSClient, hat: String, config: Config, credentials: Hat
 
   import HatClientActor._
 
-  lazy val hatProtocol = {
+  lazy val hatProtocol: String = {
     (hatSecure, mockClient) match {
       case (_, true)      => ""
       case (true, false)  => "https://"
@@ -70,9 +72,9 @@ class HatClientActor(ws: WSClient, hat: String, config: Config, credentials: Hat
   val logger = Logger(s"HatClientActor")
   // Use the actor's dispatcher as execution context for api calls
   implicit val ec: ExecutionContext = context.dispatcher
-  val hatSecure = config.getOrElse("dexter.secure", false)
-  val mockClient = config.getOrElse("dexter.mock", false)
-  val hatAddress = if (mockClient) {
+  val hatSecure: Boolean = config.getOrElse("dexter.secure", false)
+  val mockClient: Boolean = config.getOrElse("dexter.mock", false)
+  val hatAddress: String = if (mockClient) {
     ""
   }
   else {
@@ -101,7 +103,7 @@ class HatClientActor(ws: WSClient, hat: String, config: Config, credentials: Hat
           }
         } recover {
           case e =>
-            val message = s"Token parsing for $hat failed"
+            val message = s"Token parsing for $hat failed: ${e.getMessage}"
             logger.warn(message)
             Unauthorized(message)
         }
@@ -133,7 +135,8 @@ class HatClientActor(ws: WSClient, hat: String, config: Config, credentials: Hat
 
     case Unauthorized(message) =>
       logger.error(s"Client unauthorized for $hat: $message")
-      //      unstashAll()
+      unstashAll()
+      context.setReceiveTimeout(5.minutes)
       context.become(unauthenticated)
 
     case msg: DataOperationMessage =>
@@ -188,12 +191,15 @@ class HatClientActor(ws: WSClient, hat: String, config: Config, credentials: Hat
 
     case PostDataV2(namespace, endpoint, data) =>
       logger.debug(s"Posting Data for $hat using v2 API: ${data.toString}")
-      val savedData = hatClient.saveData(maybeToken.get, namespace, endpoint, data) recover {
-        case e =>
-          val message = s"Could not post data values: ${e.getMessage}"
-          logger.error(message)
-          FetchingFailed(message)
-      }
+      val savedData: Future[DataOperationMessage] = hatClient.saveData(maybeToken.get, namespace, endpoint, data)
+        .map(d => DataSaved(d))
+        .recover {
+          case e =>
+            val message = s"Could not post data values: ${e.getMessage}"
+            logger.error(message)
+            FetchingFailed(message)
+        }
+
       savedData pipeTo sender
 
     case Disconnected =>
@@ -208,6 +214,9 @@ class HatClientActor(ws: WSClient, hat: String, config: Config, credentials: Hat
       sender ! FetchingFailed(s"Data could not be retrieved - could not authenticate with HAT $hat for Data Debit $ddid")
       // Go back to the initial state for error recovery
       context.become(receive)
+    case ReceiveTimeout =>
+      logger.info(s"Failed HAT $hat client idle, restart")
+      self ! PoisonPill
     case _ =>
       logger.error(s"HAT client is not authenticated to $hat")
       sender ! FetchingFailed(s"HAT client is not authenticated to $hat")

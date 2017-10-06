@@ -10,10 +10,11 @@ package org.hatdex.dataplug.actors
 
 import javax.inject.Inject
 
-import akka.actor.{ Actor, ActorLogging, ActorPath }
+import akka.actor.{ Actor, ActorPath }
 import org.hatdex.dataplug.actors.DataPlugManagerActor.Fetch
 import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointCall
 import org.hatdex.dataplug.utils.Mailer
+import play.api.Logger
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -27,9 +28,11 @@ object DataPlugSyncDispatcherActor {
 }
 
 class DataPlugSyncDispatcherActor @Inject() (
-    val mailer: Mailer) extends Actor with ActorLogging {
+    val mailer: Mailer) extends Actor {
 
   import DataPlugSyncDispatcherActor._
+
+  protected val logger: Logger = Logger(this.getClass)
 
   var requestsIssued: Long = 0L
 
@@ -38,13 +41,13 @@ class DataPlugSyncDispatcherActor @Inject() (
   def receive: Receive = {
     case Sync(actorPath, fetchEndpointCall) =>
       context.actorSelection(actorPath).resolveOne(5.seconds) map { syncActor =>
-        log.info(s"[$requestsIssued] Starting sync actor $syncActor")
+        logger.info(s"[$requestsIssued] Starting sync actor $syncActor")
         requestsIssued = requestsIssued + 1L
         syncActor ! Fetch(fetchEndpointCall, 0)
       } recover {
         case e =>
           val message = s"Could not fetch for actor $actorPath - ${e.getMessage}"
-          log.error(message)
+          logger.error(message)
           mailer.serverExceptionNotifyInternal(message, new RuntimeException(message))
       }
   }

@@ -44,15 +44,19 @@ case class ApiEndpointCall(
   headers: Map[String, String])
 
 case class ApiEndpoint(
-  name: String,
-  description: String,
-  details: Option[String])
+    name: String,
+    description: String,
+    details: Option[String]) {
+  lazy val sanitizedName: String = name.replace("/", "_")
+}
 
 case class ApiEndpointVariant(
-  endpoint: ApiEndpoint,
-  variant: Option[String],
-  variantDescription: Option[String],
-  configuration: Option[ApiEndpointCall])
+    endpoint: ApiEndpoint,
+    variant: Option[String],
+    variantDescription: Option[String],
+    configuration: Option[ApiEndpointCall]) {
+  lazy val sanitizedVariantName: String = variant.getOrElse("").replace("#", "").replace("/", "_")
+}
 
 case class ApiEndpointStatus(
   phata: String,

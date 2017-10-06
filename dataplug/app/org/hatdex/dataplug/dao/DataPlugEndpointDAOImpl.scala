@@ -26,7 +26,7 @@ import scala.concurrent._
  */
 @Singleton
 class DataPlugEndpointDAOImpl @Inject() (@NamedDatabase("default") db: Database) extends DataPlugEndpointDAO {
-  implicit val ec = IoExecutionContext.ioThreadPool
+  implicit val ec: ExecutionContext = IoExecutionContext.ioThreadPool
 
   private def simpleUserInfoParser(table: String): RowParser[User] = {
     get[String](s"$table.provider_id") ~
@@ -145,7 +145,7 @@ class DataPlugEndpointDAOImpl @Inject() (@NamedDatabase("default") db: Database)
               'phata -> phata,
               'endpoint -> plugName,
               'variant -> variant,
-              'variantDescription -> None,
+              'variantDescription -> Option.empty[String],
               'configuration -> configuration.map(c => Json.toJson(c)).map(_.toString))
             .executeInsert()
         }

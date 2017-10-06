@@ -69,13 +69,13 @@ class TwitterFriendInterface @Inject() (
 
       val result: Option[ApiEndpointCall] = (listContainsUser, userFirstInList, maybeNextCursor) match {
         // Stop continuation, nothing to update
-        case (true, true, _)           => None
+        case (true, true, _)       => None
         // Update HAT with new users and reset to the latest user ID
-        case (true, false, _)          => Some(updatedParamsWithFirstUserId(maybeUsers, params))
+        case (true, false, _)      => Some(updatedParamsWithFirstUserId(maybeUsers, params))
         // Stop continuation, last page reached
-        case (false, false, Some("0")) => None
+        case (false, _, Some("0")) => None
         // Build continuation for the next page
-        case (false, false, _) =>
+        case (false, _, _) =>
           maybeNextCursor map { nextCursor =>
             val update = params.queryParameters + ("cursor" -> nextCursor)
             params.copy(queryParameters = update)

@@ -8,7 +8,6 @@
 
 package org.hatdex.dataplugTwitter.apiInterfaces
 
-import akka.actor.Scheduler
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.google.inject.Inject
@@ -82,7 +81,8 @@ class TwitterStatusUpdateInterface @Inject() (
       val providerLoginInfo = user.linkedUsers.find(_.providerId == provider.id).get
       authInfoRepository.find[AuthInfoType](providerLoginInfo.loginInfo).map(_.get)
     }
-
+    // Using existential types in uploading media file parts
+    import scala.language.existentials
     val eventualMediaId: Future[String] = for {
       body <- eventualFileBody
       authInfo <- eventualAuthInfo
@@ -90,9 +90,9 @@ class TwitterStatusUpdateInterface @Inject() (
         .sign(oauth1service.sign(authInfo))
         .post(Source(FilePart("media", "filename", None, body) :: List()))
     } yield {
-      result status match {
+      result.status match {
         case OK =>
-          logger.info(s"Got media ID: ${(result.json \ "media_id_string")}")
+          logger.info(s"Got media ID: ${result.json \ "media_id_string"}")
           (result.json \ "media_id_string").get.as[String]
         case status =>
           logger.error(s"Unexpected response from upload (status code $status): ${result.body}")
@@ -147,7 +147,7 @@ class TwitterStatusUpdateInterface @Inject() (
       buildRequest(requestParams) flatMap { result =>
         result.status match {
           case OK =>
-            Future.successful()
+            Future.successful(())
           case status =>
             Future.failed(new RuntimeException(s"Unexpected response from twitter (status code $status): ${result.body}"))
         }

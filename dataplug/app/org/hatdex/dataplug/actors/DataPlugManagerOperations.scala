@@ -28,29 +28,29 @@ trait DataPlugManagerOperations {
 
   import DataPlugManagerActor._
 
-  def kickstartAll(): Future[Seq[Start]] = {
-    // Retrieve all endpoint variants any user is registered with
-    dataplugEndpointService.retrieveAllEndpoints flatMap { userEndpoints =>
-      val eventualFetches = userEndpoints map {
-        case (phata, endpoint) =>
-          // Retrieve last successful status for that user and endpoint variant
-          val eventualMaybeEndpointVariant = dataplugEndpointService.retrieveLastSuccessfulEndpointVariant(phata, endpoint.endpoint.name, endpoint.variant)
-          eventualMaybeEndpointVariant map { maybeEndpointVariant =>
-            // If a fetch has previously been successful, fetch those settings as a starting point, otherwise use default configuration
-            // FIXME: currently last successful endpoint doesn't contain continuation token or any such thing
-            val fetchParameters = maybeEndpointVariant.flatMap(_.configuration).orElse(endpoint.configuration)
-            Start(endpoint, phata, fetchParameters)
-          }
-      }
-      Future.sequence(eventualFetches)
-    }
-  }
+  //  def kickstartAll(): Future[Seq[Start]] = {
+  //    // Retrieve all endpoint variants any user is registered with
+  //    dataplugEndpointService.retrieveAllEndpoints flatMap { userEndpoints =>
+  //      val eventualFetches = userEndpoints map {
+  //        case (phata, endpoint) =>
+  //          // Retrieve last successful status for that user and endpoint variant
+  //          val eventualMaybeEndpointVariant = dataplugEndpointService.retrieveLastSuccessfulEndpointVariant(phata, endpoint.endpoint.name, endpoint.variant)
+  //          eventualMaybeEndpointVariant map { maybeEndpointVariant =>
+  //            // If a fetch has previously been successful, fetch those settings as a starting point, otherwise use default configuration
+  //            // FIXME: currently last successful endpoint doesn't contain continuation token or any such thing
+  //            val fetchParameters = maybeEndpointVariant.flatMap(_.configuration).orElse(endpoint.configuration)
+  //            Start(endpoint, phata, fetchParameters)
+  //          }
+  //      }
+  //      Future.sequence(eventualFetches)
+  //    }
+  //  }
 
   def fetchData(
     endpointInterface: DataPlugEndpointInterface,
     variant: ApiEndpointVariant, phata: String,
     fetchEndpoint: ApiEndpointCall, retries: Int, hatClient: ActorRef): Future[PhataDataPlugVariantSyncerMessage] = {
-    implicit val fetchTimeout: Timeout = 10.seconds;
+    implicit val fetchTimeout: Timeout = 30.seconds
     endpointInterface.fetch(fetchEndpoint, phata, hatClient) map {
       case DataPlugFetchContinuation(continuation) =>
         dataplugEndpointService.saveEndpointStatus(phata, variant, fetchEndpoint, success = true, Some("continuation continued"))

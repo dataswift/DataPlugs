@@ -45,7 +45,7 @@ trait DataPlugApiEndpointClient {
       .withQueryString(params.queryParameters.toList: _*)
       .withHeaders(params.headers.toList: _*)
 
-    logger.warn(s"Making request $wsRequest")
+    logger.warn(s"Making request $params")
 
     val response = params.method match {
       case ApiEndpointMethod.Get(_)        => wsRequest.get()

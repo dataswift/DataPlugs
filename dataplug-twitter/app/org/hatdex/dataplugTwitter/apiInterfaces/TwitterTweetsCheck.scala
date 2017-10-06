@@ -8,25 +8,20 @@
 
 package org.hatdex.dataplugTwitter.apiInterfaces
 
-import akka.actor.{ ActorRef, Scheduler }
+import akka.actor.ActorRef
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider
-import com.mohiva.play.silhouette.impl.providers.oauth2.GoogleProvider
-import org.hatdex.dataplug.apiInterfaces.{ DataPlugEndpointInterface, DataPlugOptionsCollector }
+import org.hatdex.dataplug.apiInterfaces.DataPlugOptionsCollector
 import org.hatdex.dataplug.apiInterfaces.authProviders.RequestAuthenticatorOAuth1
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpoint, _ }
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
-import org.hatdex.dataplugTwitter.apiInterfaces.TwitterTweetInterface
-import org.hatdex.hat.api.models.ApiDataTable
 import play.api.Logger
 import play.api.cache.CacheApi
 import play.api.http.Status._
-import play.api.libs.json._
 import play.api.libs.ws.{ WSClient, WSResponse }
 
-import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 
 class TwitterTweetsCheck @Inject() (
@@ -54,7 +49,7 @@ class TwitterTweetsCheck @Inject() (
 
     authenticatedFetchParameters flatMap { requestParams =>
       buildRequest(requestParams) flatMap { result =>
-        result status match {
+        result.status match {
           case OK =>
             val variant = ApiEndpointVariant(
               ApiEndpoint("tweets", "Tweets", None),

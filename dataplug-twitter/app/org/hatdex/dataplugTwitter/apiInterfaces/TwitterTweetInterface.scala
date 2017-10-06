@@ -8,8 +8,6 @@
 
 package org.hatdex.dataplugTwitter.apiInterfaces
 
-import java.util.Locale
-
 import akka.actor.{ ActorRef, Scheduler }
 import akka.util.Timeout
 import com.google.inject.Inject
@@ -17,8 +15,8 @@ import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider
 import org.hatdex.commonPlay.utils.FutureTransformations
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
-import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth1, RequestAuthenticatorOAuth2 }
-import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod, ApiEndpointTableStructure }
+import org.hatdex.dataplug.apiInterfaces.authProviders.RequestAuthenticatorOAuth1
+import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugTwitter.models._

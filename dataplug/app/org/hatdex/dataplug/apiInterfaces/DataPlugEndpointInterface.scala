@@ -12,7 +12,7 @@ import akka.actor.{ ActorRef, Scheduler }
 import akka.pattern.ask
 import akka.util.Timeout
 import org.hatdex.dataplug.actors.HatClientActor
-import org.hatdex.dataplug.actors.HatClientActor.FetchingFailed
+import org.hatdex.dataplug.actors.HatClientActor.{ DataSaved, FetchingFailed }
 import org.hatdex.dataplug.apiInterfaces.authProviders.RequestAuthenticator
 import org.hatdex.dataplug.apiInterfaces.models._
 import org.hatdex.dataplug.utils.FutureRetries
@@ -45,6 +45,7 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
       result.status match {
         case OK =>
           processResults(result.json, hatAddress, hatClientActor, fetchParams) map { _ =>
+            logger.debug(s"Successfully processed request for $hatAddress to save data from ${fetchParams.url}${fetchParams.path}")
             buildContinuation(result.json, fetchParams)
               .map(DataPlugFetchContinuation)
               .getOrElse(DataPlugFetchNextSync(buildNextSync(result.json, fetchParams)))
@@ -52,26 +53,26 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
             case error =>
               mailer.serverExceptionNotifyInternal(
                 s"""
-                   | Processing Response for HAT $hatAddress.
+                   | Error when uploading data to HAT $hatAddress.
                    | Fetch Parameters: $fetchParams.
                    | Content: ${Json.prettyPrint(result.json)}
-          """.stripMargin, error)
+                """.stripMargin, error)
               Future.failed(error)
           }
 
         case UNAUTHORIZED =>
-          logger.warn(s"Unauthorized request $fetchParams - ${result.status}: ${result.body}")
+          logger.warn(s"Unauthorized request $fetchParams for $hatAddress - ${result.status}: ${result.body}")
           Future.successful(DataPlugFetchNextSync(fetchParams))
         case NOT_FOUND =>
           logger.warn(s"Not found for request $fetchParams - ${result.status}: ${result.body}")
-          Future.failed(new RuntimeException(s"Not found for request $fetchParams - ${result.status}: ${result.body}"))
+          Future.failed(new RuntimeException(s"Not found for request $fetchParams for $hatAddress - ${result.status}: ${result.body}"))
         case _ =>
-          logger.warn(s"Unsuccessful response from api endpoint $fetchParams - ${result.status}: ${result.body}")
+          logger.warn(s"Unsuccessful response from api endpoint $fetchParams for $hatAddress - ${result.status}: ${result.body}")
           Future.successful(DataPlugFetchNextSync(fetchParams))
       }
     } recoverWith {
       case e =>
-        logger.warn(s"Error when querying api endpoint $fetchParams - ${e.getMessage}")
+        logger.warn(s"Error when querying api endpoint $fetchParams for $hatAddress - ${e.getMessage}")
         Future.failed(e)
     }
   }
@@ -97,7 +98,7 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
       hatClientActor.?(HatClientActor.PostDataV2(namespace, endpoint, batchdata))
         .map {
           case FetchingFailed(message) => Future.failed(new RuntimeException(message))
-          case _: Seq[_]               => Future.successful(())
+          case DataSaved(_)            => Future.successful(())
           case _                       => Future.failed(new RuntimeException("Unrecognised message from the HAT Client Actor"))
         }
     }
