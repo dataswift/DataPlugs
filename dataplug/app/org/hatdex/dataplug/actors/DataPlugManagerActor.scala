@@ -17,6 +17,7 @@ import akka.pattern.{ Backoff, BackoffSupervisor, pipe }
 import akka.stream.scaladsl.{ Sink, Source }
 import akka.stream.{ ActorMaterializer, OverflowStrategy, ThrottleMode }
 import org.hatdex.dataplug.actors.DataPlugSyncDispatcherActor.Sync
+import org.hatdex.dataplug.actors.Errors.DataPlugError
 import org.hatdex.dataplug.apiInterfaces._
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointVariant }
 import org.hatdex.dataplug.services.DataPlugEndpointService
@@ -67,7 +68,7 @@ object DataPlugManagerActor {
 
   case class Complete(nextSyncCall: ApiEndpointCall) extends PhataDataPlugVariantSyncerMessage
 
-  case class SyncingFailed(error: String) extends PhataDataPlugVariantSyncerMessage
+  case class SyncingFailed(error: String, cause: DataPlugError) extends PhataDataPlugVariantSyncerMessage
 
 }
 
@@ -122,7 +123,7 @@ class DataPlugManagerActor @Inject() (
       } getOrElse {
         val message = s"No such plug ${variant.endpoint.name} in DataPlug Registry"
         logger.error(message)
-        mailer.serverExceptionNotifyInternal(message, new RuntimeException(message))
+        mailer.serverExceptionNotifyInternal(message, new DataPlugError(message))
         Future.successful(())
       }
 

@@ -48,6 +48,7 @@ case class ApiEndpoint(
     description: String,
     details: Option[String]) {
   lazy val sanitizedName: String = name.replace("/", "_")
+
 }
 
 case class ApiEndpointVariant(
@@ -56,6 +57,12 @@ case class ApiEndpointVariant(
     variantDescription: Option[String],
     configuration: Option[ApiEndpointCall]) {
   lazy val sanitizedVariantName: String = variant.getOrElse("").replace("#", "").replace("/", "_")
+
+  override def toString: String = s"${endpoint.name} (variant ${variant}) ${
+    configuration.map(c =>
+      s"${c.method} ${c.url}${c.path} with path: ${c.pathParameters}, query: ${c.queryParameters}, headers: ${c.headers}")
+      .getOrElse("")
+  }"
 }
 
 case class ApiEndpointStatus(

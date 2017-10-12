@@ -10,6 +10,7 @@ package org.hatdex.dataplug.apiInterfaces
 
 import java.net.URLEncoder
 
+import org.hatdex.dataplug.actors.Errors.SourceApiCommunicationException
 import org.hatdex.dataplug.apiInterfaces.models._
 import org.hatdex.dataplug.utils.Mailer
 import play.api.Logger
@@ -45,7 +46,7 @@ trait DataPlugApiEndpointClient {
       .withQueryString(params.queryParameters.toList: _*)
       .withHeaders(params.headers.toList: _*)
 
-    logger.warn(s"Making request $params")
+    logger.debug(s"Making request $params")
 
     val response = params.method match {
       case ApiEndpointMethod.Get(_)        => wsRequest.get()
@@ -54,6 +55,8 @@ trait DataPlugApiEndpointClient {
       case ApiEndpointMethod.Put(_, body)  => wsRequest.put(body)
     }
 
-    response
+    response recover {
+      case e => throw SourceApiCommunicationException(s"Error executing request $params", e)
+    }
   }
 }

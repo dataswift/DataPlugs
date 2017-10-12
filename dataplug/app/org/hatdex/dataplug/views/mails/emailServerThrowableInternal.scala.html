@@ -7,17 +7,24 @@
 
         <p>Details:</p>
 
-        <p>@throwable.getMessage</p>
+        <p>@throwable.getClass.getSimpleName - @throwable.getMessage</p>
 
         <ul>
         @Html(throwable.getStackTrace.mkString("<li>", "</li><li>", "</li>"))
         </ul>
 
         @Option(throwable.getCause).map { cause =>
-            Caused by:
+            Caused by @cause.getClass.getSimpleName - @cause.getMessage:
             <ul>
                 @Html(cause.getStackTrace.mkString("<li>", "</li><li>", "</li>"))
             </ul>
+
+            @Option(cause.getCause).map { cause =>
+                Cause linked to @cause.getClass.getSimpleName - @cause.getMessage:
+                <ul>
+                    @Html(cause.getStackTrace.mkString("<li>", "</li><li>", "</li>"))
+                </ul>
+            }
         }
 
         <p>DataPlugSystems</p>

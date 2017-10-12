@@ -8,6 +8,7 @@
 package org.hatdex.dataplug.actors
 
 import akka.actor.{ ActorContext, ActorNotFound, ActorRef, Props }
+import org.hatdex.dataplug.actors.Errors.DataPlugError
 import play.api.Logger
 
 import scala.concurrent.duration.{ FiniteDuration, _ }
@@ -22,7 +23,7 @@ trait RetryingActorLauncher {
   protected def launchActor(actorProps: Props, selection: String, depth: Int = 0, timeout: FiniteDuration = 1.second)(implicit ec: ExecutionContext): Future[ActorRef] = {
     if (depth >= maxAttempts) {
       logger.warn(s"Actor for $selection not resolved")
-      throw new RuntimeException(s"Can not create actor for $selection and reached max attempts of $maxAttempts")
+      throw new DataPlugError(s"Can not create actor for $selection and reached max attempts of $maxAttempts")
     }
 
     context.actorSelection(s"${context.self.path}/$selection").resolveOne(timeout) map { clientActor =>

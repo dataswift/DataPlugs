@@ -52,7 +52,7 @@ class DataplugSyncerActorManager @Inject() (
   def startAllActiveVariantChoices()(implicit ec: ExecutionContext): Future[Done] = {
     Logger.info("Starting active API endpoint syncing")
     dataPlugEndpointService.retrieveAllEndpoints flatMap { phataVariants =>
-      Logger.info(s"Retrieved endpoints to sync: ${phataVariants.mkString("\n")}")
+      Logger.debug(s"Retrieved endpoints to sync: ${phataVariants.mkString("\n")}")
       Source.fromIterator(() => phataVariants.iterator)
         .throttle(1, 10.seconds, 1, ThrottleMode.Shaping)
         .map {

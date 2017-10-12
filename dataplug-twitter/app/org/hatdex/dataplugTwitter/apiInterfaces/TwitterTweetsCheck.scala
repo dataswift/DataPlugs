@@ -12,6 +12,7 @@ import akka.actor.ActorRef
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider
+import org.hatdex.dataplug.actors.Errors.SourceApiCommunicationException
 import org.hatdex.dataplug.apiInterfaces.DataPlugOptionsCollector
 import org.hatdex.dataplug.apiInterfaces.authProviders.RequestAuthenticatorOAuth1
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpoint, _ }
@@ -61,7 +62,7 @@ class TwitterTweetsCheck @Inject() (
             Future.successful(choices)
           case _ =>
             logger.warn(s"Unsuccessful response from api endpoint $fetchParams - ${result.status}: ${result.body}")
-            Future.failed(new RuntimeException(s"Unsuccessful response from api endpoint $fetchParams - ${result.status}: ${result.body}"))
+            Future.failed(SourceApiCommunicationException(s"Unsuccessful response from api endpoint $fetchParams - ${result.status}: ${result.body}"))
         }
       }
     }

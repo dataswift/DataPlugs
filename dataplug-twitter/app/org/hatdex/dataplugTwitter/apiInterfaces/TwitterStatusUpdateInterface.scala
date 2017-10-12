@@ -14,6 +14,7 @@ import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider
+import org.hatdex.dataplug.actors.Errors.SourceApiCommunicationException
 import org.hatdex.dataplug.apiInterfaces.DataPlugContentUploader
 import org.hatdex.dataplug.apiInterfaces.authProviders.RequestAuthenticatorOAuth1
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod, DataPlugNotableShareRequest }
@@ -96,7 +97,7 @@ class TwitterStatusUpdateInterface @Inject() (
           (result.json \ "media_id_string").get.as[String]
         case status =>
           logger.error(s"Unexpected response from upload (status code $status): ${result.body}")
-          throw new RuntimeException(s"Unexpected response from twitter (status code $status): ${result.body}")
+          throw SourceApiCommunicationException(s"Unexpected response from twitter (status code $status): ${result.body}")
       }
     }
 
@@ -126,7 +127,7 @@ class TwitterStatusUpdateInterface @Inject() (
             case OK =>
               Future.successful(Json.parse(result.body).as[TwitterStatusUpdate])
             case status =>
-              Future.failed(new RuntimeException(s"Unexpected response from twitter (status code $status): ${result.body}"))
+              Future.failed(SourceApiCommunicationException(s"Unexpected response from twitter (status code $status): ${result.body}"))
           }
         }
       }
@@ -149,7 +150,7 @@ class TwitterStatusUpdateInterface @Inject() (
           case OK =>
             Future.successful(())
           case status =>
-            Future.failed(new RuntimeException(s"Unexpected response from twitter (status code $status): ${result.body}"))
+            Future.failed(SourceApiCommunicationException(s"Unexpected response from twitter (status code $status): ${result.body}"))
         }
       }
     }

@@ -9,12 +9,13 @@
 package org.hatdex.dataplug.actors
 
 import akka.actor.{ ActorRef, Scheduler }
-import akka.event.LoggingAdapter
 import akka.pattern.after
 import akka.util.Timeout
+import org.hatdex.dataplug.actors.Errors.DataPlugError
 import org.hatdex.dataplug.apiInterfaces._
-import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointVariant, DataPlugFetchContinuation, DataPlugFetchNextSync }
+import org.hatdex.dataplug.apiInterfaces.models._
 import org.hatdex.dataplug.services.DataPlugEndpointService
+import play.api.Logger
 
 import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
@@ -24,27 +25,9 @@ trait DataPlugManagerOperations {
 
   protected val dataplugEndpointService: DataPlugEndpointService
   protected val scheduler: Scheduler
-  protected def log: LoggingAdapter
+  protected def logger: Logger
 
   import DataPlugManagerActor._
-
-  //  def kickstartAll(): Future[Seq[Start]] = {
-  //    // Retrieve all endpoint variants any user is registered with
-  //    dataplugEndpointService.retrieveAllEndpoints flatMap { userEndpoints =>
-  //      val eventualFetches = userEndpoints map {
-  //        case (phata, endpoint) =>
-  //          // Retrieve last successful status for that user and endpoint variant
-  //          val eventualMaybeEndpointVariant = dataplugEndpointService.retrieveLastSuccessfulEndpointVariant(phata, endpoint.endpoint.name, endpoint.variant)
-  //          eventualMaybeEndpointVariant map { maybeEndpointVariant =>
-  //            // If a fetch has previously been successful, fetch those settings as a starting point, otherwise use default configuration
-  //            // FIXME: currently last successful endpoint doesn't contain continuation token or any such thing
-  //            val fetchParameters = maybeEndpointVariant.flatMap(_.configuration).orElse(endpoint.configuration)
-  //            Start(endpoint, phata, fetchParameters)
-  //          }
-  //      }
-  //      Future.sequence(eventualFetches)
-  //    }
-  //  }
 
   def fetchData(
     endpointInterface: DataPlugEndpointInterface,
@@ -68,12 +51,13 @@ trait DataPlugManagerOperations {
 
     endpointInterface.buildFetchParameters(endpointCall.orElse(variant.configuration)) flatMap { fetchEndpoint =>
       fetchData(endpointInterface, variant, phata, fetchEndpoint, retries, hatClient) recoverWith {
-        case e => fetchError(e, variant, phata, fetchEndpoint, retries, hatClient)
+        case e: DataPlugError => fetchError(e, variant, phata, fetchEndpoint, retries, hatClient)
       }
     } recoverWith {
-      case error =>
-        log.error(s"Error while fetching endpoint parameters: ${error.getMessage}")
-        Future.successful(SyncingFailed(s"Error while fetching endpoint parameters: ${error.getMessage}"))
+      case error: DataPlugError =>
+        val message = s"${error.getClass.getSimpleName} Error while fetching endpoint parameters: ${error.getMessage}"
+        logger.error(message)
+        Future.successful(SyncingFailed(message, error))
     }
 
   }
@@ -84,16 +68,16 @@ trait DataPlugManagerOperations {
     fetchEndpoint: ApiEndpointCall, retries: Int, hatClient: ActorRef): Future[PhataDataPlugVariantSyncerMessage] = {
 
     fetchData(endpointInterface, variant, phata, fetchEndpoint, retries, hatClient) recoverWith {
-      case e =>
+      case e: DataPlugError =>
         fetchError(e, variant, phata, fetchEndpoint, retries, hatClient)
     }
   }
 
   protected def fetchError(
-    e: Throwable, variant: ApiEndpointVariant, phata: String,
+    e: DataPlugError, variant: ApiEndpointVariant, phata: String,
     fetchEndpoint: ApiEndpointCall, retries: Int, hatClient: ActorRef): Future[PhataDataPlugVariantSyncerMessage] = {
 
-    log.error(s"Error fetching ${variant.endpoint.name} for $phata: ${e.getMessage}", e)
+    logger.warn(s"${e.getClass.getSimpleName} Error fetching ${variant.endpoint.name} for $phata: ${e.getMessage}")
     if (retries < maxFetchRetries) {
       dataplugEndpointService.saveEndpointStatus(phata, variant,
         fetchEndpoint, success = false, Some(s"Retry $retries for data fetching"))
@@ -103,10 +87,11 @@ trait DataPlugManagerOperations {
       }
     }
     else {
-      log.error(s"Error fetching ${variant.endpoint.name} for $phata - maximum of $maxFetchRetries retries exceeded, error ${e.getMessage}")
+      val message = s"${e.getClass.getSimpleName} Error fetching ${variant.endpoint.name} for $phata - maximum of $maxFetchRetries retries exceeded, error ${e.getMessage}"
+      logger.error(message)
       dataplugEndpointService.saveEndpointStatus(phata, variant,
         fetchEndpoint, success = false, Some(s"data fetch failed: ${e.getMessage}"))
-      Future.successful(SyncingFailed(s"Error fetching ${variant.endpoint.name} for $phata - maximum of $maxFetchRetries retries exceeded, error ${e.getMessage}"))
+      Future.successful(SyncingFailed(message, e))
     }
   }
 
@@ -115,8 +100,24 @@ trait DataPlugManagerOperations {
     variant: ApiEndpointVariant, phata: String,
     nextSyncCall: ApiEndpointCall): Future[Unit] = {
 
-    log.info(s"${variant.endpoint.name} Completed Fetching for $phata, next sync $nextSyncCall")
+    logger.info(s"${variant.endpoint.name} Completed Fetching for $phata, next sync $nextSyncCall")
 
     dataplugEndpointService.activateEndpoint(phata, variant.endpoint.name, variant.variant, Some(nextSyncCall))
   }
+}
+
+object Errors {
+  class DataPlugError(message: String = "", cause: Throwable = None.orNull) extends Exception(message, cause)
+
+  class HATApiError(message: String = "", cause: Throwable = None.orNull) extends DataPlugError(message, cause)
+
+  case class HATAuthenticationException(message: String = "", cause: Throwable = None.orNull) extends HATApiError(message, cause)
+  case class HATDataProcessingException(message: String = "", cause: Throwable = None.orNull) extends HATApiError(message, cause)
+  case class HATApiCommunicationException(message: String = "", cause: Throwable = None.orNull) extends HATApiError(message, cause)
+
+  class SourceApiError(message: String = "", cause: Throwable = None.orNull) extends DataPlugError(message, cause)
+
+  case class SourceAuthenticationException(message: String = "", cause: Throwable = None.orNull) extends SourceApiError(message, cause)
+  case class SourceDataProcessingException(message: String = "", cause: Throwable = None.orNull) extends SourceApiError(message, cause)
+  case class SourceApiCommunicationException(message: String = "", cause: Throwable = None.orNull) extends SourceApiError(message, cause)
 }

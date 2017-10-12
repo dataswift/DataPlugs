@@ -12,6 +12,7 @@ import javax.inject.Inject
 
 import akka.actor.{ Actor, ActorPath }
 import org.hatdex.dataplug.actors.DataPlugManagerActor.Fetch
+import org.hatdex.dataplug.actors.Errors.DataPlugError
 import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointCall
 import org.hatdex.dataplug.utils.Mailer
 import play.api.Logger
@@ -48,7 +49,7 @@ class DataPlugSyncDispatcherActor @Inject() (
         case e =>
           val message = s"Could not fetch for actor $actorPath - ${e.getMessage}"
           logger.error(message)
-          mailer.serverExceptionNotifyInternal(message, new RuntimeException(message))
+          mailer.serverExceptionNotifyInternal(message, new DataPlugError(message))
       }
   }
 }

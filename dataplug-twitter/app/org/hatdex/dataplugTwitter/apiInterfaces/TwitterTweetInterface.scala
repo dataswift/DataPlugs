@@ -14,6 +14,7 @@ import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider
 import org.hatdex.commonPlay.utils.FutureTransformations
+import org.hatdex.dataplug.actors.Errors.SourceDataProcessingException
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
 import org.hatdex.dataplug.apiInterfaces.authProviders.RequestAuthenticatorOAuth1
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
@@ -119,10 +120,10 @@ class TwitterTweetInterface @Inject() (
         Success(data)
       case data: JsArray =>
         logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")
-        Failure(new RuntimeException(s"Error validating data, some of the required fields missing."))
+        Failure(SourceDataProcessingException(s"Error validating data, some of the required fields missing."))
       case _ =>
         logger.error(s"Error parsing JSON object: ${rawData.toString}")
-        Failure(new RuntimeException(s"Error parsing JSON object."))
+        Failure(SourceDataProcessingException(s"Error parsing JSON object."))
     }
   }
 

@@ -11,6 +11,7 @@ package org.hatdex.dataplug.apiInterfaces
 import akka.actor.{ ActorRef, Scheduler }
 import akka.pattern.ask
 import akka.util.Timeout
+import org.hatdex.dataplug.actors.Errors.{ DataPlugError, _ }
 import org.hatdex.dataplug.apiInterfaces.authProviders.RequestAuthenticator
 import org.hatdex.dataplug.apiInterfaces.models._
 import org.hatdex.dataplug.utils.FutureRetries
@@ -24,7 +25,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Try
 
-trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthenticator with DataPlugApiEndpointClient {
+trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAuthenticator {
   val refreshInterval: FiniteDuration
   protected implicit val scheduler: Scheduler
 
@@ -58,14 +59,25 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
               .map(DataPlugFetchContinuation)
               .getOrElse(DataPlugFetchNextSync(buildNextSync(result.json, fetchParams)))
           } recoverWith {
-            case error =>
-              mailer.serverExceptionNotifyInternal(
-                s"""
-                   | Error when uploading data to HAT $hatAddress.
+            case e: HATApiError =>
+              if (logger.isDebugEnabled) {
+                mailer.serverExceptionNotifyInternal(s"""
+                   | Error when communicating data to HAT $hatAddress.
                    | Fetch Parameters: $fetchParams.
                    | Content: ${Json.prettyPrint(result.json)}
-                """.stripMargin, error)
-              Future.failed(error)
+                  """.stripMargin, e)
+              }
+              Future.failed(e)
+
+            case e: SourceApiError =>
+              if (logger.isDebugEnabled) {
+                mailer.serverExceptionNotifyInternal(s"""
+                   | Error when retrieving data from source for $hatAddress.
+                   | Fetch Parameters: $fetchParams.
+                   | Content: ${Json.prettyPrint(result.json)}
+                    """.stripMargin, e)
+              }
+              Future.failed(e)
           }
 
         case UNAUTHORIZED =>
@@ -79,15 +91,20 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
           }
         case NOT_FOUND =>
           logger.warn(s"Not found for request $fetchParams - ${result.status}: ${result.body}")
-          Future.failed(new RuntimeException(s"Not found for request $fetchParams for $hatAddress - ${result.status}: ${result.body}"))
+          Future.failed(SourceApiCommunicationException(s"Not found for request $fetchParams for $hatAddress - ${result.status}: ${result.body}"))
         case _ =>
           logger.warn(s"Unsuccessful response from api endpoint $fetchParams for $hatAddress - ${result.status}: ${result.body}")
           Future.successful(DataPlugFetchNextSync(fetchParams))
       }
     } recoverWith {
-      case e =>
-        logger.warn(s"Error when querying api endpoint $fetchParams for $hatAddress - ${e.getMessage}")
+      case e: DataPlugError =>
+        val message = s"${e.getClass.getSimpleName} Error when querying api endpoint $fetchParams for $hatAddress - ${e.getMessage}"
+        logger.warn(message)
         Future.failed(e)
+      case e =>
+        val message = s"${e.getClass.getSimpleName} Error when querying api endpoint $fetchParams for $hatAddress - ${e.getMessage}"
+        logger.warn(message)
+        Future.failed(new DataPlugError(message, e))
     }
   }
 
@@ -111,9 +128,9 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
     if (batchdata.value.nonEmpty) { // set the predicate to false to prevent posting to HAT
       hatClientActor.?(HatClientActor.PostData(namespace, endpoint, batchdata))
         .map {
-          case FetchingFailed(message) => Future.failed(new RuntimeException(message))
+          case FetchingFailed(message) => Future.failed(HATApiCommunicationException(message))
           case DataSaved(_)            => Future.successful(())
-          case _                       => Future.failed(new RuntimeException("Unrecognised message from the HAT Client Actor"))
+          case _                       => Future.failed(HATApiCommunicationException("Unrecognised message from the HAT Client Actor"))
         }
     }
     else {

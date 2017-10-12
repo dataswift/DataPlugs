@@ -3,6 +3,7 @@ package org.hatdex.dataplugFitbit.apiInterfaces
 import akka.actor.{ ActorRef, Scheduler }
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
+import org.hatdex.dataplug.actors.Errors.SourceDataProcessingException
 import org.hatdex.dataplug.apiInterfaces.DataPlugOptionsCollector
 import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpoint, _ }
@@ -93,7 +94,7 @@ class FitbitProfileCheck @Inject() (
 
           case _ =>
             logger.warn(s"Could not validate FitbitProfile API endpoint $fetchParams - ${response.status}: ${response.body}")
-            Future.failed(new RuntimeException("Could not validate FitbitProfile API endpoint"))
+            Future.failed(SourceDataProcessingException("Could not validate FitbitProfile API endpoint"))
         }
       }
     }.recover {
