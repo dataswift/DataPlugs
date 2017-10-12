@@ -8,23 +8,19 @@
 
 package org.hatdex.dataplug.controllers
 
-import javax.inject.{ Inject, Named }
+import javax.inject.Inject
 
-import akka.actor.ActorRef
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Clock
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import org.hatdex.commonPlay.models.auth.forms.AuthForms
-import org.hatdex.dataplug.actors.DataPlugManagerActor.{ Start, Stop }
-import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointVariantChoice
-import org.hatdex.dataplug.models.User
-import org.hatdex.dataplug.services.{ DataPlugEndpointService, DataplugSyncerActorManager }
+import org.hatdex.dataplug.services.DataplugSyncerActorManager
 import org.hatdex.dataplug.utils.{ PhataAuthenticationEnvironment, SilhouettePhataAuthenticationController }
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import play.api.mvc._
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.Future
 
 class Application @Inject() (
     val messagesApi: MessagesApi,

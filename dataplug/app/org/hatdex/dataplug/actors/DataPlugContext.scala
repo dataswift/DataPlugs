@@ -1,19 +1,40 @@
 /*
- * Copyright (C) HAT Data Exchange Ltd - All Rights Reserved
- *  Unauthorized copying of this file, via any medium is strictly prohibited
- *  Proprietary and confidential
- *  Written by Andrius Aucinas <andrius.aucinas@hatdex.org>, 10 2017
+ * Copyright (C) 2017 HAT Data Exchange Ltd - All Rights Reserved
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * Written by Augustinas Markevicius <augustinas.markevicius@hatdex.org> 5, 2017
  */
 
 package org.hatdex.dataplug.actors
 
-import akka.actor.{ ActorContext, ActorNotFound, ActorRef, Props }
+import java.util.concurrent.Executors
+
+import akka.actor.{ Actor, ActorContext, ActorNotFound, ActorRef, Props }
 import org.hatdex.dataplug.actors.Errors.DataPlugError
 import play.api.Logger
 
 import scala.concurrent.duration.{ FiniteDuration, _ }
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Try
+
+object IoExecutionContext {
+  private val concurrency = Runtime.getRuntime.availableProcessors()
+  private val factor = 5 // get from configuration  file
+  private val noOfThread = concurrency * factor
+  implicit val ioThreadPool: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(noOfThread))
+}
+
+class ForwardingActor extends Actor {
+
+  protected val logger: Logger = Logger(this.getClass)
+
+  def receive: Receive = {
+    case DataPlugManagerActor.Forward(message, to) =>
+      logger.debug(s"Forwarding $message to ${to.path}")
+      to.forward(message)
+  }
+}
 
 trait RetryingActorLauncher {
   protected val context: ActorContext

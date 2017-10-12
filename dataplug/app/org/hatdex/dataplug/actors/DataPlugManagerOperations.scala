@@ -21,7 +21,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 
 trait DataPlugManagerOperations {
-  implicit val executionContext: ExecutionContext
+  protected implicit val ec: ExecutionContext
 
   protected val dataplugEndpointService: DataPlugEndpointService
   protected val scheduler: Scheduler

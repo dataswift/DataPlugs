@@ -10,21 +10,19 @@ package org.hatdex.dataplug.services
 
 import javax.inject.{ Inject, Named }
 
-import akka.{ Done, NotUsed }
+import akka.Done
 import akka.actor.ActorRef
-import akka.stream.{ Materializer, ThrottleMode }
 import akka.stream.scaladsl.Source
-import com.mohiva.play.silhouette.api.{ LoginInfo, Provider }
-import com.mohiva.play.silhouette.api.services.IdentityService
-import com.mohiva.play.silhouette.impl.providers.{ CommonSocialProfile, SocialProvider, SocialProviderRegistry }
+import akka.stream.{ Materializer, ThrottleMode }
+import com.mohiva.play.silhouette.impl.providers.{ SocialProvider, SocialProviderRegistry }
 import org.hatdex.dataplug.actors.DataPlugManagerActor.{ Start, Stop }
-import org.hatdex.dataplug.apiInterfaces.{ DataPlugOptionsCollector, DataPlugOptionsCollectorRegistry }
 import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointVariantChoice
+import org.hatdex.dataplug.apiInterfaces.{ DataPlugOptionsCollector, DataPlugOptionsCollectorRegistry }
 import org.hatdex.dataplug.models.User
 import play.api.Logger
 
-import scala.concurrent.{ ExecutionContext, Future }
 import scala.concurrent.duration._
+import scala.concurrent.{ ExecutionContext, Future }
 
 class DataplugSyncerActorManager @Inject() (
     socialProviderRegistry: SocialProviderRegistry,
@@ -36,16 +34,15 @@ class DataplugSyncerActorManager @Inject() (
   private val logger = Logger("SyncerActorManager")
 
   def updateApiVariantChoices(user: User, variantChoices: Seq[ApiEndpointVariantChoice])(implicit ec: ExecutionContext): Future[Unit] = {
-    dataPlugEndpointService.updateApiVariantChoices(user.userId, variantChoices) map {
-      case _ =>
-        variantChoices foreach { variantChoice =>
-          if (variantChoice.active) {
-            dataPlugManagerActor ! Start(variantChoice.variant, user.userId, variantChoice.variant.configuration)
-          }
-          else {
-            dataPlugManagerActor ! Stop(variantChoice.variant, user.userId)
-          }
+    dataPlugEndpointService.updateApiVariantChoices(user.userId, variantChoices) map { _ =>
+      variantChoices foreach { variantChoice =>
+        if (variantChoice.active) {
+          dataPlugManagerActor ! Start(variantChoice.variant, user.userId, variantChoice.variant.configuration)
         }
+        else {
+          dataPlugManagerActor ! Stop(variantChoice.variant, user.userId)
+        }
+      }
     }
   }
 
@@ -54,7 +51,7 @@ class DataplugSyncerActorManager @Inject() (
     dataPlugEndpointService.retrieveAllEndpoints flatMap { phataVariants =>
       Logger.debug(s"Retrieved endpoints to sync: ${phataVariants.mkString("\n")}")
       Source.fromIterator(() => phataVariants.iterator)
-        .throttle(1, 10.seconds, 1, ThrottleMode.Shaping)
+        .throttle(1, 1.seconds, 1, ThrottleMode.Shaping)
         .map {
           case (phata, variant) =>
             dataPlugManagerActor ! Start(variant, phata, variant.configuration)

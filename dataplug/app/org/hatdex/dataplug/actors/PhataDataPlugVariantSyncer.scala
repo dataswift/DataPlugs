@@ -8,7 +8,7 @@
 
 package org.hatdex.dataplug.actors
 
-import akka.actor.{ Actor, ActorLogging, ActorRef, PoisonPill, Props, Scheduler }
+import akka.actor.{ Actor, ActorRef, PoisonPill, Props, Scheduler }
 import akka.pattern.pipe
 import org.hatdex.dataplug.actors.DataPlugManagerActor._
 import org.hatdex.dataplug.apiInterfaces._
@@ -16,7 +16,6 @@ import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointVariant
 import org.hatdex.dataplug.services.DataPlugEndpointService
 import org.hatdex.dataplug.utils.Mailer
 import play.api.Logger
-import play.api.libs.concurrent.InjectedActorSupport
 import play.api.libs.ws.WSClient
 
 import scala.concurrent.ExecutionContext
@@ -27,21 +26,20 @@ class PhataDataPlugVariantSyncer(
     apiEndpointVariant: ApiEndpointVariant,
     wsClient: WSClient,
     hatClient: ActorRef,
+    throttledSyncActor: ActorRef,
     val dataplugEndpointService: DataPlugEndpointService,
-    val mailer: Mailer,
-    val executionContext: ExecutionContext) extends Actor with ActorLogging with InjectedActorSupport with DataPlugManagerOperations {
+    val mailer: Mailer)(implicit val ec: ExecutionContext) extends Actor with DataPlugManagerOperations {
 
-  val scheduler: Scheduler = context.system.scheduler
-
-  val logger: Logger = Logger(this.getClass)
-
-  implicit val ec: ExecutionContext = executionContext
+  protected val scheduler: Scheduler = context.system.scheduler
+  protected val logger: Logger = Logger(this.getClass)
 
   def receive: Receive = {
     case Fetch(endpointCall, retries) =>
       logger.debug(s"FETCH Received by $phata-${apiEndpointVariant.endpoint.name}-${apiEndpointVariant.variant}")
       context.become(syncing)
-      fetch(endpointInterface, apiEndpointVariant, phata, endpointCall, retries, hatClient) pipeTo self
+      fetch(endpointInterface, apiEndpointVariant, phata, endpointCall, retries, hatClient)
+        .map(Forward(_, self))
+        .pipeTo(throttledSyncActor)
     case message =>
       logger.debug(s"UNKNOWN Received by $phata-${apiEndpointVariant.endpoint.name}-${apiEndpointVariant.variant}: $message")
   }
@@ -49,7 +47,9 @@ class PhataDataPlugVariantSyncer(
   def syncing: Receive = {
     case FetchContinuation(fetchEndpoint, retries) =>
       logger.debug(s"FETCH CONTINUATION Received by $phata-${apiEndpointVariant.endpoint.name}-${apiEndpointVariant.variant}")
-      fetchContinuation(endpointInterface, apiEndpointVariant, phata, fetchEndpoint, retries, hatClient) pipeTo self
+      fetchContinuation(endpointInterface, apiEndpointVariant, phata, fetchEndpoint, retries, hatClient)
+        .map(Forward(_, self))
+        .pipeTo(throttledSyncActor)
     case Complete(fetchEndpoint) =>
       logger.debug(s"COMPLETE Received by $phata-${apiEndpointVariant.endpoint.name}-${apiEndpointVariant.variant} in FETCH")
       context.become(receive)
@@ -76,9 +76,9 @@ object PhataDataPlugVariantSyncer {
     apiEndpointVariant: ApiEndpointVariant,
     wsClient: WSClient,
     hatClient: ActorRef,
+    throttledSyncActor: ActorRef,
     dataplugEndpointService: DataPlugEndpointService,
-    mailer: Mailer,
-    executionContext: ExecutionContext): Props =
+    mailer: Mailer)(implicit executionContext: ExecutionContext): Props =
     Props(new PhataDataPlugVariantSyncer(phata, endpointInterface, apiEndpointVariant,
-      wsClient, hatClient, dataplugEndpointService, mailer, executionContext))
+      wsClient, hatClient, throttledSyncActor, dataplugEndpointService, mailer))
 }
