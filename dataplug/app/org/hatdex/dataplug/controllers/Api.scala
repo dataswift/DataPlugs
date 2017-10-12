@@ -32,9 +32,8 @@ class Api @Inject() (
     syncerActorManager: DataplugSyncerActorManager) extends Controller {
 
   def tickle: Action[AnyContent] = tokenUserAuthenticatedAction.async { implicit request =>
-    syncerActorManager.runPhataActiveVariantChoices(request.identity.userId) map {
-      case _ =>
-        Ok(Json.toJson(Map("message" -> "Tickled")))
+    syncerActorManager.runPhataActiveVariantChoices(request.identity.userId) map { _ =>
+      Ok(Json.toJson(Map("message" -> "Tickled")))
     }
   }
 

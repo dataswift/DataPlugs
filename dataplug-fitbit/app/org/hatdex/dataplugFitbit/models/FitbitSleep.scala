@@ -14,9 +14,13 @@ case class MinuteCount(
 )
 
 case class LevelsSummary(
-  asleep: MinuteCount,
-  awake: MinuteCount,
-  restless: MinuteCount
+  asleep: Option[MinuteCount],
+  awake: Option[MinuteCount],
+  restless: Option[MinuteCount],
+  deep: Option[MinuteCount],
+  light: Option[MinuteCount],
+  rem: Option[MinuteCount],
+  wake: Option[MinuteCount]
 )
 
 case class Levels(

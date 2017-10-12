@@ -127,8 +127,8 @@ class FitbitSleepInterface @Inject() (
         logger.error(s"Error parsing JSON object: ${rawData.toString}")
         Failure(SourceDataProcessingException(s"Error parsing JSON object."))
     }.getOrElse {
-      logger.error(s"Error parsing JSON object: ${rawData.toString}")
-      Failure(SourceDataProcessingException(s"Error parsing JSON object."))
+      logger.error(s"Error parsing JSON object, necessary property not found: ${rawData.toString}")
+      Failure(SourceDataProcessingException(s"Error parsing JSON object, necessary property not found."))
     }
   }
 
