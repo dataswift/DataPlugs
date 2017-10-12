@@ -21,6 +21,7 @@ libraryDependencies ++= Seq(
   Library.Play.Db.liquibase,
   Library.HATDeX.hatClient,
   Library.HATDeX.dexClient,
+  Library.HATDeX.dexter,
   Library.HATDeX.commonPlay,
   filters
 )

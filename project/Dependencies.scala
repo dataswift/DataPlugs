@@ -29,6 +29,7 @@ object Dependencies {
       private val version = "2.4.1-SNAPSHOT"
       val hatClient = "org.hatdex" %% "hat-client-scala-play" % version
       val dexClient = "org.hatdex" %% "dex-client-scala-play" % version
+      val dexter = "org.hatdex" %% "dexter" % "1.2.0-SNAPSHOT"
       val commonPlay = "org.hatdex" %% "common-play" % "1.0.0-SNAPSHOT"
     }
 

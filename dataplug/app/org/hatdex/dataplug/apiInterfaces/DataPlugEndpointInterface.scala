@@ -11,11 +11,11 @@ package org.hatdex.dataplug.apiInterfaces
 import akka.actor.{ ActorRef, Scheduler }
 import akka.pattern.ask
 import akka.util.Timeout
-import org.hatdex.dataplug.actors.HatClientActor
-import org.hatdex.dataplug.actors.HatClientActor.{ DataSaved, FetchingFailed }
 import org.hatdex.dataplug.apiInterfaces.authProviders.RequestAuthenticator
 import org.hatdex.dataplug.apiInterfaces.models._
 import org.hatdex.dataplug.utils.FutureRetries
+import org.hatdex.dexter.actors.HatClientActor
+import org.hatdex.dexter.actors.HatClientActor.{ DataSaved, FetchingFailed }
 import org.joda.time.DateTime
 import play.api.http.Status._
 import play.api.libs.json.{ JsArray, JsValue, Json }
@@ -37,7 +37,15 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
    * @return Potentially updated set of parameters, e.g. with new timestamps
    */
   def fetch(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext, timeout: Timeout): Future[DataPlugFetchStep] = {
-    val authenticatedFetchParameters = authenticateRequest(fetchParams, hatAddress)
+    processDataFetch(fetchParams, hatAddress, hatClientActor, retrying = false)
+  }
+
+  protected def processDataFetch(
+    fetchParams: ApiEndpointCall,
+    hatAddress: String,
+    hatClientActor: ActorRef,
+    retrying: Boolean)(implicit ec: ExecutionContext, timeout: Timeout): Future[DataPlugFetchStep] = {
+    val authenticatedFetchParameters = authenticateRequest(fetchParams, hatAddress, refreshToken = retrying)
 
     authenticatedFetchParameters flatMap { requestParameters =>
       buildRequest(requestParameters)
@@ -61,8 +69,14 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
           }
 
         case UNAUTHORIZED =>
-          logger.warn(s"Unauthorized request $fetchParams for $hatAddress - ${result.status}: ${result.body}")
-          Future.successful(DataPlugFetchNextSync(fetchParams))
+          if (!retrying) {
+            logger.debug(s"Unauthorized request $fetchParams for $hatAddress - ${result.status}: ${result.body}")
+            processDataFetch(fetchParams, hatAddress, hatClientActor, retrying = true)
+          }
+          else {
+            logger.warn(s"Unauthorized retried request $fetchParams for $hatAddress - ${result.status}: ${result.body}")
+            Future.successful(DataPlugFetchNextSync(fetchParams))
+          }
         case NOT_FOUND =>
           logger.warn(s"Not found for request $fetchParams - ${result.status}: ${result.body}")
           Future.failed(new RuntimeException(s"Not found for request $fetchParams for $hatAddress - ${result.status}: ${result.body}"))
@@ -95,7 +109,7 @@ trait DataPlugEndpointInterface extends HatDataOperations with RequestAuthentica
     }
 
     if (batchdata.value.nonEmpty) { // set the predicate to false to prevent posting to HAT
-      hatClientActor.?(HatClientActor.PostDataV2(namespace, endpoint, batchdata))
+      hatClientActor.?(HatClientActor.PostData(namespace, endpoint, batchdata))
         .map {
           case FetchingFailed(message) => Future.failed(new RuntimeException(message))
           case DataSaved(_)            => Future.successful(())

@@ -19,10 +19,11 @@ import akka.stream.{ ActorMaterializer, OverflowStrategy, ThrottleMode }
 import org.hatdex.dataplug.actors.DataPlugSyncDispatcherActor.Sync
 import org.hatdex.dataplug.apiInterfaces._
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointVariant }
-import org.hatdex.dataplug.models.HatClientCredentials
 import org.hatdex.dataplug.services.DataPlugEndpointService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dex.api.services.DexClient
+import org.hatdex.dexter.actors.HatClientActor
+import org.hatdex.dexter.models.HatClientCredentials
 import play.api.cache.CacheApi
 import play.api.libs.concurrent.InjectedActorSupport
 import play.api.libs.ws.WSClient
@@ -138,9 +139,10 @@ class DataPlugManagerActor @Inject() (
     configuration.getString("service.dex.scheme").get)
 
   private def startSyncerActor(phata: String, variant: ApiEndpointVariant, endpointInterface: DataPlugEndpointInterface, actorKey: String): Future[ActorRef] = {
-    val hatActorProps = HatClientActor.props(ws, phata, configuration.underlying, HatClientCredentials(
+    val hatActorProps = HatClientActor.props(ws, phata, HatClientCredentials(
       configuration.getString("service.hatCredentials.username").get,
-      configuration.getString("service.hatCredentials.password").get))
+      configuration.getString("service.hatCredentials.password").get,
+      secure = true))
 
     val hatActorSupervisorProps = BackoffSupervisor.props(
       Backoff.onStop(
@@ -151,7 +153,7 @@ class DataPlugManagerActor @Inject() (
         randomFactor = 0.2 // adds 20% "noise" to vary the intervals slightly
       ))
 
-    val cacheKey = s"dex:plug:${configuration.getString("service.dex.dataplugId").get}"
+    val cacheKey = s"dex:plug:${configuration.getString("service.dex.dataplugId").get}:$phata"
     val dexConnected = cacheApi.get[Boolean](cacheKey)
       .map { setup =>
         Future.successful(setup)

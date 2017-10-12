@@ -11,11 +11,9 @@ package org.hatdex.dataplug.dao
 import javax.inject.{ Inject, Singleton }
 
 import anorm.JodaParameterMetaData._
-import anorm.SqlParser._
 import anorm.{ RowParser, _ }
 import org.hatdex.dataplug.actors.IoExecutionContext
 import org.hatdex.dataplug.apiInterfaces.models._
-import org.hatdex.dataplug.models.User
 import play.api.db.{ Database, NamedDatabase }
 import play.api.libs.json.Json
 
@@ -28,18 +26,9 @@ import scala.concurrent._
 class DataPlugEndpointDAOImpl @Inject() (@NamedDatabase("default") db: Database) extends DataPlugEndpointDAO {
   implicit val ec: ExecutionContext = IoExecutionContext.ioThreadPool
 
-  private def simpleUserInfoParser(table: String): RowParser[User] = {
-    get[String](s"$table.provider_id") ~
-      get[String](s"$table.user_id") map {
-        case providerId ~ userId =>
-          User(providerId, userId, List())
-      }
-  }
-
   implicit val apiEndpointCallColumn: Column[ApiEndpointCall] = {
     import JsonProtocol.endpointCallFormat
-    Column.nonNull { (value, meta) =>
-      //      val MetaDataItem(qualified, nullable, clazz) = meta
+    Column.nonNull { (value, _) =>
       Right(Json.parse(value.toString).as[ApiEndpointCall])
     }
   }

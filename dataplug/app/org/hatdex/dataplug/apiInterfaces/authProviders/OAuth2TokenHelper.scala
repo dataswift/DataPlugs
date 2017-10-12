@@ -39,6 +39,8 @@ class OAuth2TokenHelper @Inject() (
   /**
    * Refreshes the OAuth2Info token at the refreshURL.
    *
+   * Caches previously refreshed tokens to avoid unnecessarily hitting the provider's endpoints with every API call
+   *
    * @param refreshToken The refresh token, as on OAuth2Info
    */
   def refresh(loginInfo: LoginInfo, refreshToken: String)(implicit ec: ExecutionContext): Option[Future[OAuth2Info]] = {
