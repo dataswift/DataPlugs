@@ -8,16 +8,15 @@
 
 package org.hatdex.dataplug.controllers
 
-import javax.inject.{ Inject, Named }
+import javax.inject.Inject
 
-import akka.actor.{ ActorRef, ActorSystem }
+import org.hatdex.dataplug.actors.IoExecutionContext
 import org.hatdex.dataplug.apiInterfaces.models.JsonProtocol
 import org.hatdex.dataplug.services.{ DataPlugEndpointService, DataplugSyncerActorManager }
 import org.hatdex.dataplug.utils.{ JwtPhataAuthenticatedAction, JwtPhataAwareAction }
-import play.api.Logger
+import org.hatdex.hat.api.models.ErrorMessage
 import play.api.i18n.MessagesApi
-import play.api.libs.json.{ JsError, Json }
-import play.api.libs.ws.WSClient
+import play.api.libs.json.Json
 import play.api.mvc._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -31,6 +30,9 @@ class Api @Inject() (
     dataPlugEndpointService: DataPlugEndpointService,
     syncerActorManager: DataplugSyncerActorManager) extends Controller {
 
+  protected val ioEC = IoExecutionContext.ioThreadPool
+  protected val provider = configuration.getString("service.name").getOrElse("")
+
   def tickle: Action[AnyContent] = tokenUserAuthenticatedAction.async { implicit request =>
     syncerActorManager.runPhataActiveVariantChoices(request.identity.userId) map { _ =>
       Ok(Json.toJson(Map("message" -> "Tickled")))
@@ -38,9 +40,26 @@ class Api @Inject() (
   }
 
   import JsonProtocol.endpointStatusFormat
+  import org.hatdex.hat.api.json.HatJsonFormats.errorMessage
   def status: Action[AnyContent] = tokenUserAuthenticatedAction.async { implicit request =>
-    dataPlugEndpointService.listCurrentEndpointStatuses(request.identity.userId) map { apiEndpointStatuses =>
-      Ok(Json.toJson(apiEndpointStatuses))
+    // Check if the user has the required social profile linked
+    request.identity.linkedUsers.find(_.providerId == provider) map { _ =>
+      val result = for {
+        _ <- syncerActorManager.currentProviderApiVariantChoices(request.identity, provider)(ioEC)
+        apiEndpointStatuses <- dataPlugEndpointService.listCurrentEndpointStatuses(request.identity.userId)
+      } yield {
+        Ok(Json.toJson(apiEndpointStatuses))
+      }
+
+      // In case fetching current endpoint statuses failed, assume the issue came from refreshing data from the provider
+      result recover {
+        case _ => Forbidden(
+          Json.toJson(ErrorMessage(
+            "Forbidden",
+            "The user is not authorized to access remote data - has Access Token been revoked?")))
+      }
+    } getOrElse {
+      Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Required social profile ($provider) not connected"))))
     }
   }
 

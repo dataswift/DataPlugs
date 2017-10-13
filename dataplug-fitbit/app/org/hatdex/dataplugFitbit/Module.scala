@@ -38,6 +38,7 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
     // Automatic database schema migrations
     bind[SchemaMigration].to[SchemaMigrationImpl]
     bind[SchemaMigrationLauncher].asEagerSingleton()
+    bind[StartupService].to[StartupServiceImpl].asEagerSingleton()
 
     bind[DataPlugEndpointDAO].to[DataPlugEndpointDAOImpl]
     bind[DataPlugEndpointService].to[DataPlugEndpointServiceImpl]

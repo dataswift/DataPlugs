@@ -31,4 +31,16 @@ class DataPlugViewSetDefault extends DataPlugViewSet {
 
   def indexRedirect: Call =
     org.hatdex.dataplug.controllers.routes.Application.index()
+
+  def signupComplete(
+    socialProviderRegistry: SocialProviderRegistry,
+    endpointVariants: Option[Seq[ApiEndpointVariantChoice]])(implicit user: User, request: RequestHeader, messages: Messages): Html = {
+    dataplugViews.html.complete(socialProviderRegistry, endpointVariants)
+  }
+
+  def disconnect(
+    socialProviderRegistry: SocialProviderRegistry,
+    endpointVariants: Option[Seq[ApiEndpointVariantChoice]])(implicit user: User, request: RequestHeader, messages: Messages): Html = {
+    dataplugViews.html.disconnect(socialProviderRegistry, endpointVariants)
+  }
 }

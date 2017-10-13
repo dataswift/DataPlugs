@@ -1,8 +1,9 @@
 @import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 
 @import org.hatdex.dataplug.models.User
+@import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointVariantChoice
 
-@(socialProviders: SocialProviderRegistry)(implicit user: User, request: RequestHeader, messages: Messages)
+@(socialProviders: SocialProviderRegistry, endpointVariants: Option[Seq[ApiEndpointVariantChoice]])(implicit user: User, request: RequestHeader, messages: Messages)
 
 @menubarContent = {
     <li class="text-lowercase">

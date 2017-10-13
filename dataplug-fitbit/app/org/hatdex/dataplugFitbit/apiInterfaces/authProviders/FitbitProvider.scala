@@ -1,11 +1,11 @@
 package org.hatdex.dataplugFitbit.apiInterfaces.authProviders
 
 import com.mohiva.play.silhouette.api.LoginInfo
+import com.mohiva.play.silhouette.api.crypto.Base64
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.exceptions.ProfileRetrievalException
 import com.mohiva.play.silhouette.impl.providers._
-import FitbitProvider._
-import com.mohiva.play.silhouette.api.crypto.Base64
+import org.hatdex.dataplugFitbit.apiInterfaces.authProviders.FitbitProvider._
 import play.api.http.HeaderNames._
 import play.api.libs.json.{ JsArray, JsValue }
 

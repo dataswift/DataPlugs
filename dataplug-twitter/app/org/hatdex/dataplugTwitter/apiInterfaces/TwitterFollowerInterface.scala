@@ -17,12 +17,10 @@ import org.hatdex.commonPlay.utils.FutureTransformations
 import org.hatdex.dataplug.actors.Errors.SourceDataProcessingException
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
 import org.hatdex.dataplug.apiInterfaces.authProviders.RequestAuthenticatorOAuth1
-import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod, ApiEndpointTableStructure }
+import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugTwitter.models._
-import org.hatdex.hat.api.models.{ ApiDataRecord, ApiDataTable }
-import org.joda.time.DateTime
 import play.api.Logger
 import play.api.cache.CacheApi
 import play.api.libs.json._

@@ -15,7 +15,7 @@ import akka.actor.ActorRef
 import akka.stream.scaladsl.Source
 import akka.stream.{ Materializer, ThrottleMode }
 import com.mohiva.play.silhouette.impl.providers.{ SocialProvider, SocialProviderRegistry }
-import org.hatdex.dataplug.actors.DataPlugManagerActor.{ Start, Stop }
+import org.hatdex.dataplug.actors.DataPlugManagerActor.{ DataPlugManagerActorMessage, Start, Stop }
 import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointVariantChoice
 import org.hatdex.dataplug.apiInterfaces.{ DataPlugOptionsCollector, DataPlugOptionsCollectorRegistry }
 import org.hatdex.dataplug.models.User
@@ -28,20 +28,20 @@ class DataplugSyncerActorManager @Inject() (
     socialProviderRegistry: SocialProviderRegistry,
     dataPlugEndpointService: DataPlugEndpointService,
     optionsCollectionRegistry: DataPlugOptionsCollectorRegistry,
-    implicit val materializer: Materializer,
-    @Named("dataPlugManager") dataPlugManagerActor: ActorRef) {
+    @Named("dataPlugManager") dataPlugManagerActor: ActorRef)(implicit val materializer: Materializer) {
 
-  private val logger = Logger("SyncerActorManager")
+  private val logger = Logger(this.getClass)
 
   def updateApiVariantChoices(user: User, variantChoices: Seq[ApiEndpointVariantChoice])(implicit ec: ExecutionContext): Future[Unit] = {
     dataPlugEndpointService.updateApiVariantChoices(user.userId, variantChoices) map { _ =>
       variantChoices foreach { variantChoice =>
-        if (variantChoice.active) {
-          dataPlugManagerActor ! Start(variantChoice.variant, user.userId, variantChoice.variant.configuration)
+        val message: DataPlugManagerActorMessage = if (variantChoice.active) {
+          Start(variantChoice.variant, user.userId, variantChoice.variant.configuration)
         }
         else {
-          dataPlugManagerActor ! Stop(variantChoice.variant, user.userId)
+          Stop(variantChoice.variant, user.userId)
         }
+        dataPlugManagerActor ! message
       }
     }
   }
@@ -69,9 +69,8 @@ class DataplugSyncerActorManager @Inject() (
     Logger.info("Starting active API endpoint syncing")
     dataPlugEndpointService.retrievePhataEndpoints(phata) map { phataVariants =>
       Logger.info(s"Retrieved endpoints to sync: ${phataVariants.mkString("\n")}")
-      phataVariants foreach {
-        case variant =>
-          dataPlugManagerActor ! Start(variant, phata, variant.configuration)
+      phataVariants foreach { variant =>
+        dataPlugManagerActor ! Start(variant, phata, variant.configuration)
       }
     } recoverWith {
       case e =>

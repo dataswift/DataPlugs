@@ -1,6 +1,6 @@
 package org.hatdex.dataplugFitbit.models
 
-import play.api.libs.json.{ Json, Reads, Format }
+import play.api.libs.json.{ Json, Reads }
 
 case class ActivityLevel(
   minutes: Int,

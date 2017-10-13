@@ -1,6 +1,5 @@
 package org.hatdex.dataplugFitbit.models
 
-import org.joda.time.DateTime
 import play.api.libs.json._
 
 case class FitbitProfile(

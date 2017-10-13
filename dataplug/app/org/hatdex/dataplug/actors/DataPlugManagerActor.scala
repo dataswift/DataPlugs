@@ -95,7 +95,7 @@ class DataPlugManagerActor @Inject() (
     case Start(variant, phata, maybeEndpointCall) =>
       dataPlugRegistry.get[DataPlugEndpointInterface](variant.endpoint.name).map { endpointInterface =>
         val actorKey = syncerActorKey(phata, variant)
-        logger.warn(s"Starting actor fetch $actorKey")
+        logger.info(s"Starting actor fetch $actorKey")
         val eventualSyncMessage = for {
           endpointCall <- dataplugEndpointService.retrieveLastSuccessfulEndpointVariant(phata, variant.endpoint.name, variant.variant)
             .map(maybeEndpointVariant => maybeEndpointVariant.flatMap(_.configuration).orElse(maybeEndpointCall))
