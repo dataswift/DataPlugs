@@ -43,7 +43,7 @@ class TwitterTweetInterface @Inject() (
 
   val namespace: String = "twitter"
   val endpoint: String = "tweets"
-  protected val logger: Logger = Logger("TwitterTweetsInterface")
+  protected val logger: Logger = Logger(this.getClass)
 
   val defaultApiEndpoint = TwitterTweetInterface.defaultApiEndpoint
 

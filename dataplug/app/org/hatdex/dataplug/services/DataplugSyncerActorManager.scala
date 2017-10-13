@@ -41,15 +41,16 @@ class DataplugSyncerActorManager @Inject() (
         else {
           Stop(variantChoice.variant, user.userId)
         }
+        logger.debug(s"For variant $variantChoice sending message $message to manager")
         dataPlugManagerActor ! message
       }
     }
   }
 
   def startAllActiveVariantChoices()(implicit ec: ExecutionContext): Future[Done] = {
-    Logger.info("Starting active API endpoint syncing")
+    logger.info("Starting active API endpoint syncing")
     dataPlugEndpointService.retrieveAllEndpoints flatMap { phataVariants =>
-      Logger.debug(s"Retrieved endpoints to sync: ${phataVariants.mkString("\n")}")
+      logger.debug(s"Retrieved endpoints to sync: ${phataVariants.mkString("\n")}")
       Source.fromIterator(() => phataVariants.iterator)
         .throttle(1, 1.seconds, 1, ThrottleMode.Shaping)
         .map {
@@ -60,21 +61,21 @@ class DataplugSyncerActorManager @Inject() (
         .runForeach(r => logger.info(s"$r - initializing data sync"))
     } recoverWith {
       case e =>
-        Logger.error(s"Could not retrieve endpoints to sync: ${e.getMessage}")
+        logger.error(s"Could not retrieve endpoints to sync: ${e.getMessage}")
         Future.failed(e)
     }
   }
 
   def runPhataActiveVariantChoices(phata: String)(implicit ec: ExecutionContext): Future[Unit] = {
-    Logger.info("Starting active API endpoint syncing")
+    logger.info("Starting active API endpoint syncing")
     dataPlugEndpointService.retrievePhataEndpoints(phata) map { phataVariants =>
-      Logger.info(s"Retrieved endpoints to sync: ${phataVariants.mkString("\n")}")
+      logger.info(s"Retrieved endpoints to sync: ${phataVariants.mkString("\n")}")
       phataVariants foreach { variant =>
         dataPlugManagerActor ! Start(variant, phata, variant.configuration)
       }
     } recoverWith {
       case e =>
-        Logger.error(s"Could not retrieve endpoints to sync: ${e.getMessage}")
+        logger.error(s"Could not retrieve endpoints to sync: ${e.getMessage}")
         Future.failed(e)
     }
   }

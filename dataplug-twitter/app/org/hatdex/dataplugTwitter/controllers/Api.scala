@@ -34,7 +34,7 @@ class Api @Inject() (
     twitterStatusUpdateInterface: TwitterStatusUpdateInterface,
     syncerActorManager: DataplugSyncerActorManager) extends Controller {
 
-  val logger = Logger("application")
+  val logger = Logger(this.getClass)
 
   val ioEC = IoExecutionContext.ioThreadPool
 

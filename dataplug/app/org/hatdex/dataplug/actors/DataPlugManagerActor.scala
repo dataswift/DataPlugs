@@ -102,6 +102,10 @@ class DataPlugManagerActor @Inject() (
           syncerActor <- startSyncerActor(phata, variant, endpointInterface, actorKey)
         } yield Forward(Fetch(endpointCall, 0), syncerActor)
 
+        eventualSyncMessage.onFailure {
+          case e => logger.error(s"Error while trying to start sycning dat for $phata, variant $variant: ${e.getMessage}", e)
+        }
+
         eventualSyncMessage pipeTo throttledSyncActor
       } getOrElse {
         val message = s"No such plug ${variant.endpoint.name} in DataPlug Registry"

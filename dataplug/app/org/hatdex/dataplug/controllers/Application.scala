@@ -36,17 +36,18 @@ class Application @Inject() (
     clock: Clock) extends SilhouettePhataAuthenticationController(silhouette, clock, configuration) {
 
   protected val logger = Logger(this.getClass)
-  protected val provider = configuration.getString("service.name").getOrElse("")
+  protected val provider = configuration.getString("service.name").getOrElse("").toLowerCase
   protected implicit val ioEC = IoExecutionContext.ioThreadPool
 
   def index(): Action[AnyContent] = UserAwareAction.async { implicit request =>
-    Logger.debug(s"Maybe user? ${request.identity}")
+    logger.debug(s"Maybe user? ${request.identity}")
     request.identity.map { implicit user =>
       val eventualResult = for {
         variantChoices <- syncerActorManager.currentProviderApiVariantChoices(user, provider)(ioEC)
         apiEndpointStatuses <- dataPlugEndpointService.listCurrentEndpointStatuses(user.userId)
       } yield {
         if (apiEndpointStatuses.isEmpty) {
+          logger.debug(s"Got choices to sign up for $variantChoices")
           processSignups(selectedVariants = variantChoices.map(_.copy(active = true))) map { _ =>
             Ok(dataPlugViewSet.signupComplete(socialProviderRegistry, Option(variantChoices)))
           }
@@ -59,7 +60,7 @@ class Application @Inject() (
       eventualResult.flatMap(r => r)
         .recover {
           case e =>
-            Logger.debug(s"$provider API cannot be accessed. Redirecting to $provider OAuth service.")
+            logger.error(s"$provider API cannot be accessed: ${e.getMessage}. Redirecting to $provider OAuth service.", e)
             Redirect(org.hatdex.dataplug.controllers.routes.SocialAuthController.authenticate(provider))
         }
     } getOrElse {

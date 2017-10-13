@@ -86,7 +86,7 @@ class OAuth2TokenHelper @Inject() (
             }
           })
         case _ =>
-          Logger.info(s"No OAuth2Provider for $loginInfo, $refreshToken")
+          logger.info(s"No OAuth2Provider for $loginInfo, $refreshToken")
           None
       }
     }
