@@ -37,7 +37,7 @@ class MonzoTransactionsInterface @Inject() (
 
   val namespace: String = "monzo"
   val endpoint: String = "transactions"
-  protected val logger: Logger = Logger("MonzoTransactionsInterface")
+  protected val logger: Logger = Logger(this.getClass)
 
   protected val apiEndpointTableStructures: Map[String, ApiEndpointTableStructure] = Map(
     "transactions" -> MonzoTransaction,

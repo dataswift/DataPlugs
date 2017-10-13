@@ -29,7 +29,7 @@ class MonzoAccountList @Inject() (
 
   val namespace: String = "monzo"
   val endpoint: String = "accounts"
-  protected val logger: Logger = Logger("MonzoTransactionsInterface")
+  protected val logger: Logger = Logger(this.getClass)
 
   val defaultApiEndpoint = ApiEndpointCall(
     "https://api.monzo.com",

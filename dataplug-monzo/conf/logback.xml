@@ -32,8 +32,12 @@
   <logger name="MarketsquareNoticeService" level="INFO"/>
   <logger name="JwtPhataAuthentication" level="INFO"/>
   <logger name="HatLoginController" level="INFO"/>
-  <logger name="MonzoTransactionsInterface" level="DEBUG"/>
   <logger name="SchemaMigration" level="INFO" />
+  <logger name="org.hatdex.dataplug" level="INFO" />
+  <logger name="org.hatdex.dataplug.*" level="INFO" />
+  <logger name="org.hatdex.dataplugMonzo.*" level="INFO"/>
+  <logger name="org.hatdex.dataplugMonzo" level="INFO" />
+  <logger name="com.mohiva.play.silhouette.*" level="INFO" />
 
 
   <root level="WARN">
