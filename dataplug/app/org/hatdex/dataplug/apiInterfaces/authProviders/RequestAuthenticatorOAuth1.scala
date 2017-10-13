@@ -32,7 +32,7 @@ trait RequestAuthenticatorOAuth1 extends RequestAuthenticator {
 
   lazy val oauth1service = new PlayOAuth1Service(provider.settings)
 
-  def authenticateRequest(params: ApiEndpointCall, hatAddress: String)(implicit ec: ExecutionContext): Future[ApiEndpointCall] = {
+  def authenticateRequest(params: ApiEndpointCall, hatAddress: String, refreshToken: Boolean = false)(implicit ec: ExecutionContext): Future[ApiEndpointCall] = {
     Future.successful(params.copy(pathParameters = params.pathParameters ++ Map("hatAddress" -> hatAddress)))
   }
 

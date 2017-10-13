@@ -26,9 +26,11 @@ object Dependencies {
 
   object Library {
     object HATDeX {
-      private val version = "2.4.0-SNAPSHOT"
+      private val version = "2.4.1-SNAPSHOT"
       val hatClient = "org.hatdex" %% "hat-client-scala-play" % version
-      val marketsquareClient = "org.hatdex" %% "marketsquare-client-scala-play" % "2.2.0"
+      val dexClient = "org.hatdex" %% "dex-client-scala-play" % version
+      val dexter = "org.hatdex" %% "dexter" % "1.2.0-SNAPSHOT"
+      val commonPlay = "org.hatdex" %% "common-play" % "1.0.0-SNAPSHOT"
     }
 
     object Play {
@@ -82,6 +84,7 @@ object Dependencies {
 
     object Utils {
       val pegdown = "org.pegdown" % "pegdown" % "1.6.0"
+      val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.0.9"
     }
 
     val scalaGuice = "net.codingwell" %% "scala-guice" % "4.0.1"

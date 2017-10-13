@@ -1,6 +1,6 @@
 package org.hatdex.dataplugMonzo.apiInterfaces
 
-import akka.actor.ActorRef
+import akka.actor.{ ActorRef, Scheduler }
 import akka.util.Timeout
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
@@ -30,6 +30,7 @@ class MonzoTransactionsInterface @Inject() (
     val tokenHelper: OAuth2TokenHelper,
     val cacheApi: CacheApi,
     val mailer: Mailer,
+    val scheduler: Scheduler,
     val provider: MonzoProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
 
   // JSON type formatters

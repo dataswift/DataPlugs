@@ -20,7 +20,9 @@ libraryDependencies ++= Seq(
   Library.Utils.pegdown,
   Library.Play.Db.liquibase,
   Library.HATDeX.hatClient,
-  Library.HATDeX.marketsquareClient,
+  Library.HATDeX.dexClient,
+  Library.HATDeX.dexter,
+  Library.HATDeX.commonPlay,
   filters
 )
 

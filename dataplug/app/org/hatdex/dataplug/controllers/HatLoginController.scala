@@ -72,7 +72,7 @@ class HatLoginController @Inject() (
     authResult.recover {
       case e: ProviderException =>
         logger.warn(Messages("auth.hatcredentials.incorrect"), e)
-        Redirect(routes.HatLoginController.signinHat()).flashing("error" -> Messages("auth.hatcredentials.incorrect"))
+        Redirect(dataPlugViewSet.indexRedirect).flashing("error" -> Messages("auth.hatcredentials.incorrect"))
     }
   }
 

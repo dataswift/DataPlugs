@@ -11,15 +11,15 @@ package org.hatdex.dataplugTwitter.controllers
 import javax.inject.Inject
 
 import org.hatdex.dataplug.actors.IoExecutionContext
-import org.hatdex.dataplug.apiInterfaces.models.{ DataPlugNotableShareRequest, DataPlugSharedNotable, JsonProtocol }
+import org.hatdex.dataplug.apiInterfaces.models.DataPlugNotableShareRequest
 import org.hatdex.dataplug.services.{ DataPlugEndpointService, DataPlugNotablesService, DataplugSyncerActorManager }
 import org.hatdex.dataplug.utils.{ JwtPhataAuthenticatedAction, JwtPhataAwareAction }
 import org.hatdex.dataplugTwitter.apiInterfaces.TwitterStatusUpdateInterface
 import org.joda.time.DateTime
-import play.api.{ Configuration, Logger }
 import play.api.i18n.MessagesApi
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc._
+import play.api.{ Configuration, Logger }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -37,35 +37,6 @@ class Api @Inject() (
   val logger = Logger("application")
 
   val ioEC = IoExecutionContext.ioThreadPool
-
-  import JsonProtocol.endpointStatusFormat
-  def status: Action[AnyContent] = tokenUserAuthenticatedAction.async { implicit request =>
-    // Check if the user has the required social profile linked
-    request.identity.linkedUsers.find(_.providerId == "twitter") map {
-      case _ =>
-        val result = for {
-          _ <- syncerActorManager.currentProviderApiVariantChoices(request.identity, "twitter")(ioEC)
-          apiEndpointStatuses <- dataPlugEndpointService.listCurrentEndpointStatuses(request.identity.userId)
-        } yield {
-          Ok(Json.toJson(apiEndpointStatuses))
-        }
-
-        // In case fetching current endpoint statuses failed, assume the issue came from refreshing data from the provider
-        result recover {
-          case e =>
-            Forbidden(
-              Json.toJson(Map(
-                "message" -> "Forbidden",
-                "error" -> "The user is not authorized to access remote data - has Access Token been revoked?")))
-        }
-    } getOrElse {
-      Future.successful(
-        Forbidden(
-          Json.toJson(Map(
-            "message" -> "Forbidden",
-            "error" -> "Required social profile not connected"))))
-    }
-  }
 
   def create: Action[DataPlugNotableShareRequest] = Action.async(BodyParsers.parse.json[DataPlugNotableShareRequest]) { implicit request =>
     request.headers.get("x-auth-token") map { secret =>

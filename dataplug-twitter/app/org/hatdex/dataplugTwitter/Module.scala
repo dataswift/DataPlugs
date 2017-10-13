@@ -15,7 +15,7 @@ import com.mohiva.play.silhouette.impl.providers._
 import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider
 import com.mohiva.play.silhouette.impl.providers.oauth1.services.PlayOAuth1Service
 import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.dataplug.actors.{ DataPlugManagerActor, InjectedHatClientActor }
+import org.hatdex.dataplug.actors.{ DataPlugManagerActor }
 import org.hatdex.dataplug.apiInterfaces.{ DataPlugOptionsCollector, DataPlugOptionsCollectorRegistry, DataPlugRegistry }
 import org.hatdex.dataplug.controllers.DataPlugViewSet
 import org.hatdex.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl, DataPlugSharedNotableDAO, DataPlugSharedNotableDAOImpl }
@@ -47,7 +47,6 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
 
     bind[DataPlugViewSet].to[DataPlugViewSetTwitter]
 
-    bindActorFactory[InjectedHatClientActor, InjectedHatClientActor.Factory]
     bindActor[DataPlugManagerActor]("dataplug-manager")
   }
 

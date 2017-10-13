@@ -27,4 +27,12 @@ trait DataPlugViewSet {
   def signIn(form: Form[String])(implicit request: RequestHeader, messages: Messages): Html
 
   def indexRedirect: Call
+
+  def signupComplete(
+    socialProviderRegistry: SocialProviderRegistry,
+    endpointVariants: Option[Seq[ApiEndpointVariantChoice]])(implicit user: User, request: RequestHeader, messages: Messages): Html
+
+  def disconnect(
+    socialProviderRegistry: SocialProviderRegistry,
+    endpointVariants: Option[Seq[ApiEndpointVariantChoice]])(implicit user: User, request: RequestHeader, messages: Messages): Html
 }

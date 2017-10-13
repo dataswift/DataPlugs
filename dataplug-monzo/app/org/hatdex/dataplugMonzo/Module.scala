@@ -7,24 +7,22 @@
 
 package org.hatdex.dataplugMonzo
 
+import akka.actor.{ ActorSystem, Scheduler }
 import com.google.inject.{ AbstractModule, Provides }
 import com.mohiva.play.silhouette.api.Provider
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.providers._
-import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider
-import com.mohiva.play.silhouette.impl.providers.oauth1.services.PlayOAuth1Service
-import com.mohiva.play.silhouette.impl.providers.oauth2.{ FacebookProvider, GoogleProvider }
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.dataplug.actors.{ DataPlugManagerActor, InjectedHatClientActor }
+import org.hatdex.dataplug.actors.DataPlugManagerActor
 import org.hatdex.dataplug.apiInterfaces.{ DataPlugOptionsCollector, DataPlugOptionsCollectorRegistry, DataPlugRegistry }
 import org.hatdex.dataplug.controllers.DataPlugViewSet
 import org.hatdex.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl }
 import org.hatdex.dataplug.services._
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import org.hatdex.dataplugMonzo.apiInterfaces.authProviders.MonzoProvider
 import org.hatdex.dataplugMonzo.apiInterfaces.{ MonzoAccountList, MonzoTransactionsInterface }
 import org.hatdex.dataplugMonzo.controllers.DataPlugViewSetMonzo
-import org.hatdex.dataplugMonzo.apiInterfaces.authProviders.MonzoProvider
 import play.api.Configuration
 import play.api.libs.concurrent.AkkaGuiceSupport
 
@@ -40,13 +38,13 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
     // Automatic database schema migrations
     bind[SchemaMigration].to[SchemaMigrationImpl]
     bind[SchemaMigrationLauncher].asEagerSingleton()
+    bind[StartupService].to[StartupServiceImpl].asEagerSingleton()
 
     bind[DataPlugEndpointDAO].to[DataPlugEndpointDAOImpl]
     bind[DataPlugEndpointService].to[DataPlugEndpointServiceImpl]
 
     bind[DataPlugViewSet].to[DataPlugViewSetMonzo]
 
-    bindActorFactory[InjectedHatClientActor, InjectedHatClientActor.Factory]
     bindActor[DataPlugManagerActor]("dataplug-manager")
   }
 
@@ -103,6 +101,11 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
     stateProvider: OAuth2StateProvider,
     configuration: Configuration): MonzoProvider = {
     new MonzoProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.monzo"))
+  }
+
+  @Provides
+  def providesAkkaActorScheduler(actorSystem: ActorSystem): Scheduler = {
+    actorSystem.scheduler
   }
 
 }

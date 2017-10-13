@@ -18,8 +18,6 @@ libraryDependencies ++= Seq(
   Library.Play.Db.postgres,
   Library.Play.Db.anorm,
   Library.Utils.pegdown,
-  Library.HATDeX.hatClient,
-  Library.HATDeX.marketsquareClient,
   filters
 )
 

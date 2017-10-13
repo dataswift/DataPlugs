@@ -12,20 +12,17 @@ import akka.actor.ActorRef
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider
-import org.hatdex.dataplug.apiInterfaces.{ DataPlugEndpointInterface, DataPlugOptionsCollector }
+import org.hatdex.dataplug.actors.Errors.SourceApiCommunicationException
+import org.hatdex.dataplug.apiInterfaces.DataPlugOptionsCollector
 import org.hatdex.dataplug.apiInterfaces.authProviders.RequestAuthenticatorOAuth1
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpoint, _ }
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
-import org.hatdex.dataplugTwitter.apiInterfaces.TwitterFriendInterface
-import org.hatdex.hat.api.models.ApiDataTable
 import play.api.Logger
 import play.api.cache.CacheApi
 import play.api.http.Status._
-import play.api.libs.json.JsValue
 import play.api.libs.ws.{ WSClient, WSResponse }
 
-import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 
 class TwitterFriendsCheck @Inject() (
@@ -65,7 +62,7 @@ class TwitterFriendsCheck @Inject() (
             Future.successful(choices)
           case _ =>
             logger.warn(s"Unsuccessful response from api endpoint $fetchParams - ${result.status}: ${result.body}")
-            Future.failed(new RuntimeException(s"Unsuccessful response from api endpoint $fetchParams - ${result.status}: ${result.body}"))
+            Future.failed(SourceApiCommunicationException(s"Unsuccessful response from api endpoint $fetchParams - ${result.status}: ${result.body}"))
         }
       }
     }

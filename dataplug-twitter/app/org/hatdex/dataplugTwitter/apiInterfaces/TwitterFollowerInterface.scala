@@ -8,20 +8,19 @@
 
 package org.hatdex.dataplugTwitter.apiInterfaces
 
-import akka.actor.ActorRef
+import akka.actor.{ ActorRef, Scheduler }
 import akka.util.Timeout
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider
 import org.hatdex.commonPlay.utils.FutureTransformations
+import org.hatdex.dataplug.actors.Errors.SourceDataProcessingException
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
 import org.hatdex.dataplug.apiInterfaces.authProviders.RequestAuthenticatorOAuth1
-import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod, ApiEndpointTableStructure }
+import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugTwitter.models._
-import org.hatdex.hat.api.models.{ ApiDataRecord, ApiDataTable }
-import org.joda.time.DateTime
 import play.api.Logger
 import play.api.cache.CacheApi
 import play.api.libs.json._
@@ -37,6 +36,7 @@ class TwitterFollowerInterface @Inject() (
     val authInfoRepository: AuthInfoRepository,
     val cacheApi: CacheApi,
     val mailer: Mailer,
+    val scheduler: Scheduler,
     val provider: TwitterProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth1 {
 
   // JSON type formatters
@@ -44,10 +44,6 @@ class TwitterFollowerInterface @Inject() (
   val namespace: String = "twitter"
   val endpoint: String = "followers"
   protected val logger: Logger = Logger("TwitterFollowersInterface")
-
-  protected val apiEndpointTableStructures: Map[String, ApiEndpointTableStructure] = Map(
-    "followers" -> TwitterUser
-  )
 
   val defaultApiEndpoint = TwitterFollowerInterface.defaultApiEndpoint
 
@@ -99,13 +95,13 @@ class TwitterFollowerInterface @Inject() (
         Success(data)
       case data: JsArray =>
         logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")
-        Failure(new RuntimeException(s"Error validating data, some of the required fields missing."))
+        Failure(SourceDataProcessingException(s"Error validating data, some of the required fields missing."))
       case _ =>
         logger.error(s"Error parsing JSON object: ${rawData.toString}")
-        Failure(new RuntimeException(s"Error parsing JSON object."))
+        Failure(SourceDataProcessingException(s"Error parsing JSON object."))
     }.getOrElse {
       logger.error(s"Error parsing JSON object: ${rawData.toString}")
-      Failure(new RuntimeException(s"Error parsing JSON object."))
+      Failure(SourceDataProcessingException(s"Error parsing JSON object."))
     }
   }
 
