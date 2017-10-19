@@ -95,7 +95,7 @@ class DataplugSyncerActorManager @Inject() (
       } yield {
         choices.map { choice =>
           choice.copy(
-            active = enabledVariants.exists(v => v.variant.variant == choice.variant.variant),
+            active = enabledVariants.exists(v => v.key == choice.key && v.variant.variant == choice.variant.variant),
             variant = enabledVariants.find(_.key == choice.key).map(_.variant).getOrElse(choice.variant))
         }
       }

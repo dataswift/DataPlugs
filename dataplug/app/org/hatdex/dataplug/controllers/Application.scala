@@ -48,23 +48,24 @@ class Application @Inject() (
         apiEndpointStatuses <- dataPlugEndpointService.listCurrentEndpointStatuses(user.userId)
       } yield {
         if (chooseVariants) {
-          logger.debug(s"Let user choose what to sync")
+          logger.debug(s"Let user choose what to sync: $variantChoices")
           if (apiEndpointStatuses.isEmpty) {
             Future.successful(Ok(dataPlugViewSet.connect(socialProviderRegistry, Some(variantChoices), dataPlugViewSet.variantsForm)))
           }
           else {
-            Future.successful(Ok(dataPlugViewSet.disconnect(socialProviderRegistry, Some(variantChoices))))
+            Future.successful(Ok(dataPlugViewSet.disconnect(socialProviderRegistry, Some(variantChoices), chooseVariants)))
           }
         }
         else {
-          if (apiEndpointStatuses.isEmpty) {
+          logger.debug(s"Process endpoint choices automatically: $variantChoices")
+          if (apiEndpointStatuses.isEmpty || variantChoices.forall(!_.active)) {
             logger.debug(s"Got choices to sign up for $variantChoices")
             processSignups(selectedVariants = variantChoices.map(_.copy(active = true))) map { _ =>
               Ok(dataPlugViewSet.signupComplete(socialProviderRegistry, Option(variantChoices)))
             }
           }
           else {
-            Future.successful(Ok(dataPlugViewSet.disconnect(socialProviderRegistry, Some(variantChoices))))
+            Future.successful(Ok(dataPlugViewSet.disconnect(socialProviderRegistry, Some(variantChoices), chooseVariants)))
           }
         }
       }
@@ -119,11 +120,11 @@ class Application @Inject() (
       if (apiEndpointStatuses.nonEmpty) {
         logger.debug(s"Got choices to disconnect: $variantChoices")
         processSignups(selectedVariants = variantChoices.map(_.copy(active = false))) map { _ =>
-          Ok(dataPlugViewSet.disconnect(socialProviderRegistry, None))
+          Ok(dataPlugViewSet.disconnect(socialProviderRegistry, None, chooseVariants))
         }
       }
       else {
-        Future.successful(Ok(dataPlugViewSet.disconnect(socialProviderRegistry, None)))
+        Future.successful(Ok(dataPlugViewSet.disconnect(socialProviderRegistry, None, chooseVariants)))
       }
     }
 

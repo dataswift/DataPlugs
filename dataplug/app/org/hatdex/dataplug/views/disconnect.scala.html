@@ -5,7 +5,8 @@
 @import org.hatdex.dataplug.controllers.routes
 
 @(socialProviders: SocialProviderRegistry,
-        endpointVariants: Option[Seq[ApiEndpointVariantChoice]])(implicit user: User, request: RequestHeader, messages: Messages)
+        endpointVariants: Option[Seq[ApiEndpointVariantChoice]],
+        chooseVariants: Boolean = false)(implicit user: User, request: RequestHeader, messages: Messages)
 
 @import b3.vertical.fieldConstructor
 
@@ -53,15 +54,16 @@
                                 <div class="checkbox checkbox-circle checkbox-rump">
                                     <input type="checkbox" name="endpointVariants[@index]"
                                     id="endpointVariants_@index"
-                                    value="@variant.key"
-                                        @("checked".when(variant.active))>
+                                    value="@variant.key" @("checked".when(variant.active)) @("disabled".when(!chooseVariants))>
                                     <label for="endpointVariants_@index">@variant.description</label>
                                 </div>
                             </div>
                         }
                     </fieldset>
-                    @b3.submit('class -> "btn btn-dataplug") {
-                        @Messages("connect")
+                    @if(chooseVariants){
+                        @b3.submit('class -> "btn btn-dataplug") {
+                            @Messages("connect")
+                        }
                     }
                 }
             }

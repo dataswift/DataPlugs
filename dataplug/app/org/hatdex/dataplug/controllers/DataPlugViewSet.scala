@@ -34,5 +34,6 @@ trait DataPlugViewSet {
 
   def disconnect(
     socialProviderRegistry: SocialProviderRegistry,
-    endpointVariants: Option[Seq[ApiEndpointVariantChoice]])(implicit user: User, request: RequestHeader, messages: Messages): Html
+    endpointVariants: Option[Seq[ApiEndpointVariantChoice]],
+    chooseVariants: Boolean)(implicit user: User, request: RequestHeader, messages: Messages): Html
 }

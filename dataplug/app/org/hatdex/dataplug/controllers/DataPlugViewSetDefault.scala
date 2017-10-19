@@ -40,7 +40,8 @@ class DataPlugViewSetDefault extends DataPlugViewSet {
 
   def disconnect(
     socialProviderRegistry: SocialProviderRegistry,
-    endpointVariants: Option[Seq[ApiEndpointVariantChoice]])(implicit user: User, request: RequestHeader, messages: Messages): Html = {
-    dataplugViews.html.disconnect(socialProviderRegistry, endpointVariants)
+    endpointVariants: Option[Seq[ApiEndpointVariantChoice]],
+    chooseVariants: Boolean)(implicit user: User, request: RequestHeader, messages: Messages): Html = {
+    dataplugViews.html.disconnect(socialProviderRegistry, endpointVariants, chooseVariants)
   }
 }

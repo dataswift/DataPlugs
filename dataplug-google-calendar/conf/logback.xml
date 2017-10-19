@@ -32,6 +32,7 @@
   <logger name="JwtPhataAuthentication" level="INFO"/>
   <logger name="HatLoginController" level="INFO"/>
   <logger name="org.hatdex.dataplug.*" level="DEBUG"/>
+  <logger name="org.hatdex.dataplug.controllers" level="DEBUG"/>
   <logger name="SchemaMigration" level="INFO" />
 
 
