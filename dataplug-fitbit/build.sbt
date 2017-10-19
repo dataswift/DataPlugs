@@ -6,7 +6,7 @@ routesGenerator := InjectedRoutesGenerator
 
 pipelineStages := Seq(uglify, digest, gzip)
 includeFilter in gzip := "*.js || *.css || *.svg || *.png"
-sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "dataplugCalendar" / "assets"
+sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "dataplugFitbit" / "assets"
 
 import com.typesafe.sbt.packager.docker._
 packageName in Docker := "calendar-dataplug"

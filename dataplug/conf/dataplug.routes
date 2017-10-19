@@ -1,7 +1,8 @@
 # Routes
 # This file defines all application routes (Higher priority routes first)
 
-GET         /assets/*file                  org.hatdex.dataplug.controllers.Assets.at(path="/public/lib/dataplug", file)
+GET         /dataplug/assets/*file         org.hatdex.dataplug.controllers.Assets.versioned(path="/public/lib/dataplug", file)
+GET         /assets/*file                  org.hatdex.dataplug.controllers.Assets.versioned(path="/public/", file)
 
 GET         /                              org.hatdex.dataplug.controllers.Application.index
 POST        /connect                       org.hatdex.dataplug.controllers.Application.connectVariants()
