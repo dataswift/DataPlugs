@@ -2,6 +2,7 @@
 
 @import org.hatdex.dataplug.models.User
 @import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointVariantChoice
+@import org.hatdex.dataplug.controllers.routes
 
 @(socialProviders: SocialProviderRegistry, endpointVariants: Option[Seq[ApiEndpointVariantChoice]])(implicit user: User, request: RequestHeader, messages: Messages)
 
@@ -16,15 +17,27 @@
 @org.hatdex.dataplug.views.html.templates.main(Messages("sign.in.title"), menubarContent = menubarContent) {
     <div class="row">
         <div class="plug-content col-xs-10 col-xs-offset-1 col-sm-8 col-sm-offset-2 col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3">
-            <div class="complete-instructions">
-            @Messages("disconnect.instructions")
-            </div>
-            <div class="complete-instructions">
-            @Messages("disconnect.note")
-            </div>
-            @*<a class="btn btn-block btn-dataplug" href="#">*@
-            @*Messages("button.disconnect")*@
-            @*</a>*@
+            @endpointVariants.map { _ =>
+                <div class="complete-instructions">
+                    @Messages("disconnect.instructions")
+                </div>
+                <div class="complete-instructions">
+                @Messages("disconnect.note")
+                </div>
+                <a class="btn btn-block btn-dataplug" href="@routes.Application.disconnect()">
+                @Messages("disconnect.button")
+                </a>
+            }.getOrElse {
+                <div class="complete-instructions">
+                @Messages("disconnect.disconnected")
+                </div>
+                <div class="complete-instructions">
+                @Messages("disconnect.noteDisconnected")
+                </div>
+                <a class="btn btn-block btn-dataplug" href="@routes.Application.index()">
+                @Messages("disconnect.reconnectButton")
+                </a>
+            }
             <a class="btn btn-block btn-dataplug" id="rumpel-link" href="https://@user.userId/hatlogin?name=Rumpel&redirect=https://rumpel.hubofallthings.com">
             @Messages("button.rumpel")
             </a>

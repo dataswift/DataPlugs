@@ -68,6 +68,30 @@ class Application @Inject() (
     }
   }
 
+  def disconnect(): Action[AnyContent] = SecuredAction.async { implicit request =>
+    val eventualResult = for {
+      variantChoices <- syncerActorManager.currentProviderApiVariantChoices(request.identity, provider)(ioEC)
+      apiEndpointStatuses <- dataPlugEndpointService.listCurrentEndpointStatuses(request.identity.userId)
+    } yield {
+      if (apiEndpointStatuses.nonEmpty) {
+        logger.debug(s"Got choices to disconnect: $variantChoices")
+        processSignups(selectedVariants = variantChoices.map(_.copy(active = false))) map { _ =>
+          Ok(dataPlugViewSet.disconnect(socialProviderRegistry, None))
+        }
+      }
+      else {
+        Future.successful(Ok(dataPlugViewSet.disconnect(socialProviderRegistry, None)))
+      }
+    }
+
+    eventualResult.flatMap(r => r)
+      .recover {
+        case e =>
+          logger.error(s"$provider API cannot be accessed: ${e.getMessage}. Redirecting to $provider OAuth service.", e)
+          Redirect(org.hatdex.dataplug.controllers.routes.SocialAuthController.authenticate(provider))
+      }
+  }
+
   protected def processSignups(selectedVariants: Seq[ApiEndpointVariantChoice])(implicit user: User, requestHeader: RequestHeader): Future[Result] = {
     logger.debug(s"Processing Variant Choices $selectedVariants for user ${user.userId}")
 

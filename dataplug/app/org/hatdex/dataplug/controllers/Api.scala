@@ -45,7 +45,7 @@ class Api @Inject() (
     // Check if the user has the required social profile linked
     request.identity.linkedUsers.find(_.providerId == provider) map { _ =>
       val result = for {
-        _ <- syncerActorManager.currentProviderApiVariantChoices(request.identity, provider)(ioEC)
+        choices <- syncerActorManager.currentProviderApiVariantChoices(request.identity, provider)(ioEC) if choices.exists(_.active)
         apiEndpointStatuses <- dataPlugEndpointService.listCurrentEndpointStatuses(request.identity.userId)
       } yield {
         Ok(Json.toJson(apiEndpointStatuses))

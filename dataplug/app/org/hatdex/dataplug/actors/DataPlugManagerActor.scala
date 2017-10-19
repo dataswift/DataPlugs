@@ -115,7 +115,7 @@ class DataPlugManagerActor @Inject() (
       }
 
     case Stop(variant, phata) =>
-      val actorKey = syncerActorKey(phata, variant)
+      val actorKey = s"${syncerActorKey(phata, variant)}-supervisor"
       logger.warn(s"Stopping actor $actorKey")
       // Kill any actors that are syncing this dataplug variant for phata
       context.actorSelection(actorKey) ! PoisonPill
