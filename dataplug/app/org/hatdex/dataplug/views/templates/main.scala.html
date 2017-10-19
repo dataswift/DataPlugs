@@ -12,8 +12,8 @@
 @navbarContent = {
     <ul class="nav navbar-nav navbar-right">
         @menubarContent
-        <li><a href="http://www.hatdex.org/what-is-the-hat/" target="_blank">What is the HAT</a></li>
-        <li><a href="https://marketsquare.hubofallthings.com" target="_blank">MarketSquare</a></li>
+        @*<li><a href="http://www.hatdex.org/what-is-the-hat/" target="_blank">What is the HAT</a></li>*@
+        @*<li><a href="https://marketsquare.hubofallthings.com" target="_blank">MarketSquare</a></li>*@
     </ul>
 }
 
@@ -64,9 +64,8 @@
             <div class="container-fluid">
             @content
             </div>
-
-            @org.hatdex.dataplug.views.html.components.footer()
         </div>
+        @org.hatdex.dataplug.views.html.components.footer()
         @modals
         @allScripts
     </body>

@@ -13,7 +13,7 @@
     height: 74px;
   }
   background-color: transparent;
-  background: $base-black;
+  background: $color-navigation;
   color: $base-white;
   border-radius: 0;
   //min-height: unset;
@@ -88,8 +88,8 @@ header {
 footer {
   position: relative;
   min-height: 3em;
-  background: $base-black;
-  color: $gray-light;
+  background: $color-navigation;
+  color: $base-white;
   padding: 3em 1em 2em 7em;
   ul {
     padding-left: 0;
@@ -104,7 +104,7 @@ footer {
     }
   }
   a {
-    color: $gray-light;
+    color: $base-white;
   }
   a:hover {
     color: $gray-lighter;
