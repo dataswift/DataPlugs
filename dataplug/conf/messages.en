@@ -8,3 +8,15 @@ signin.hat.info=Please enter your Personal HAT Address (PHATA). You will then be
 setup.goto.rumpel=Go back to Rumpel™
 
 setup.message.delay=It may take a few minutes for the new data to appear on Rumpel™.
+
+disconnect.instructions=Your Plug is currently set up and running successfully. Manage all your Data Plugs in Web Rumpel, or return to Rumpel Lite.
+
+disconnect.note=(Having problems? Try to disconnect the plug and reconnect to Twitter again.)
+
+disconnect.button=Disconnect Data Plug
+
+disconnect.disconnected=Plug Disconnected
+
+disconnect.noteDisconnected=The Plug has been disconnected from your HAT and will no longer be synchronising information
+
+disconnect.reconnectButton=Reconnect Data Plug

@@ -43,7 +43,7 @@ class SchemaMigrationImpl @Inject() (configuration: Configuration, @NamedDatabas
    */
   def run(changeLogFiles: Seq[String]): Future[Unit] = {
     logger.info(s"Running schema migrations: ${changeLogFiles.mkString(", ")}")
-    changeLogFiles.foldLeft(Future()) { (execution, evolution) => execution.flatMap { _ => updateDb(evolution) } }
+    changeLogFiles.foldLeft(Future(())) { (execution, evolution) => execution.flatMap { _ => updateDb(evolution) } }
   }
 
   private def updateDb(diffFilePath: String): Future[Unit] = {

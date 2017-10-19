@@ -8,30 +8,32 @@
 
 package org.hatdex.dataplug.actors
 
+import java.util.UUID
 import javax.inject.{ Inject, Named }
 
-import akka.NotUsed
-import akka.actor.{ Actor, ActorLogging, ActorNotFound, ActorRef, PoisonPill }
+import akka.actor.{ Actor, ActorRef, PoisonPill, Props, Scheduler }
 import akka.pattern.{ Backoff, BackoffSupervisor, pipe }
-import akka.stream.{ ActorMaterializer, OverflowStrategy, ThrottleMode }
-import akka.stream.scaladsl.{ Sink, Source }
-import org.hatdex.dataplug.actors.DataPlugSyncDispatcherActor.Sync
+import akka.stream.ActorMaterializer
+import org.hatdex.dataplug.actors.Errors.DataPlugError
 import org.hatdex.dataplug.apiInterfaces._
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointVariant }
 import org.hatdex.dataplug.services.DataPlugEndpointService
 import org.hatdex.dataplug.utils.Mailer
-import play.api.Configuration
-import play.api.libs.concurrent.InjectedActorSupport
+import org.hatdex.dex.api.services.DexClient
+import org.hatdex.dexter.actors.HatClientActor
+import org.hatdex.dexter.models.HatClientCredentials
+import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
+import play.api.{ Configuration, Logger }
 
-import scala.collection.mutable
-import scala.concurrent.{ ExecutionContext, Future }
 import scala.concurrent.duration._
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.Success
 
 object DataPlugManagerActor {
 
-  val failureRetryInterval = 30.seconds
-  val maxFetchRetries = 10
+  val failureRetryInterval: FiniteDuration = 30.seconds
+  val maxFetchRetries: Int = 10
 
   sealed trait DataPlugManagerActorMessage
 
@@ -53,6 +55,10 @@ object DataPlugManagerActor {
     phata: String,
     error: String) extends DataPlugManagerActorMessage
 
+  sealed trait DataPlugSyncDispatcherActorMessage
+
+  case class Forward(message: PhataDataPlugVariantSyncerMessage, to: ActorRef) extends DataPlugSyncDispatcherActorMessage
+
   sealed trait PhataDataPlugVariantSyncerMessage
 
   case class Fetch(call: Option[ApiEndpointCall], retries: Int) extends PhataDataPlugVariantSyncerMessage
@@ -61,7 +67,7 @@ object DataPlugManagerActor {
 
   case class Complete(nextSyncCall: ApiEndpointCall) extends PhataDataPlugVariantSyncerMessage
 
-  case class SyncingFailed(error: String) extends PhataDataPlugVariantSyncerMessage
+  case class SyncingFailed(error: String, cause: DataPlugError) extends PhataDataPlugVariantSyncerMessage
 
 }
 
@@ -69,78 +75,95 @@ class DataPlugManagerActor @Inject() (
   dataPlugRegistry: DataPlugRegistry,
   ws: WSClient,
   configuration: Configuration,
+  cacheApi: CacheApi,
   val dataplugEndpointService: DataPlugEndpointService,
   val mailer: Mailer,
-  @Named("syncDispatcher") syncDispatcher: ActorRef,
-  hatClientFactory: InjectedHatClientActor.Factory)
-    extends Actor with ActorLogging with InjectedActorSupport with DataPlugManagerOperations {
+  @Named("syncThrottler") throttledSyncActor: ActorRef)(implicit val ec: ExecutionContext) extends Actor
+    with DataPlugManagerOperations
+    with RetryingActorLauncher {
+
+  protected val logger: Logger = Logger(this.getClass)
+  protected implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   import DataPlugManagerActor._
 
-  private implicit val materializer = ActorMaterializer()
-  implicit val executionContext: ExecutionContext = context.dispatcher
-  val scheduler = context.system.scheduler
+  val scheduler: Scheduler = context.system.scheduler
 
-  sealed trait DataPlugSyncState
-  case object DataPlugSyncing extends DataPlugSyncState
-  case object DataPlugFailed extends DataPlugSyncState
-  case object DataPlugIdle extends DataPlugSyncState
-  case object DataPlugStopped extends DataPlugSyncState
-
-  val dataPlugSyncActors: mutable.Map[String, ActorRef] = mutable.Map()
-
-  val throttledSyncActor = Source.actorRef(bufferSize = 1000, OverflowStrategy.dropNew)
-    .throttle(elements = 15, per = 15.minutes, maximumBurst = 10, ThrottleMode.Shaping)
-    .to(Sink.actorRef(syncDispatcher, NotUsed))
-    .run()
+  private def syncerActorKey(phata: String, variant: ApiEndpointVariant) = s"$phata-${variant.endpoint.sanitizedName}-${variant.sanitizedVariantName}"
 
   def receive: Receive = {
     case Start(variant, phata, maybeEndpointCall) =>
       dataPlugRegistry.get[DataPlugEndpointInterface](variant.endpoint.name).map { endpointInterface =>
-        val actorKey = s"$phata-${variant.endpoint.name}-${variant.variant.getOrElse("").replace("#", "")}"
-        log.warning(s"Starting actor fetch $actorKey")
-        startSyncerActor(phata, variant, endpointInterface, actorKey).map { syncerActor =>
-          context.system.scheduler.schedule(0.seconds, endpointInterface.refreshInterval) {
+        val actorKey = syncerActorKey(phata, variant)
+        logger.info(s"Starting actor fetch $actorKey")
+        val eventualSyncMessage = for {
+          endpointCall <- dataplugEndpointService.retrieveLastSuccessfulEndpointVariant(phata, variant.endpoint.name, variant.variant)
+            .map(maybeEndpointVariant => maybeEndpointVariant.flatMap(_.configuration).orElse(maybeEndpointCall))
+          syncerActor <- startSyncerActor(phata, variant, endpointInterface, actorKey)
+        } yield Forward(Fetch(endpointCall, 0), syncerActor)
 
-            val eventualFetchEndpointCall = dataplugEndpointService.retrieveLastSuccessfulEndpointVariant(
-              phata, variant.endpoint.name, variant.variant) map { maybeEndpointVariant =>
-              maybeEndpointVariant.flatMap(_.configuration).orElse(maybeEndpointCall)
-            }
-
-            eventualFetchEndpointCall.map(Sync(syncerActor.path, _)) pipeTo throttledSyncActor
-          }
+        eventualSyncMessage.onFailure {
+          case e => logger.error(s"Error while trying to start sycning dat for $phata, variant $variant: ${e.getMessage}", e)
         }
+
+        eventualSyncMessage pipeTo throttledSyncActor
       } getOrElse {
         val message = s"No such plug ${variant.endpoint.name} in DataPlug Registry"
-        log.error(message)
-        mailer.serverExceptionNotifyInternal(message, new RuntimeException(message))
+        logger.error(message)
+        mailer.serverExceptionNotifyInternal(message, new DataPlugError(message))
+        Future.successful(())
       }
+
     case Stop(variant, phata) =>
-      val actorKey = s"$phata-${variant.endpoint.name}-${variant.variant.getOrElse("").replace("#", "")}"
-      log.warning(s"Stopping actor $actorKey")
+      val actorKey = s"${syncerActorKey(phata, variant)}-supervisor"
+      logger.warn(s"Stopping actor $actorKey")
       // Kill any actors that are syncing this dataplug variant for phata
       context.actorSelection(actorKey) ! PoisonPill
   }
 
+  private val dexClient = new DexClient(
+    ws,
+    configuration.getString("service.dex.address").get,
+    configuration.getString("service.dex.scheme").get)
+
   private def startSyncerActor(phata: String, variant: ApiEndpointVariant, endpointInterface: DataPlugEndpointInterface, actorKey: String): Future[ActorRef] = {
-    context.actorSelection(s"$actorKey-supervisor").resolveOne(5.seconds) map { syncActor =>
-      syncActor
-    } recover {
-      case ActorNotFound(selection) =>
-        log.warning(s"Starting syncer actor $actorKey with supervisor - no existing $selection")
-        val syncerProps = PhataDataPlugVariantSyncer.props(phata, endpointInterface, variant,
-          configuration, hatClientFactory, ws, dataplugEndpointService, mailer, executionContext)
+    val hatActorProps = HatClientActor.props(ws, phata, HatClientCredentials(
+      configuration.getString("service.hatCredentials.username").get,
+      configuration.getString("service.hatCredentials.password").get,
+      secure = true))
 
-        val supervisor = BackoffSupervisor.props(
-          Backoff.onStop(
-            syncerProps,
-            childName = actorKey,
-            minBackoff = 3.seconds,
-            maxBackoff = 30.seconds,
-            randomFactor = 0.2 // adds 20% "noise" to vary the intervals slightly
-          ))
+    val hatActorSupervisorProps = BackoffSupervisor.props(
+      // Backing off supervisor with 20% "noise" to vary the intervals slightly
+      Backoff.onStop(hatActorProps, childName = actorKey,
+        minBackoff = 10.seconds, maxBackoff = 120.seconds, randomFactor = 0.2))
 
-        context.actorOf(supervisor, s"$actorKey-supervisor")
+    val cacheKey = s"dex:plug:${configuration.getString("service.dex.dataplugId").get}:$phata"
+    val dexConnected = cacheApi.get[Boolean](cacheKey)
+      .map { setup =>
+        Future.successful(setup)
+      } getOrElse {
+        dexClient.dataplugConnectHat(
+          configuration.getString("service.dex.accessToken").get,
+          UUID.fromString(configuration.getString("service.dex.dataplugId").get), phata)
+          .map(_ => true)
+          .andThen { case Success(s) => cacheApi.set(cacheKey, s) }
+          .andThen { case Success(_) => logger.warn(s"DEX connected dataplug ${configuration.getString("service.dex.dataplugId").get} to HAT $phata") }
+      }
+
+    def syncerActor(hatActor: ActorRef): Props = {
+      val syncerProps = PhataDataPlugVariantSyncer.props(phata, endpointInterface, variant,
+        ws, hatActor, throttledSyncActor, dataplugEndpointService, mailer)(ec)
+
+      BackoffSupervisor.props(
+        // Backing off supervisor with 20% "noise" to vary the intervals slightly
+        Backoff.onStop(syncerProps, childName = actorKey,
+          minBackoff = 10.seconds, maxBackoff = 120.seconds, randomFactor = 0.2))
     }
+
+    for {
+      _ <- dexConnected
+      hatActor <- launchActor(hatActorSupervisorProps, s"hat:$phata")
+      syncerActor <- launchActor(syncerActor(hatActor), s"$actorKey-supervisor")
+    } yield syncerActor
   }
 }

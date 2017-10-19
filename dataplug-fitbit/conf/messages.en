@@ -1,0 +1,30 @@
+################################################################################################
+# TITLES
+
+dataplug.name=Fitbit Plug
+
+title.about=About Fitbit HAT Plug
+
+sign.in.title=Link your Fitbit to HAT
+
+field.hataddress=Personal HAT Address
+
+signin.hat.header=HAT Login
+
+signin.hat.signin=Login with HAT
+
+#signin.hat.info=Please enter your Personal HAT Address (PHATA). You will then be directed to the HAT to log in with your password. If you are already logged onto to your HAT and/or have entered your HAT password recently, the process will be automatic.
+
+signin.hat.hint=You will be taken to your personal HAT page. For security reasons, your HAT password can only be entered at that page.
+
+complete.instructions=The plug has been successfully activated. Close the current window and refresh your Rumpel application to see the newly acquired data. Alternatively, click the button below to navigate back to Rumpel.
+
+disconnect.instructions=Your Plug is currently set up and running successfully. Manage all your Data Plugs in Web Rumpel, or return to Rumpel Lite.
+
+disconnect.note=(Having problems? Try to disconnect the plug and reconnect to Twitter again.)
+
+button.rumpel=Back to Web Rumpel
+
+button.rumpellite=Back to Rumpel Lite
+
+button.disconnect=Disconnect Data Plug

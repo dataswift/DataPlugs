@@ -1,19 +1,18 @@
 package org.hatdex.dataplugCalendar.apiInterfaces
 
-import akka.actor.ActorRef
+import akka.actor.{ ActorRef, Scheduler }
 import akka.util.Timeout
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth2.GoogleProvider
 import org.hatdex.commonPlay.utils.FutureTransformations
+import org.hatdex.dataplug.actors.Errors.SourceDataProcessingException
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
 import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
-import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod, ApiEndpointTableStructure }
+import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugCalendar.models._
-import org.hatdex.hat.api.models.{ ApiDataRecord, ApiDataTable }
-import org.joda.time.DateTime
 import play.api.Logger
 import play.api.cache.CacheApi
 import play.api.libs.json._
@@ -30,24 +29,19 @@ class GoogleCalendarInterface @Inject() (
     val tokenHelper: OAuth2TokenHelper,
     val cacheApi: CacheApi,
     val mailer: Mailer,
+    val scheduler: Scheduler,
     val provider: GoogleProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
 
   // JSON type formatters
   import GoogleCalendarEventJsonProtocol.eventFormat
-  import GoogleCalendarEventJsonProtocol.attendeeFormat
 
-  val sourceName: String = "google"
-  val endpointName: String = "calendar"
-  protected val logger: Logger = Logger("GoogleCalendarInterface")
+  val namespace: String = "google"
+  val endpoint: String = "calendar"
+  protected val logger: Logger = Logger(this.getClass)
 
-  protected val apiEndpointTableStructures: Map[String, ApiEndpointTableStructure] = Map(
-    "events" -> GoogleCalendarEvent,
-    "attendees" -> GoogleCalendarAttendee
-  )
+  val defaultApiEndpoint: ApiEndpointCall = GoogleCalendarInterface.defaultApiEndpoint
 
-  val defaultApiEndpoint = GoogleCalendarInterface.defaultApiEndpoint
-
-  val refreshInterval = 60.minutes
+  val refreshInterval: FiniteDuration = 60.minutes
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     (content \ "nextPageToken").asOpt[String] map { nextPageToken =>
@@ -72,77 +66,53 @@ class GoogleCalendarInterface @Inject() (
     hatClientActor: ActorRef,
     fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Unit] = {
 
-    val items = (content \ "items").as[JsArray] // Calendar items returned by the API call
-    val calendarId = fetchParameters.pathParameters("calendarId") // Get calendar ID to be attached to all events
+    val validatedData = transformData(content, fetchParameters.pathParameters("calendarId")).map(validateMinDataStructure)
+      .getOrElse(Failure(SourceDataProcessingException("Source data malformed, could not insert calendar ID in the structure")))
 
     // Shape results into HAT data records
     val resultsPosted = for {
-      events <- FutureTransformations.transform(parseEvents(items, calendarId)) // Parse calendar events into strongly-typed structures
-      tableStructures <- ensureDataTables(hatAddress, hatClientActor) // Ensure HAT data tables have been created
-      apiDataRecords <- Future.sequence(events.map(convertGoogleEventToHat(_, tableStructures)))
-      posted <- uploadHatData(apiDataRecords, hatAddress, hatClientActor) // Upload the data
+      validatedData <- FutureTransformations.transform(validatedData) // Parse calendar events into strongly-typed structures
+      _ <- uploadHatData(namespace, endpoint, validatedData, hatAddress, hatClientActor) // Upload the data
     } yield {
-      debug(content, events)
-      posted
+      logger.debug(s"Successfully synced new records for HAT $hatAddress")
     }
 
     resultsPosted
   }
 
-  private def convertGoogleEventToHat(event: GoogleCalendarEvent, tableStructures: Map[String, ApiDataTable]): Future[ApiDataRecord] = {
-    val plainDataForRecords = buildJsonRecord(event)
-    val recordTimestamp = event.updated.orElse(event.created).map(t => new DateTime(t))
-    buildHatDataRecord(plainDataForRecords, sourceName, event.id, recordTimestamp, tableStructures)
+  private def transformData(rawData: JsValue, calendarId: String) = {
+    import play.api.libs.json.Reads._
+    import play.api.libs.json._
+
+    val transformation = (__ \ "items").json.update(
+      of[JsArray].map {
+        case JsArray(arr) => JsArray(
+          arr.map { item =>
+            item.transform((__ \ 'calendarId).json.put(JsString(calendarId)))
+          }.collect {
+            case JsSuccess(v, _) => v
+          }
+        )
+      }
+    )
+    rawData.transform(transformation)
   }
 
-  private def debug(content: JsValue, events: Seq[GoogleCalendarEvent]): Unit = {
-    // Calendar information returned by the API call
-    val kind = (content \ "kind").as[String]
-    val summary = (content \ "summary").asOpt[String]
-    val description = (content \ "description").asOpt[String]
-    val updated = (content \ "updated").asOpt[String]
-    val nextPageToken = (content \ "nextPageToken").asOpt[String]
-    val nextSyncToken = (content \ "nextSyncToken").asOpt[String]
-
-    logger.debug(
-      s"""Received $kind for $summary ($description):
-          | - last updated $updated
-          | - ${events.length} items
-          | - next page $nextPageToken
-          | - next sync $nextSyncToken""".stripMargin)
-  }
-
-  private def parseEvents(items: JsArray, calendarId: String): Try[List[GoogleCalendarEvent]] = {
-    items.validate[List[GoogleCalendarEvent]] match {
-      case s: JsSuccess[List[GoogleCalendarEvent]] =>
-        val events = s.get.map { e =>
-          // make sure all attendees contain both the event id and calendar id
-          val eAttendees = e.attendees.map(_.map(_.copy(eventId = Some(e.id), Some(calendarId))))
-          e.copy(calendarId = Some(calendarId), attendees = eAttendees)
-        }
-
-        Success(events)
-      case e: JsError =>
-        val error = new RuntimeException(s"Error parsing event values: $e")
-        logger.error(s"Error parsing event values: $e - ${items.toString()}")
-        Failure(error)
+  def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
+    (rawData \ "items").toOption.map {
+      case data: JsArray if data.validate[List[GoogleCalendarEvent]].isSuccess =>
+        logger.debug(s"Validated JSON object: ${data.toString}")
+        Success(data)
+      case data: JsObject =>
+        logger.error(s"Error validating data, some of the required fields missing: ${data.toString}")
+        Failure(SourceDataProcessingException(s"Error validating data, some of the required fields missing."))
+      case _ =>
+        logger.error(s"Error parsing JSON object: ${rawData.toString}")
+        Failure(SourceDataProcessingException(s"Error parsing JSON object."))
+    }.getOrElse {
+      logger.error(s"Error parsing JSON object: ${rawData.toString}")
+      Failure(SourceDataProcessingException(s"Error parsing JSON object."))
     }
-  }
-
-  private def buildJsonRecord(event: GoogleCalendarEvent): JsArray = {
-    val eventWithoutAttendeesJson = JsObject(Map("events" -> Json.toJson(event.copy(attendees = None))))
-
-    val eventAttendees = event.attendees
-      .map(atts => atts.map(a => Json.toJson(a)))
-      .getOrElse(List())
-      .map(e => JsObject(Map("attendees" -> e)))
-
-    // Create JsArray with event and attendee objects
-    val eventRecord = JsArray(eventAttendees) :+ eventWithoutAttendeesJson
-
-    logger.debug(s"Events: ${Json.prettyPrint(eventRecord)}")
-
-    eventRecord
   }
 
 }

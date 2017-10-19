@@ -23,8 +23,8 @@ disconnect.instructions=Your Plug is currently set up and running successfully. 
 
 disconnect.note=(Having problems? Try to disconnect the plug and reconnect to Twitter again.)
 
+disconnect.button=Disconnect Data Plug
+
 button.rumpel=Back to Web Rumpel
 
 button.rumpellite=Back to Rumpel Lite
-
-button.disconnect=Disconnect Data Plug

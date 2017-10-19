@@ -150,7 +150,6 @@ class OAuth1InfoDAOImpl @Inject() (@NamedDatabase("default") db: Database, maile
    * @return A future to wait for the process to be completed.
    */
   def remove(loginInfo: LoginInfo): Future[Unit] = {
-    mailer.serverExceptionNotifyInternal(s"Deleting oauth1 token", new RuntimeException(s"Deleting oauth1 token for $loginInfo"))
     Future {
       blocking {
         db.withTransaction { implicit connection =>

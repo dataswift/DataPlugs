@@ -8,20 +8,19 @@
 
 package org.hatdex.dataplugTwitter.apiInterfaces
 
-import akka.actor.ActorRef
+import akka.actor.{ ActorRef, Scheduler }
 import akka.util.Timeout
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider
 import org.hatdex.commonPlay.utils.FutureTransformations
+import org.hatdex.dataplug.actors.Errors.SourceDataProcessingException
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
 import org.hatdex.dataplug.apiInterfaces.authProviders.RequestAuthenticatorOAuth1
-import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod, ApiEndpointTableStructure }
+import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugTwitter.models._
-import org.hatdex.hat.api.models.{ ApiDataRecord, ApiDataTable }
-import org.joda.time.DateTime
 import play.api.Logger
 import play.api.cache.CacheApi
 import play.api.libs.json._
@@ -37,21 +36,18 @@ class TwitterFollowerInterface @Inject() (
     val authInfoRepository: AuthInfoRepository,
     val cacheApi: CacheApi,
     val mailer: Mailer,
+    val scheduler: Scheduler,
     val provider: TwitterProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth1 {
 
   // JSON type formatters
 
-  val sourceName: String = "twitter"
-  val endpointName: String = "followers"
+  val namespace: String = "twitter"
+  val endpoint: String = "followers"
   protected val logger: Logger = Logger("TwitterFollowersInterface")
-
-  protected val apiEndpointTableStructures: Map[String, ApiEndpointTableStructure] = Map(
-    "followers" -> TwitterUser
-  )
 
   val defaultApiEndpoint = TwitterFollowerInterface.defaultApiEndpoint
 
-  val refreshInterval = 5.minutes
+  val refreshInterval = 24.hours
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     (content \ "next_cursor_str").as[String] match {
@@ -84,49 +80,29 @@ class TwitterFollowerInterface @Inject() (
     hatClientActor: ActorRef,
     fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Unit] = {
 
-    val rawFollowers = (content \ "users").as[JsArray] // Tweets returned by the API call
-
-    // Shape results into HAT data records
-    val resultsPosted = for {
-      users <- FutureTransformations.transform(parseUsers(rawFollowers)) // Parse tweets into strongly-typed structures
-      tableStructures <- ensureDataTables(hatAddress, hatClientActor) // Ensure HAT data tables have been created
-      apiDataRecords <- Future.sequence(users.map(convertTwitterUserToHat(_, tableStructures)))
-      posted <- uploadHatData(apiDataRecords, hatAddress, hatClientActor) // Upload the data
+    for {
+      users <- FutureTransformations.transform(validateMinDataStructure(content)) // Parse tweets into strongly-typed structures
+      _ <- uploadHatData(namespace, endpoint, users, hatAddress, hatClientActor) // Upload the data
     } yield {
-      debug(content, users)
-      posted
-    }
-
-    resultsPosted
-  }
-
-  private def convertTwitterUserToHat(user: TwitterUser, tableStructures: Map[String, ApiDataTable]): Future[ApiDataRecord] = {
-    val plainDataForRecords = buildJsonRecord(user)
-    val recordTimestamp = Some(new DateTime(user.created_at))
-    buildHatDataRecord(plainDataForRecords, sourceName, user.id.toString, recordTimestamp, tableStructures)
-  }
-
-  private def debug(content: JsValue, tweets: Seq[TwitterUser]): Unit = {
-    // Calendar information returned by the API call
-  }
-
-  private def parseUsers(items: JsArray): Try[List[TwitterUser]] = {
-    items.validate[List[TwitterUser]] match {
-      case s: JsSuccess[List[TwitterUser]] =>
-        Success(s.get)
-      case e: JsError =>
-        val error = new RuntimeException(s"Error parsing event values: $e")
-        logger.error(s"Error parsing event values: $e - ${items.toString()}")
-        Failure(error)
+      logger.debug(s"Successfully synced new records for HAT $hatAddress")
     }
   }
 
-  private def buildJsonRecord(user: TwitterUser): JsArray = {
-    val userJsonRecord = JsArray(List(JsObject(Map("friends" -> Json.toJson(user)))))
-
-    logger.debug(s"Followers: ${Json.prettyPrint(userJsonRecord)}")
-
-    userJsonRecord
+  def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
+    (rawData \ "users").toOption.map {
+      case data: JsArray if data.validate[List[TwitterUser]].isSuccess =>
+        logger.debug(s"Validated JSON object:\n${data.toString}")
+        Success(data)
+      case data: JsArray =>
+        logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")
+        Failure(SourceDataProcessingException(s"Error validating data, some of the required fields missing."))
+      case _ =>
+        logger.error(s"Error parsing JSON object: ${rawData.toString}")
+        Failure(SourceDataProcessingException(s"Error parsing JSON object."))
+    }.getOrElse {
+      logger.error(s"Error parsing JSON object: ${rawData.toString}")
+      Failure(SourceDataProcessingException(s"Error parsing JSON object."))
+    }
   }
 
 }

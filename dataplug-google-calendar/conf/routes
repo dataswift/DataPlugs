@@ -3,12 +3,13 @@
 
 GET         /dataplug/assets/*file         org.hatdex.dataplug.controllers.Assets.at(path="/public/lib/dataplug", file)
 
-GET         /                              org.hatdex.dataplugCalendar.controllers.Application.index
+GET         /                              org.hatdex.dataplug.controllers.Application.index
 POST        /connect                       org.hatdex.dataplugCalendar.controllers.Application.processSignups
-GET         /authenticate/hat              org.hatdex.dataplug.controllers.HatLoginController.authHat
-POST        /signin/hat                    org.hatdex.dataplug.controllers.HatLoginController.signinHat
+GET         /disconnect                    org.hatdex.dataplug.controllers.Application.disconnect()
+GET         /authenticate/hat              org.hatdex.dataplug.controllers.HatLoginController.authHat()
+POST        /signin/hat                    org.hatdex.dataplug.controllers.HatLoginController.signinHat()
 GET         /authenticate/:provider        org.hatdex.dataplug.controllers.SocialAuthController.authenticate(provider)
 
 GET         /api/tickle                    org.hatdex.dataplug.controllers.Api.tickle
-GET         /api/status                    org.hatdex.dataplugCalendar.controllers.Api.status
+GET         /api/status                    org.hatdex.dataplug.controllers.Api.status
 GET         /api/permissions               org.hatdex.dataplug.controllers.Api.permissions
