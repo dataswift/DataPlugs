@@ -23,7 +23,7 @@ class DataPlugViewSetDefault extends DataPlugViewSet {
     endpointVariants: Option[Seq[ApiEndpointVariantChoice]],
     variantsForm: Form[List[String]])(implicit request: RequestHeader, user: User, messages: Messages): Html = {
 
-    dataplugViews.html.connect(socialProviderRegistry)
+    dataplugViews.html.connect(socialProviderRegistry, endpointVariants, variantsForm)
   }
 
   def signIn(form: Form[String])(implicit request: RequestHeader, messages: Messages): Html =

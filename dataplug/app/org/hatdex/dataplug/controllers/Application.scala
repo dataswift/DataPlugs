@@ -23,7 +23,7 @@ import play.api.Logger
 import play.api.i18n.MessagesApi
 import play.api.mvc._
 
-import scala.concurrent.Future
+import scala.concurrent.{ ExecutionContext, Future }
 
 class Application @Inject() (
     val messagesApi: MessagesApi,
@@ -35,9 +35,10 @@ class Application @Inject() (
     syncerActorManager: DataplugSyncerActorManager,
     clock: Clock) extends SilhouettePhataAuthenticationController(silhouette, clock, configuration) {
 
-  protected val logger = Logger(this.getClass)
-  protected val provider = configuration.getString("service.name").getOrElse("").toLowerCase
-  protected implicit val ioEC = IoExecutionContext.ioThreadPool
+  protected val logger: Logger = Logger(this.getClass)
+  protected val provider: String = configuration.getString("service.name").getOrElse("").toLowerCase
+  protected val chooseVariants: Boolean = configuration.getBoolean("service.chooseVariants").getOrElse(false)
+  protected implicit val ioEC: ExecutionContext = IoExecutionContext.ioThreadPool
 
   def index(): Action[AnyContent] = UserAwareAction.async { implicit request =>
     logger.debug(s"Maybe user? ${request.identity}")
@@ -46,14 +47,25 @@ class Application @Inject() (
         variantChoices <- syncerActorManager.currentProviderApiVariantChoices(user, provider)(ioEC)
         apiEndpointStatuses <- dataPlugEndpointService.listCurrentEndpointStatuses(user.userId)
       } yield {
-        if (apiEndpointStatuses.isEmpty) {
-          logger.debug(s"Got choices to sign up for $variantChoices")
-          processSignups(selectedVariants = variantChoices.map(_.copy(active = true))) map { _ =>
-            Ok(dataPlugViewSet.signupComplete(socialProviderRegistry, Option(variantChoices)))
+        if (chooseVariants) {
+          logger.debug(s"Let user choose what to sync")
+          if (apiEndpointStatuses.isEmpty) {
+            Future.successful(Ok(dataPlugViewSet.connect(socialProviderRegistry, Some(variantChoices), dataPlugViewSet.variantsForm)))
+          }
+          else {
+            Future.successful(Ok(dataPlugViewSet.disconnect(socialProviderRegistry, Some(variantChoices))))
           }
         }
         else {
-          Future.successful(Ok(dataPlugViewSet.disconnect(socialProviderRegistry, Some(variantChoices))))
+          if (apiEndpointStatuses.isEmpty) {
+            logger.debug(s"Got choices to sign up for $variantChoices")
+            processSignups(selectedVariants = variantChoices.map(_.copy(active = true))) map { _ =>
+              Ok(dataPlugViewSet.signupComplete(socialProviderRegistry, Option(variantChoices)))
+            }
+          }
+          else {
+            Future.successful(Ok(dataPlugViewSet.disconnect(socialProviderRegistry, Some(variantChoices))))
+          }
         }
       }
 
@@ -65,6 +77,37 @@ class Application @Inject() (
         }
     } getOrElse {
       Future.successful(Ok(dataPlugViewSet.signIn(AuthForms.signinHatForm)))
+    }
+  }
+
+  def connectVariants(): Action[AnyContent] = SecuredAction.async { implicit request =>
+    if (chooseVariants) {
+      dataPlugViewSet.variantsForm.bindFromRequest.fold(
+        formWithErrors => Future.successful(BadRequest(dataPlugViewSet.connect(socialProviderRegistry, None, formWithErrors))),
+        selectedVariants => {
+          logger.debug(s"Processing variantChoices $selectedVariants")
+          request.identity.linkedUsers.find(_.providerId == provider) map { _ =>
+            val eventualCurrentVariantChoices = syncerActorManager.currentProviderApiVariantChoices(request.identity, provider)(ioEC)
+              .map {
+                _.map { variantChoice =>
+                  variantChoice.copy(active = selectedVariants.contains(variantChoice.key))
+                }
+              }
+
+            eventualCurrentVariantChoices flatMap { variantChoices =>
+              logger.debug(s"Processing signups $variantChoices")
+              processSignups(variantChoices) map { _ =>
+                Ok(dataPlugViewSet.signupComplete(socialProviderRegistry, Option(variantChoices)))
+              }
+            }
+          } getOrElse {
+            Future.successful(Redirect(dataPlugViewSet.indexRedirect)
+              .flashing("error" -> "Synchronisation not possible - you have no options available right now."))
+          }
+        })
+    }
+    else {
+      Future.successful(Redirect(dataPlugViewSet.indexRedirect).flashing("error" -> "Selecting data to synchronise is not possible"))
     }
   }
 

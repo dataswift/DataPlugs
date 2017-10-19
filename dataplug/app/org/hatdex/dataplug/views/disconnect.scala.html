@@ -4,7 +4,10 @@
 @import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointVariantChoice
 @import org.hatdex.dataplug.controllers.routes
 
-@(socialProviders: SocialProviderRegistry, endpointVariants: Option[Seq[ApiEndpointVariantChoice]])(implicit user: User, request: RequestHeader, messages: Messages)
+@(socialProviders: SocialProviderRegistry,
+        endpointVariants: Option[Seq[ApiEndpointVariantChoice]])(implicit user: User, request: RequestHeader, messages: Messages)
+
+@import b3.vertical.fieldConstructor
 
 @menubarContent = {
     <li class="text-lowercase">
@@ -22,22 +25,47 @@
                     @Messages("disconnect.instructions")
                 </div>
                 <div class="complete-instructions">
-                @Messages("disconnect.note")
+                    @Messages("disconnect.note")
                 </div>
                 <a class="btn btn-block btn-dataplug" href="@routes.Application.disconnect()">
-                @Messages("disconnect.button")
+                    @Messages("disconnect.button")
                 </a>
             }.getOrElse {
                 <div class="complete-instructions">
-                @Messages("disconnect.disconnected")
+                    @Messages("disconnect.disconnected")
                 </div>
                 <div class="complete-instructions">
-                @Messages("disconnect.noteDisconnected")
+                    @Messages("disconnect.noteDisconnected")
                 </div>
                 <a class="btn btn-block btn-dataplug" href="@routes.Application.index()">
-                @Messages("disconnect.reconnectButton")
+                    @Messages("disconnect.reconnectButton")
                 </a>
             }
+
+            @endpointVariants.map { variants =>
+                @b3.form(org.hatdex.dataplug.controllers.routes.Application.connectVariants(), 'class -> "synchronisation-options") {
+                    <legend><h3>@Messages("setup.dataplug.info")</h3></legend>
+                    <fieldset>
+                        @helper.CSRF.formField
+
+                        @for((variant, index) <- variants.zipWithIndex) {
+                            <div class="form-group" id="endpointVariants_@(index)_field">
+                                <div class="checkbox checkbox-circle checkbox-rump">
+                                    <input type="checkbox" name="endpointVariants[@index]"
+                                    id="endpointVariants_@index"
+                                    value="@variant.key"
+                                        @("checked".when(variant.active))>
+                                    <label for="endpointVariants_@index">@variant.description</label>
+                                </div>
+                            </div>
+                        }
+                    </fieldset>
+                    @b3.submit('class -> "btn btn-dataplug") {
+                        @Messages("connect")
+                    }
+                }
+            }
+
             <a class="btn btn-block btn-dataplug" id="rumpel-link" href="https://@user.userId/hatlogin?name=Rumpel&redirect=https://rumpel.hubofallthings.com">
             @Messages("button.rumpel")
             </a>

@@ -12,16 +12,15 @@ import com.google.inject.{ AbstractModule, Provides }
 import com.mohiva.play.silhouette.api.Provider
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.providers._
-import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.dataplug.actors.{ DataPlugManagerActor }
-import org.hatdex.dataplug.apiInterfaces.{ DataPlugOptionsCollector, DataPlugOptionsCollectorRegistry, DataPlugRegistry }
-import org.hatdex.dataplug.controllers.DataPlugViewSet
-import org.hatdex.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl }
-import org.hatdex.dataplug.services._
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import net.codingwell.scalaguice.ScalaModule
+import org.hatdex.dataplug.actors.DataPlugManagerActor
+import org.hatdex.dataplug.apiInterfaces.{ DataPlugOptionsCollector, DataPlugOptionsCollectorRegistry, DataPlugRegistry }
+import org.hatdex.dataplug.controllers.{ DataPlugViewSet, DataPlugViewSetDefault }
+import org.hatdex.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl }
+import org.hatdex.dataplug.services._
 import org.hatdex.dataplugFitbit.apiInterfaces._
-import org.hatdex.dataplugFitbit.controllers.DataPlugViewSetFitbit
 import org.hatdex.dataplugFitbit.apiInterfaces.authProviders.FitbitProvider
 import play.api.Configuration
 import play.api.libs.concurrent.AkkaGuiceSupport
@@ -43,7 +42,7 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
     bind[DataPlugEndpointDAO].to[DataPlugEndpointDAOImpl]
     bind[DataPlugEndpointService].to[DataPlugEndpointServiceImpl]
 
-    bind[DataPlugViewSet].to[DataPlugViewSetFitbit]
+    bind[DataPlugViewSet].to[DataPlugViewSetDefault]
 
     //    bindActorFactory[InjectedHatClientActor, InjectedHatClientActor.Factory]
     bindActor[DataPlugManagerActor]("dataplug-manager")

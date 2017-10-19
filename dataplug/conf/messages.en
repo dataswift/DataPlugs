@@ -20,3 +20,5 @@ disconnect.disconnected=Plug Disconnected
 disconnect.noteDisconnected=The Plug has been disconnected from your HAT and will no longer be synchronising information
 
 disconnect.reconnectButton=Reconnect Data Plug
+
+setup.dataplug.info=Data setup for synchronisation
