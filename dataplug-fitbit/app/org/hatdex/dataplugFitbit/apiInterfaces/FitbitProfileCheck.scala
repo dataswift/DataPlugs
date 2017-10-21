@@ -40,7 +40,8 @@ class FitbitProfileCheck @Inject() (
     Map())
 
   def get(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext): Future[Seq[ApiEndpointVariantChoice]] = {
-    authenticateRequest(fetchParams, hatAddress).flatMap { requestParams =>
+    authenticateRequest(fetchParams, hatAddress, refreshToken = false).flatMap { requestParams =>
+      logger.info("Fitbit profile check authenticated")
       buildRequest(requestParams).flatMap { response =>
         response.status match {
           case OK =>

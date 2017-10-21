@@ -40,12 +40,20 @@ class Application @Inject() (
   protected val chooseVariants: Boolean = configuration.getBoolean("service.chooseVariants").getOrElse(false)
   protected implicit val ioEC: ExecutionContext = IoExecutionContext.ioThreadPool
 
-  def index(): Action[AnyContent] = UserAwareAction.async { implicit request =>
-    logger.debug(s"Maybe user? ${request.identity}")
-    request.identity.map { implicit user =>
-      val eventualResult = for {
-        variantChoices <- syncerActorManager.currentProviderApiVariantChoices(user, provider)(ioEC)
-        apiEndpointStatuses <- dataPlugEndpointService.listCurrentEndpointStatuses(user.userId)
+  def signIn(): Action[AnyContent] = UserAwareAction { implicit request =>
+    request.identity map { _ =>
+      Redirect(dataPlugViewSet.indexRedirect)
+    } getOrElse {
+      Ok(dataPlugViewSet.signIn(AuthForms.signinHatForm))
+    }
+  }
+
+  def index(): Action[AnyContent] = SecuredAction.async { implicit request =>
+    val eventualResult = if (request.identity.linkedUsers.exists(_.providerId == provider)) {
+      // If the required social profile is connected, proceed with syncing signup
+      for {
+        variantChoices <- syncerActorManager.currentProviderApiVariantChoices(request.identity, provider)(ioEC)
+        apiEndpointStatuses <- dataPlugEndpointService.listCurrentEndpointStatuses(request.identity.userId)
       } yield {
         if (chooseVariants) {
           logger.debug(s"Let user choose what to sync: $variantChoices")
@@ -69,16 +77,19 @@ class Application @Inject() (
           }
         }
       }
-
-      eventualResult.flatMap(r => r)
-        .recover {
-          case e =>
-            logger.error(s"$provider API cannot be accessed: ${e.getMessage}. Redirecting to $provider OAuth service.", e)
-            Redirect(org.hatdex.dataplug.controllers.routes.SocialAuthController.authenticate(provider))
-        }
-    } getOrElse {
-      Future.successful(Ok(dataPlugViewSet.signIn(AuthForms.signinHatForm)))
     }
+    else {
+      // otherwise redirect to the provider to sign up
+      Future.successful(Future.successful(Redirect(org.hatdex.dataplug.controllers.routes.SocialAuthController.authenticate(provider))))
+    }
+
+    eventualResult.flatMap(r => r)
+      .recover {
+        case e =>
+          // Assume that if any error has happened, it may be fixed by re-authenticating with the provider
+          logger.error(s"Error occurred: ${e.getMessage}. Redirecting to $provider OAuth service.", e)
+          Redirect(org.hatdex.dataplug.controllers.routes.SocialAuthController.authenticate(provider))
+      }
   }
 
   def connectVariants(): Action[AnyContent] = SecuredAction.async { implicit request =>
