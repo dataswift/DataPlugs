@@ -2,6 +2,7 @@ package org.hatdex.dataplug.testkit
 
 import javax.inject.Named
 
+import akka.actor.{ ActorSystem, Scheduler }
 import com.google.inject.{ AbstractModule, Provides }
 import com.mohiva.play.silhouette.api.crypto.{ CookieSigner, Crypter, CrypterAuthenticatorEncoder }
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
@@ -203,5 +204,10 @@ class TestModule extends AbstractModule with ScalaModule {
 
     val settings = configuration.underlying.as[CookieStateSettings]("silhouette.oauth2StateProvider")
     new CookieStateProvider(settings, idGenerator, cookieSigner, clock)
+  }
+
+  @Provides
+  def providesAkkaActorScheduler(actorSystem: ActorSystem): Scheduler = {
+    actorSystem.scheduler
   }
 }
