@@ -3,11 +3,11 @@
 @import org.hatdex.dataplug.models.User
 @import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointVariantChoice
 
-@(socialProviders: SocialProviderRegistry, endpointVariants: Option[Seq[ApiEndpointVariantChoice]])(implicit user: User, request: RequestHeader, messages: Messages)
+@(socialProviders: SocialProviderRegistry, endpointVariants: Option[Seq[ApiEndpointVariantChoice]], redirect: String)(implicit user: User, request: RequestHeader, messages: Messages)
 
 @menubarContent = {
     <li class="text-lowercase">
-        <a href="https://@user.userId/hatlogin?name=Rumpel&redirect=https://rumpel.hubofallthings.com/calendar">
+        <a href="@redirect">
         @user.userId
         </a>
     </li>
@@ -19,23 +19,9 @@
             <div class="complete-instructions">
             @Messages("complete.instructions")
             </div>
-            <a class="btn btn-block btn-dataplug" id="rumpel-link" href="https://@user.userId/hatlogin?name=Rumpel&redirect=https://rumpel.hubofallthings.com">
+            <a class="btn btn-block btn-dataplug" id="rumpel-link" href="@redirect">
             @Messages("button.rumpel")
             </a>
         </div>
     </div>
-
-    <script>
-            var standalone = window.navigator.standalone,
-                    userAgent = window.navigator.userAgent.toLowerCase(),
-                    safari = /safari/.test(userAgent),
-                    ios = /iphone|ipod|ipad/.test(userAgent);
-
-            if (ios && safari && !standalone) { // Most likely mobile Safari
-                var link = document.getElementById("rumpel-link");
-
-                link.href = "rumpellocationtrackerapp://dataplugsapphost/";
-                link.text = "Back to Rumpel Lite";
-            }
-    </script>
 }

@@ -1,12 +1,14 @@
 # Routes
 # This file defines all application routes (Higher priority routes first)
 
-GET         /dataplug/assets/*file         org.hatdex.dataplug.controllers.Assets.at(path="/public/lib/dataplug", file)
+GET         /dataplug/assets/*file         org.hatdex.dataplug.controllers.Assets.versioned(path="/public/lib/dataplug", file)
+GET         /assets/*file                  org.hatdex.dataplug.controllers.Assets.versioned(path="/public/", file)
 
 GET         /                              org.hatdex.dataplug.controllers.Application.index
+GET         /signin                        org.hatdex.dataplug.controllers.Application.signIn
 POST        /connect                       org.hatdex.dataplug.controllers.Application.connectVariants()
 GET         /disconnect                    org.hatdex.dataplug.controllers.Application.disconnect()
-GET         /authenticate/hat              org.hatdex.dataplug.controllers.HatLoginController.authHat()
+GET         /authenticate/hat              org.hatdex.dataplug.controllers.HatLoginController.authHat(redirect: Option[String])
 POST        /signin/hat                    org.hatdex.dataplug.controllers.HatLoginController.signinHat()
 GET         /authenticate/:provider        org.hatdex.dataplug.controllers.SocialAuthController.authenticate(provider)
 

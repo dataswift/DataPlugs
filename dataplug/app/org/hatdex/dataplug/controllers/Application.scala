@@ -15,7 +15,7 @@ import com.mohiva.play.silhouette.api.util.Clock
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import org.hatdex.commonPlay.models.auth.forms.AuthForms
 import org.hatdex.dataplug.actors.IoExecutionContext
-import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointVariantChoice
+import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointStatus, ApiEndpointVariantChoice }
 import org.hatdex.dataplug.models.User
 import org.hatdex.dataplug.services.{ DataPlugEndpointService, DataplugSyncerActorManager }
 import org.hatdex.dataplug.utils.{ PhataAuthenticationEnvironment, SilhouettePhataAuthenticationController }
@@ -49,47 +49,55 @@ class Application @Inject() (
   }
 
   def index(): Action[AnyContent] = SecuredAction.async { implicit request =>
-    val eventualResult = if (request.identity.linkedUsers.exists(_.providerId == provider)) {
+    if (request.identity.linkedUsers.exists(_.providerId == provider)) {
       // If the required social profile is connected, proceed with syncing signup
       for {
         variantChoices <- syncerActorManager.currentProviderApiVariantChoices(request.identity, provider)(ioEC)
         apiEndpointStatuses <- dataPlugEndpointService.listCurrentEndpointStatuses(request.identity.userId)
-      } yield {
-        if (chooseVariants) {
-          logger.debug(s"Let user choose what to sync: $variantChoices")
-          if (apiEndpointStatuses.isEmpty) {
-            Future.successful(Ok(dataPlugViewSet.connect(socialProviderRegistry, Some(variantChoices), dataPlugViewSet.variantsForm)))
-          }
-          else {
-            Future.successful(Ok(dataPlugViewSet.disconnect(socialProviderRegistry, Some(variantChoices), chooseVariants)))
-          }
+        result <- if (chooseVariants) {
+          Future.successful(handleUserWithChoice(variantChoices, apiEndpointStatuses))
         }
         else {
-          logger.debug(s"Process endpoint choices automatically: $variantChoices")
-          if (apiEndpointStatuses.isEmpty || variantChoices.forall(!_.active)) {
-            logger.debug(s"Got choices to sign up for $variantChoices")
-            processSignups(selectedVariants = variantChoices.map(_.copy(active = true))) map { _ =>
-              Ok(dataPlugViewSet.signupComplete(socialProviderRegistry, Option(variantChoices)))
-            }
-          }
-          else {
-            Future.successful(Ok(dataPlugViewSet.disconnect(socialProviderRegistry, Some(variantChoices), chooseVariants)))
-          }
+          handleUserFullSelection(variantChoices, apiEndpointStatuses)
+        }
+      } yield result
+    }
+    else {
+      // otherwise redirect to the provider to sign up
+      Future.successful(Redirect(org.hatdex.dataplug.controllers.routes.SocialAuthController.authenticate(provider)))
+    }
+  }
+
+  private def handleUserWithChoice(
+    variantChoices: Seq[ApiEndpointVariantChoice],
+    apiEndpointStatuses: Seq[ApiEndpointStatus])(implicit requestHeader: RequestHeader, user: User): Result = {
+    logger.debug(s"Let user choose what to sync: $variantChoices")
+    if (apiEndpointStatuses.isEmpty) {
+      Ok(dataPlugViewSet.connect(socialProviderRegistry, Some(variantChoices), dataPlugViewSet.variantsForm))
+    }
+    else {
+      Ok(dataPlugViewSet.disconnect(socialProviderRegistry, Some(variantChoices), chooseVariants))
+    }
+  }
+
+  protected def handleUserFullSelection(
+    variantChoices: Seq[ApiEndpointVariantChoice],
+    apiEndpointStatuses: Seq[ApiEndpointStatus])(implicit request: RequestHeader, user: User): Future[Result] = {
+    logger.debug(s"Process endpoint choices automatically: $variantChoices")
+    if (apiEndpointStatuses.isEmpty || variantChoices.forall(!_.active)) {
+      logger.debug(s"Got choices to sign up for $variantChoices")
+      syncerActorManager.updateApiVariantChoices(user, variantChoices.map(_.copy(active = true))) map { _ =>
+        // Automatically redirect the user if there is a redirect registered in the session
+        request.session.get("redirect").map { r =>
+          Redirect(r)
+        } getOrElse {
+          Ok(dataPlugViewSet.signupComplete(socialProviderRegistry, Option(variantChoices)))
         }
       }
     }
     else {
-      // otherwise redirect to the provider to sign up
-      Future.successful(Future.successful(Redirect(org.hatdex.dataplug.controllers.routes.SocialAuthController.authenticate(provider))))
+      Future.successful(Ok(dataPlugViewSet.disconnect(socialProviderRegistry, Some(variantChoices), chooseVariants)))
     }
-
-    eventualResult.flatMap(r => r)
-      .recover {
-        case e =>
-          // Assume that if any error has happened, it may be fixed by re-authenticating with the provider
-          logger.error(s"Error occurred: ${e.getMessage}. Redirecting to $provider OAuth service.", e)
-          Redirect(org.hatdex.dataplug.controllers.routes.SocialAuthController.authenticate(provider))
-      }
   }
 
   def connectVariants(): Action[AnyContent] = SecuredAction.async { implicit request =>
@@ -108,7 +116,7 @@ class Application @Inject() (
 
             eventualCurrentVariantChoices flatMap { variantChoices =>
               logger.debug(s"Processing signups $variantChoices")
-              processSignups(variantChoices) map { _ =>
+              syncerActorManager.updateApiVariantChoices(request.identity, variantChoices) map { _ =>
                 Ok(dataPlugViewSet.signupComplete(socialProviderRegistry, Option(variantChoices)))
               }
             }
@@ -130,7 +138,7 @@ class Application @Inject() (
     } yield {
       if (apiEndpointStatuses.nonEmpty) {
         logger.debug(s"Got choices to disconnect: $variantChoices")
-        processSignups(selectedVariants = variantChoices.map(_.copy(active = false))) map { _ =>
+        syncerActorManager.updateApiVariantChoices(request.identity, variantChoices.map(_.copy(active = false))) map { _ =>
           Ok(dataPlugViewSet.disconnect(socialProviderRegistry, None, chooseVariants))
         }
       }
@@ -145,22 +153,6 @@ class Application @Inject() (
           logger.error(s"$provider API cannot be accessed: ${e.getMessage}. Redirecting to $provider OAuth service.", e)
           Redirect(org.hatdex.dataplug.controllers.routes.SocialAuthController.authenticate(provider))
       }
-  }
-
-  protected def processSignups(selectedVariants: Seq[ApiEndpointVariantChoice])(implicit user: User, requestHeader: RequestHeader): Future[Result] = {
-    logger.debug(s"Processing Variant Choices $selectedVariants for user ${user.userId}")
-
-    if (selectedVariants.nonEmpty) {
-      syncerActorManager.updateApiVariantChoices(user, selectedVariants).map { _ =>
-        Redirect(dataPlugViewSet.indexRedirect)
-          .flashing("success" -> "Changes have been successfully saved.")
-      }
-    }
-    else {
-      Future.successful(Redirect(dataPlugViewSet.indexRedirect)
-        .flashing("error" -> "Synchronisation not possible - you have no options available right now."))
-    }
-
   }
 
 }

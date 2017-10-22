@@ -8,7 +8,7 @@ GET         /                              org.hatdex.dataplug.controllers.Appli
 GET         /signin                        org.hatdex.dataplug.controllers.Application.signIn
 POST        /connect                       org.hatdex.dataplug.controllers.Application.connectVariants()
 GET         /disconnect                    org.hatdex.dataplug.controllers.Application.disconnect()
-GET         /authenticate/hat              org.hatdex.dataplug.controllers.HatLoginController.authHat()
+GET         /authenticate/hat              org.hatdex.dataplug.controllers.HatLoginController.authHat(redirect: Option[String])
 POST        /signin/hat                    org.hatdex.dataplug.controllers.HatLoginController.signinHat()
 GET         /authenticate/:provider        org.hatdex.dataplug.controllers.SocialAuthController.authenticate(provider)
 

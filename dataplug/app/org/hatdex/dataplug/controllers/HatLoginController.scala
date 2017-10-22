@@ -54,7 +54,7 @@ class HatLoginController @Inject() (
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // HAT Login
 
-  def authHat: Action[AnyContent] = tokenUserAwareAction.async { implicit request =>
+  def authHat(redirect: Option[String]): Action[AnyContent] = tokenUserAwareAction.async { implicit request =>
     logger.info(s"logged in user ${request.maybeUser}")
     val authResult = request.maybeUser match {
       case Some(user) => for {
@@ -62,9 +62,10 @@ class HatLoginController @Inject() (
         cookie <- env.authenticatorService.init(authenticator)
         result <- env.authenticatorService.embed(cookie, Redirect(dataPlugViewSet.indexRedirect))
       } yield {
-        logger.debug(s"Logged in! ${user}")
         env.eventBus.publish(LoginEvent(user, request))
-        result
+        val session = redirect.map(r => request.session + ("redirect" -> r))
+          .getOrElse(request.session)
+        result.withSession(session)
       }
       case None => Future.failed(new IdentityNotFoundException("Couldn't find user"))
     }
@@ -82,7 +83,8 @@ class HatLoginController @Inject() (
       address => {
         val hatHost = address.stripPrefix("http://").stripPrefix("https://").replaceAll("[^A-Za-z0-9.:]", "")
 
-        val redirectUrl = routes.HatLoginController.authHat().absoluteURL(configuration.getBoolean("service.secure").getOrElse(false))
+        val redirectUrl = routes.HatLoginController.authHat(None)
+          .absoluteURL(configuration.getBoolean("service.secure").getOrElse(false))
 
         val hatUri = wsClient.url(s"$hatProtocol$hatHost/hatlogin")
           .withQueryString("name" -> configuration.getString("service.name").get, "redirect" -> redirectUrl)

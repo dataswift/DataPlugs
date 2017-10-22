@@ -2,13 +2,14 @@
 @import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointVariantChoice
 @(socialProviders: SocialProviderRegistry,
         endpointvariants: Option[Seq[ApiEndpointVariantChoice]],
+        redirect: String,
         signupForm: Form[List[String]])(implicit user: org.hatdex.dataplug.models.User, request: RequestHeader, messages: Messages)
 
 @import b3.vertical.fieldConstructor
 
 @menubarContent = {
     <li class="text-lowercase">
-        <a href="https://@user.userId/hatlogin?name=Rumpel&redirect=https://rumpel.hubofallthings.com/finance">
+        <a href="@redirect">
         @user.userId
         </a>
     </li>
@@ -28,7 +29,7 @@
                                 @Messages("setup.message.delay")
                                 </div>
 
-                            <a role="button" href="https://@user.userId/hatlogin?name=Rumpel&redirect=https://rumpel.hubofallthings.com/finance" class="btn btn-dataplug btn-rumpel">
+                            <a role="button" href="@redirect" class="btn btn-dataplug btn-rumpel">
                             @Messages("setup.goto.rumpel")</a>
                         </div>
                     }
