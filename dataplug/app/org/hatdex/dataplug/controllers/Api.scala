@@ -11,16 +11,17 @@ package org.hatdex.dataplug.controllers
 import javax.inject.Inject
 
 import org.hatdex.dataplug.actors.IoExecutionContext
-import org.hatdex.dataplug.apiInterfaces.models.JsonProtocol
+import org.hatdex.dataplug.apiInterfaces.models.JsonProtocol.endpointStatusFormat
 import org.hatdex.dataplug.services.{ DataPlugEndpointService, DataplugSyncerActorManager }
 import org.hatdex.dataplug.utils.{ JwtPhataAuthenticatedAction, JwtPhataAwareAction }
 import org.hatdex.hat.api.models.ErrorMessage
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.mvc._
+import org.hatdex.hat.api.json.HatJsonFormats.errorMessage
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ ExecutionContext, Future }
 
 class Api @Inject() (
     messagesApi: MessagesApi,
@@ -30,8 +31,8 @@ class Api @Inject() (
     dataPlugEndpointService: DataPlugEndpointService,
     syncerActorManager: DataplugSyncerActorManager) extends Controller {
 
-  protected val ioEC = IoExecutionContext.ioThreadPool
-  protected val provider = configuration.getString("service.name").getOrElse("")
+  protected val ioEC: ExecutionContext = IoExecutionContext.ioThreadPool
+  protected val provider: String = configuration.getString("service.name").getOrElse("")
 
   def tickle: Action[AnyContent] = tokenUserAuthenticatedAction.async { implicit request =>
     syncerActorManager.runPhataActiveVariantChoices(request.identity.userId) map { _ =>
@@ -39,8 +40,6 @@ class Api @Inject() (
     }
   }
 
-  import JsonProtocol.endpointStatusFormat
-  import org.hatdex.hat.api.json.HatJsonFormats.errorMessage
   def status: Action[AnyContent] = tokenUserAuthenticatedAction.async { implicit request =>
     // Check if the user has the required social profile linked
     request.identity.linkedUsers.find(_.providerId == provider) map { _ =>

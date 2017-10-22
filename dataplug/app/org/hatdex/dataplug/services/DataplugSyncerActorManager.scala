@@ -19,6 +19,7 @@ import org.hatdex.dataplug.actors.DataPlugManagerActor.{ DataPlugManagerActorMes
 import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointVariantChoice
 import org.hatdex.dataplug.apiInterfaces.{ DataPlugOptionsCollector, DataPlugOptionsCollectorRegistry }
 import org.hatdex.dataplug.models.User
+import org.joda.time.DateTime
 import play.api.Logger
 
 import scala.concurrent.duration._
@@ -28,6 +29,7 @@ class DataplugSyncerActorManager @Inject() (
     socialProviderRegistry: SocialProviderRegistry,
     dataPlugEndpointService: DataPlugEndpointService,
     optionsCollectionRegistry: DataPlugOptionsCollectorRegistry,
+    subscriptionEventBus: SubscriptionEventBus,
     @Named("dataPlugManager") dataPlugManagerActor: ActorRef)(implicit val materializer: Materializer) {
 
   private val logger = Logger(this.getClass)
@@ -36,9 +38,11 @@ class DataplugSyncerActorManager @Inject() (
     dataPlugEndpointService.updateApiVariantChoices(user.userId, variantChoices) map { _ =>
       variantChoices foreach { variantChoice =>
         val message: DataPlugManagerActorMessage = if (variantChoice.active) {
+          subscriptionEventBus.publish(SubscriptionEventBus.UserSubscribedEvent(user, DateTime.now(), variantChoice))
           Start(variantChoice.variant, user.userId, variantChoice.variant.configuration)
         }
         else {
+          subscriptionEventBus.publish(SubscriptionEventBus.UserUnsubscribedEvent(user, DateTime.now(), variantChoice))
           Stop(variantChoice.variant, user.userId)
         }
         logger.debug(s"For variant $variantChoice sending message $message to manager")
