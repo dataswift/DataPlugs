@@ -11,6 +11,7 @@ object FitbitActivityDistance {
 }
 
 case class FitbitActivitySummary(
+    dateCreated: String,
     activityCalories: Int,
     caloriesBMR: Int,
     caloriesOut: Int,

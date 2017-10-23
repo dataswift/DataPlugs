@@ -13,6 +13,8 @@ import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugFitbit.apiInterfaces.authProviders.FitbitProvider
 import org.hatdex.dataplugFitbit.models.FitbitProfile
+import org.joda.time.DateTime
+import org.joda.time.format.{ DateTimeFormat, DateTimeFormatter }
 import play.api.Logger
 import play.api.cache.CacheApi
 import play.api.libs.json._
@@ -54,12 +56,26 @@ class FitbitProfileInterface @Inject() (
     hatClientActor: ActorRef,
     fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Unit] = {
 
+    val dataValidation =
+      transformData(content, DateTime.now.toString(FitbitProfileInterface.apiDateFormat))
+        .map(validateMinDataStructure)
+        .getOrElse(Failure(SourceDataProcessingException("Source data malformed, could not insert date in to the structure")))
+
     for {
-      validatedData <- FutureTransformations.transform(validateMinDataStructure(content))
+      validatedData <- FutureTransformations.transform(dataValidation)
       _ <- uploadHatData(namespace, endpoint, validatedData, hatAddress, hatClientActor) // Upload the data
     } yield {
       logger.debug(s"Successfully synced new records for HAT $hatAddress")
     }
+  }
+
+  private def transformData(rawData: JsValue, date: String): JsResult[JsObject] = {
+    import play.api.libs.json._
+
+    val transformation = (__ \ "user").json.update(
+      __.read[JsObject].map(o => o ++ JsObject(Map("dateCreated" -> JsString(date)))))
+
+    rawData.transform(transformation)
   }
 
   def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
@@ -82,6 +98,8 @@ class FitbitProfileInterface @Inject() (
 }
 
 object FitbitProfileInterface {
+  val apiDateFormat: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd")
+
   val defaultApiEndpoint = ApiEndpointCall(
     "https://api.fitbit.com",
     "/1/user/-/profile.json",

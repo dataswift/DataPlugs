@@ -43,6 +43,7 @@ object FitbitLifetimeStats {
 }
 
 case class FitbitLifetime(
+    dateCreated: String,
     best: FitbitBestStats,
     lifetime: FitbitLifetimeStats)
 

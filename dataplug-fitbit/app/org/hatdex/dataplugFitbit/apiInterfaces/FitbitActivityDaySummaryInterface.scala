@@ -61,7 +61,6 @@ class FitbitActivityDaySummaryInterface @Inject() (
         val updatedParameters = p.pathParameters + ("date" -> DateTime.now.minusDays(1).toString(FitbitActivityDaySummaryInterface.apiDateFormat))
         p.copy(pathParameters = updatedParameters)
       }
-
     }.getOrElse {
       val updatedParameters = defaultApiEndpoint.pathParameters + ("date" -> DateTime.now.minusDays(1).toString(FitbitActivityDaySummaryInterface.apiDateFormat))
 
@@ -79,12 +78,26 @@ class FitbitActivityDaySummaryInterface @Inject() (
     hatClientActor: ActorRef,
     fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Unit] = {
 
+    val dataValidation =
+      transformData(content, fetchParameters.pathParameters("date"))
+        .map(validateMinDataStructure)
+        .getOrElse(Failure(SourceDataProcessingException("Source data malformed, could not insert date in to the structure")))
+
     for {
-      validatedData <- FutureTransformations.transform(validateMinDataStructure(content))
+      validatedData <- FutureTransformations.transform(dataValidation)
       _ <- uploadHatData(namespace, endpoint, validatedData, hatAddress, hatClientActor) // Upload the data
     } yield {
       logger.debug(s"Successfully synced new records for HAT $hatAddress")
     }
+  }
+
+  private def transformData(rawData: JsValue, date: String): JsResult[JsObject] = {
+    import play.api.libs.json._
+
+    val transformation = (__ \ "summary").json.update(
+      __.read[JsObject].map(o => o ++ JsObject(Map("dateCreated" -> JsString(date)))))
+
+    rawData.transform(transformation)
   }
 
   def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {

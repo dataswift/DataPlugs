@@ -36,7 +36,7 @@ class FitbitSubscription @Inject() (
 
   val defaultApiEndpoint = ApiEndpointCall(
     "https://api.fitbit.com/1",
-    "/user/-/apiSubscriptions/[collection-path]/[subscription].json",
+    "/user/-/[collection-path]/apiSubscriptions/[subscription].json",
     ApiEndpointMethod.Post("Post", ""),
     Map(),
     Map(),
