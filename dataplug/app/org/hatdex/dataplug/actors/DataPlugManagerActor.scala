@@ -38,22 +38,22 @@ object DataPlugManagerActor {
   sealed trait DataPlugManagerActorMessage
 
   case class Start(
-    endpoint: ApiEndpointVariant,
-    phata: String,
-    call: Option[ApiEndpointCall]) extends DataPlugManagerActorMessage
+      endpoint: ApiEndpointVariant,
+      phata: String,
+      call: Option[ApiEndpointCall]) extends DataPlugManagerActorMessage
 
   case class Stop(
-    endpoint: ApiEndpointVariant,
-    phata: String) extends DataPlugManagerActorMessage
+      endpoint: ApiEndpointVariant,
+      phata: String) extends DataPlugManagerActorMessage
 
   case class Completed(
-    endpoint: ApiEndpointVariant,
-    phata: String) extends DataPlugManagerActorMessage
+      endpoint: ApiEndpointVariant,
+      phata: String) extends DataPlugManagerActorMessage
 
   case class Failed(
-    endpoint: ApiEndpointVariant,
-    phata: String,
-    error: String) extends DataPlugManagerActorMessage
+      endpoint: ApiEndpointVariant,
+      phata: String,
+      error: String) extends DataPlugManagerActorMessage
 
   sealed trait DataPlugSyncDispatcherActorMessage
 
@@ -72,15 +72,15 @@ object DataPlugManagerActor {
 }
 
 class DataPlugManagerActor @Inject() (
-  dataPlugRegistry: DataPlugRegistry,
-  ws: WSClient,
-  configuration: Configuration,
-  cacheApi: CacheApi,
-  val dataplugEndpointService: DataPlugEndpointService,
-  val mailer: Mailer,
-  @Named("syncThrottler") throttledSyncActor: ActorRef)(implicit val ec: ExecutionContext) extends Actor
-    with DataPlugManagerOperations
-    with RetryingActorLauncher {
+    dataPlugRegistry: DataPlugRegistry,
+    ws: WSClient,
+    configuration: Configuration,
+    cacheApi: CacheApi,
+    val dataplugEndpointService: DataPlugEndpointService,
+    val mailer: Mailer,
+    @Named("syncThrottler") throttledSyncActor: ActorRef)(implicit val ec: ExecutionContext) extends Actor
+  with DataPlugManagerOperations
+  with RetryingActorLauncher {
 
   protected val logger: Logger = Logger(this.getClass)
   protected implicit val materializer: ActorMaterializer = ActorMaterializer()

@@ -48,38 +48,32 @@ class FitbitProfileCheck @Inject() (
             val profileVariant = ApiEndpointVariant(
               ApiEndpoint("profile", "User's Fitbit profile information", None),
               Some(""), Some(""),
-              Some(FitbitProfileInterface.defaultApiEndpoint)
-            )
+              Some(FitbitProfileInterface.defaultApiEndpoint))
 
             val activityVariant = ApiEndpointVariant(
               ApiEndpoint("activity", "User's Fitbit activity list", None),
               Some(""), Some(""),
-              Some(FitbitActivityInterface.defaultApiEndpoint)
-            )
+              Some(FitbitActivityInterface.defaultApiEndpoint))
 
             val sleepVariant = ApiEndpointVariant(
               ApiEndpoint("sleep", "Fitbit sleep records", None),
               Some(""), Some(""),
-              Some(FitbitSleepInterface.defaultApiEndpoint)
-            )
+              Some(FitbitSleepInterface.defaultApiEndpoint))
 
             val weightVariant = ApiEndpointVariant(
               ApiEndpoint("weight", "Body weight and BMI measurement", None),
               Some(""), Some(""),
-              Some(FitbitWeightInterface.defaultApiEndpoint)
-            )
+              Some(FitbitWeightInterface.defaultApiEndpoint))
 
             val lifetimeVariant = ApiEndpointVariant(
               ApiEndpoint("lifetime/stats", "User's Fitbit lifetime statistics", None),
               Some(""), Some(""),
-              Some(FitbitLifetimeStatsInterface.defaultApiEndpoint)
-            )
+              Some(FitbitLifetimeStatsInterface.defaultApiEndpoint))
 
             val activitySummaryVariant = ApiEndpointVariant(
               ApiEndpoint("activity/day/summary", "Summary of user's activity throughout the day", None),
               Some(""), Some(""),
-              Some(FitbitActivityDaySummaryInterface.defaultApiEndpoint)
-            )
+              Some(FitbitActivityDaySummaryInterface.defaultApiEndpoint))
 
             val choices = Seq(
               ApiEndpointVariantChoice("profile", "User's Fitbit profile information", active = true, profileVariant),
@@ -87,8 +81,7 @@ class FitbitProfileCheck @Inject() (
               ApiEndpointVariantChoice("sleep", "User's Fitbit activity list", active = true, sleepVariant),
               ApiEndpointVariantChoice("weight", "Body weight and BMI measurement", active = true, weightVariant),
               ApiEndpointVariantChoice("lifetime/stats", "User's Fitbit lifetime statistics", active = true, lifetimeVariant),
-              ApiEndpointVariantChoice("activity/day/summary", "Summary of user's activity throughout the day", active = true, activitySummaryVariant)
-            )
+              ApiEndpointVariantChoice("activity/day/summary", "Summary of user's activity throughout the day", active = true, activitySummaryVariant))
 
             logger.info(s"API endpoint FitbitProfile validated for $hatAddress")
             Future.successful(choices)

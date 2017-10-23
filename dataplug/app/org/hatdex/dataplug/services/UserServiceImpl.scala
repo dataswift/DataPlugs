@@ -55,14 +55,12 @@ class UserServiceImpl @Inject() (userDAO: UserDAO) extends UserService {
       case Some(user) => // Update user with profile
         userDAO.save(user.copy(
           providerId = profile.loginInfo.providerID,
-          userId = profile.loginInfo.providerKey
-        ))
+          userId = profile.loginInfo.providerKey))
       case None => // Insert a new user
         userDAO.save(User(
           providerId = profile.loginInfo.providerID,
           userId = profile.loginInfo.providerKey,
-          List()
-        ))
+          List()))
     }
   }
 

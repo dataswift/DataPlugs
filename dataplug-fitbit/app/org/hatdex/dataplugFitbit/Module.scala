@@ -69,8 +69,7 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
       fitbitSleepInterface,
       fitbitWeightInterface,
       fitbitLifetimeStatsInterface,
-      fitbitActivityDaySummaryInterface
-    ))
+      fitbitActivityDaySummaryInterface))
   }
 
   @Provides
@@ -93,8 +92,7 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
     fitbitProvider: FitbitProvider): SocialProviderRegistry = {
 
     SocialProviderRegistry(Seq(
-      fitbitProvider
-    ))
+      fitbitProvider))
   }
 
   /**

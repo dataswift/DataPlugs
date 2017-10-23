@@ -35,8 +35,7 @@ trait BaseFitbitProvider extends OAuth2Provider {
 
   override protected val headers: Seq[(String, String)] = Seq(
     "Authorization" -> "Basic ".concat(Base64.encode(s"${settings.clientID}:${settings.clientSecret}")),
-    "Content-Type" -> "application/x-www-form-urlencoded"
-  )
+    "Content-Type" -> "application/x-www-form-urlencoded")
 
   /**
    * Builds the social profile.
@@ -93,10 +92,10 @@ class FitbitProfileParser extends SocialProfileParser[JsValue, CommonSocialProfi
  * @param settings      The provider settings.
  */
 class FitbitProvider(
-  protected val httpLayer: HTTPLayer,
-  protected val stateProvider: OAuth2StateProvider,
-  val settings: OAuth2Settings)
-    extends BaseFitbitProvider with CommonSocialProfileBuilder {
+    protected val httpLayer: HTTPLayer,
+    protected val stateProvider: OAuth2StateProvider,
+    val settings: OAuth2Settings)
+  extends BaseFitbitProvider with CommonSocialProfileBuilder {
 
   /**
    * The type of this class.

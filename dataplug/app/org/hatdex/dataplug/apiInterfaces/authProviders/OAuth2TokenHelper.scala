@@ -125,19 +125,19 @@ class OAuth2TokenHelper @Inject() (
    * @param customProperties    A map of custom properties for the different providers.
    */
   case class OAuth2SettingsExtended(
-    authorizationURL: Option[String] = None,
-    accessTokenURL: String,
-    redirectURL: String,
-    apiURL: Option[String] = None,
-    refreshURL: Option[String] = None,
-    refreshHeaders: Map[String, String] = Map(
-      "Accept" -> "application/json",
-      "Content-Type" -> "application/x-www-form-urlencoded"),
-    clientID: String,
-    clientSecret: String,
-    scope: Option[String] = None,
-    authorizationParams: Map[String, String] = Map.empty,
-    accessTokenParams: Map[String, String] = Map.empty,
-    customProperties: Map[String, String] = Map.empty)
+      authorizationURL: Option[String] = None,
+      accessTokenURL: String,
+      redirectURL: String,
+      apiURL: Option[String] = None,
+      refreshURL: Option[String] = None,
+      refreshHeaders: Map[String, String] = Map(
+        "Accept" -> "application/json",
+        "Content-Type" -> "application/x-www-form-urlencoded"),
+      clientID: String,
+      clientSecret: String,
+      scope: Option[String] = None,
+      authorizationParams: Map[String, String] = Map.empty,
+      accessTokenParams: Map[String, String] = Map.empty,
+      customProperties: Map[String, String] = Map.empty)
 
 }

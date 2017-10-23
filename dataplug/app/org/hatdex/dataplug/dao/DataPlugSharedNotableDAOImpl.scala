@@ -91,8 +91,7 @@ class DataPlugSharedNotableDAOImpl @Inject() (@NamedDatabase("default") db: Data
               'postedTime -> notable.postedTime,
               'deleted -> notable.deleted,
               'deletedTime -> notable.deletedTime,
-              'providerId -> notable.providerId
-            )
+              'providerId -> notable.providerId)
             .executeInsert(singleSharedNotableInfoParser)
         }
       }

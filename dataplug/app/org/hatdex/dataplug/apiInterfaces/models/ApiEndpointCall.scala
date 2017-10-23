@@ -36,12 +36,12 @@ object ApiEndpointMethod {
 }
 
 case class ApiEndpointCall(
-  url: String,
-  path: String,
-  method: ApiEndpointMethod.EndpointMethod,
-  pathParameters: Map[String, String], // for pathParameter name=value replaces [name] in path (/[name]/...)
-  queryParameters: Map[String, String],
-  headers: Map[String, String])
+    url: String,
+    path: String,
+    method: ApiEndpointMethod.EndpointMethod,
+    pathParameters: Map[String, String], // for pathParameter name=value replaces [name] in path (/[name]/...)
+    queryParameters: Map[String, String],
+    headers: Map[String, String])
 
 case class ApiEndpoint(
     name: String,
@@ -66,12 +66,12 @@ case class ApiEndpointVariant(
 }
 
 case class ApiEndpointStatus(
-  phata: String,
-  apiEndpoint: ApiEndpointVariant,
-  endpointCall: ApiEndpointCall,
-  timestamp: DateTime,
-  successful: Boolean,
-  message: Option[String])
+    phata: String,
+    apiEndpoint: ApiEndpointVariant,
+    endpointCall: ApiEndpointCall,
+    timestamp: DateTime,
+    successful: Boolean,
+    message: Option[String])
 
 object JsonProtocol {
   implicit val endpointMethodGetFormat = Json.format[ApiEndpointMethod.Get]

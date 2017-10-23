@@ -95,33 +95,40 @@ class Api @Inject() (
     BaseEncoding.base64().encode(macData)
   }
 
-  subscriptionEventBus.subscribe(actorSystem.actorOf(Props[SubscriptionManagerActor]), classOf[SubscriptionEventBus.SubscriptionEvent])
+  subscriptionEventBus.subscribe(
+    actorSystem.actorOf(SubscriptionManagerActor.props(fitbitSubscription)),
+    classOf[SubscriptionEventBus.SubscriptionEvent])
 
-  class SubscriptionManagerActor extends Actor {
-    def receive: Receive = {
-      case SubscriptionEventBus.UserSubscribedEvent(user, _, variantChoice) =>
-        variantChoiceToCollectionKey(variantChoice)
-          .map(fitbitSubscription.create(_, user.userId))
+}
 
-      case SubscriptionEventBus.UserUnsubscribedEvent(user, _, variantChoice) =>
-        variantChoiceToCollectionKey(variantChoice)
-          .map(fitbitSubscription.delete(_, user.userId))
-    }
-
-    protected def variantChoiceToCollectionKey(variantChoice: ApiEndpointVariantChoice): Option[String] = {
-      variantChoice.key match {
-        case "activity" => Some("activities")
-        case "weight"   => Some("body")
-        case "sleep"    => Some("sleep")
-        case _          => None
-      }
-    }
-  }
-
-  case class FitbitActivityNotification(
+case class FitbitActivityNotification(
     collectionType: String,
     date: String,
     ownerId: String,
     ownerType: String,
     subscriptionId: String)
+
+object SubscriptionManagerActor {
+  def props(fitbitSubscription: FitbitSubscription): Props = Props(new SubscriptionManagerActor(fitbitSubscription))
+}
+
+class SubscriptionManagerActor(fitbitSubscription: FitbitSubscription) extends Actor {
+  def receive: Receive = {
+    case SubscriptionEventBus.UserSubscribedEvent(user, _, variantChoice) =>
+      variantChoiceToCollectionKey(variantChoice)
+        .map(fitbitSubscription.create(_, user.userId))
+
+    case SubscriptionEventBus.UserUnsubscribedEvent(user, _, variantChoice) =>
+      variantChoiceToCollectionKey(variantChoice)
+        .map(fitbitSubscription.delete(_, user.userId))
+  }
+
+  protected def variantChoiceToCollectionKey(variantChoice: ApiEndpointVariantChoice): Option[String] = {
+    variantChoice.key match {
+      case "activity" => Some("activities")
+      case "weight"   => Some("body")
+      case "sleep"    => Some("sleep")
+      case _          => None
+    }
+  }
 }

@@ -15,6 +15,18 @@ import sbt._
 object BasicSettings extends AutoPlugin {
   override def trigger = allRequirements
 
+  import com.typesafe.sbt.SbtScalariform._
+  import scalariform.formatter.preferences._
+
+  lazy val scalariformPrefs = Seq(
+    ScalariformKeys.preferences := ScalariformKeys.preferences.value
+      .setPreference(FormatXml, false)
+      .setPreference(DoubleIndentClassDeclaration, true)
+      .setPreference(DoubleIndentConstructorArguments, true)
+      .setPreference(AlignSingleLineCaseStatements, true)
+      .setPreference(CompactControlReadability, true)
+      .setPreference(DanglingCloseParenthesis, Prevent))
+
   override def projectSettings = Seq(
     organization := "org.hatdex",
     version := "0.0.1-SNAPSHOT",
@@ -45,44 +57,5 @@ object BasicSettings extends AutoPlugin {
     javaOptions += "-Xmx1G",
     sources in (Compile,doc) := Seq.empty,
       publishArtifact in (Compile, packageDoc) := false
-  )
-}
-
-////*******************************
-//// Scalariform settings
-////*******************************
-object CodeFormatter extends AutoPlugin {
-
-  import com.typesafe.sbt.SbtScalariform._
-
-  import scalariform.formatter.preferences._
-
-  lazy val BuildConfig = config("build") extend Compile
-  lazy val BuildSbtConfig = config("buildsbt") extend Compile
-
-  lazy val prefs = Seq(
-    ScalariformKeys.preferences := ScalariformKeys.preferences.value
-      .setPreference(FormatXml, false)
-      .setPreference(DoubleIndentClassDeclaration, true)
-      .setPreference(AlignSingleLineCaseStatements, true)
-      .setPreference(CompactControlReadability, true)
-      .setPreference(DanglingCloseParenthesis, Preserve)
-  )
-
-  override def trigger = allRequirements
-
-  override def projectSettings = defaultScalariformSettings ++ prefs ++
-    inConfig(BuildConfig)(configScalariformSettings) ++
-    inConfig(BuildSbtConfig)(configScalariformSettings) ++
-    Seq(
-      scalaSource in BuildConfig := baseDirectory.value / "project",
-      scalaSource in BuildSbtConfig := baseDirectory.value / "project",
-      includeFilter in (BuildConfig, ScalariformKeys.format) := ("*.scala": FileFilter),
-      includeFilter in (BuildSbtConfig, ScalariformKeys.format) := ("*.sbt": FileFilter),
-      ScalariformKeys.format in Compile := {
-        (ScalariformKeys.format in BuildSbtConfig).value
-        (ScalariformKeys.format in BuildConfig).value
-        (ScalariformKeys.format in Compile).value
-      }
-    )
+  ) ++ scalariformPrefs
 }

@@ -37,4 +37,16 @@ sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "d
 routesGenerator := InjectedRoutesGenerator
 PlayKeys.devSettings += ("play.http.router", "dataplug.Routes")
 
+import com.typesafe.sbt.packager.docker._
+enablePlugins(AshScriptPlugin)
+javaOptions in Universal ++= Seq("-Dhttp.port=9000")
+
+packageName in Docker := packageName.value
+maintainer in Docker := maintainer.value
+version in Docker := version.value
+dockerExposedPorts := Seq(9000)
+dockerBaseImage := "openjdk:8-jre-alpine"
+dockerEntrypoint := Seq(s"bin/${packageName.value}")
+
+
 javaOptions in Test += "-Dconfig.file=conf/application.test.conf"

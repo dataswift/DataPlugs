@@ -11,11 +11,10 @@ package org.hatdex.dataplug.apiInterfaces.models
 import org.joda.time.DateTime
 
 case class DataPlugSharedNotable(
-  id: String,
-  phata: String,
-  posted: Boolean,
-  postedTime: Option[DateTime],
-  providerId: Option[String],
-  deleted: Boolean,
-  deletedTime: Option[DateTime]
-)
+    id: String,
+    phata: String,
+    posted: Boolean,
+    postedTime: Option[DateTime],
+    providerId: Option[String],
+    deleted: Boolean,
+    deletedTime: Option[DateTime])
