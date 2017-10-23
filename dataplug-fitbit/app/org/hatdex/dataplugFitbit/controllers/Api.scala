@@ -100,13 +100,12 @@ class Api @Inject() (
   class SubscriptionManagerActor extends Actor {
     def receive: Receive = {
       case SubscriptionEventBus.UserSubscribedEvent(user, _, variantChoice) =>
-        variantChoiceToCollectionKey(variantChoice) map { collectionPath =>
-          fitbitSubscription.create(collectionPath, user.userId)
-        }
+        variantChoiceToCollectionKey(variantChoice)
+          .map(fitbitSubscription.create(_, user.userId))
+
       case SubscriptionEventBus.UserUnsubscribedEvent(user, _, variantChoice) =>
-        variantChoiceToCollectionKey(variantChoice) map { collectionPath =>
-          fitbitSubscription.delete(collectionPath, user.userId)
-        }
+        variantChoiceToCollectionKey(variantChoice)
+          .map(fitbitSubscription.delete(_, user.userId))
     }
 
     protected def variantChoiceToCollectionKey(variantChoice: ApiEndpointVariantChoice): Option[String] = {
