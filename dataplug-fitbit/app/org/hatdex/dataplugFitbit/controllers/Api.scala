@@ -48,7 +48,7 @@ class Api @Inject() (
 
   val ioEC: ExecutionContext = IoExecutionContext.ioThreadPool
 
-  private val verificationCode = ""
+  private val verificationCode = "07aea184292ab16cdd1f1912956e3dbe9087129635f6fdb7c977bc4d63d12652"
   private val provider: String = configuration.getString("service.name").getOrElse("").toLowerCase
   private val oauth2Provider = socialProviderRegistry.get[OAuth2Provider](provider).get
 

@@ -65,7 +65,7 @@ class FitbitSubscription @Inject() (
     // FIXME: need to delete a specific subscription ID!
     val params = defaultApiEndpoint.copy(
       pathParameters =
-      Map("collection-path" -> collectionPath, "subscription" -> UUID.randomUUID().toString),
+        Map("collection-path" -> collectionPath, "subscription" -> UUID.randomUUID().toString),
       method = ApiEndpointMethod.Delete("Delete"))
 
     authenticateRequest(params, hatAddress, refreshToken = false).flatMap { requestParams =>
