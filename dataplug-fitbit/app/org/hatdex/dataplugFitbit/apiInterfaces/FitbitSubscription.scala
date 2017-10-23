@@ -49,7 +49,7 @@ class FitbitSubscription @Inject() (
     authenticateRequest(params, hatAddress, refreshToken = false).flatMap { requestParams =>
       buildRequest(requestParams).map { response =>
         response.status match {
-          case OK =>
+          case CREATED =>
             logger.info(s"Fitbit API subscription added: ${response.body}")
             Done
 
