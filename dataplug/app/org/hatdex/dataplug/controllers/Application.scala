@@ -49,7 +49,7 @@ class Application @Inject() (
   }
 
   def index(): Action[AnyContent] = SecuredAction.async { implicit request =>
-    if (request.identity.linkedUsers.exists(_.providerId == provider)) {
+    val result = if (request.identity.linkedUsers.exists(_.providerId == provider)) {
       // If the required social profile is connected, proceed with syncing signup
       for {
         variantChoices <- syncerActorManager.currentProviderApiVariantChoices(request.identity, provider)(ioEC)
@@ -66,6 +66,14 @@ class Application @Inject() (
       // otherwise redirect to the provider to sign up
       Future.successful(Redirect(org.hatdex.dataplug.controllers.routes.SocialAuthController.authenticate(provider)))
     }
+
+    result
+      .recover {
+        case e =>
+          // Assume that if any error has happened, it may be fixed by re-authenticating with the provider
+          logger.error(s"Error occurred: ${e.getMessage}. Redirecting to $provider OAuth service.", e)
+          Redirect(org.hatdex.dataplug.controllers.routes.SocialAuthController.authenticate(provider))
+      }
   }
 
   private def handleUserWithChoice(
