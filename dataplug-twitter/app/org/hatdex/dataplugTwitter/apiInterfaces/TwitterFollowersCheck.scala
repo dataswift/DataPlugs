@@ -55,8 +55,7 @@ class TwitterFollowersCheck @Inject() (
             val variant = ApiEndpointVariant(
               ApiEndpoint("Followers", "Followers of the current user", None),
               Some(""), Some(""),
-              Some(TwitterFriendInterface.defaultApiEndpoint)
-            )
+              Some(TwitterFriendInterface.defaultApiEndpoint))
 
             val choices = Seq(ApiEndpointVariantChoice("followers", "Followers", active = true, variant))
             Future.successful(choices)

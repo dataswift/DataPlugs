@@ -8,6 +8,7 @@
 
 package org.hatdex.dataplugTwitter
 
+import akka.actor.{ ActorSystem, Scheduler }
 import com.google.inject.{ AbstractModule, Provides }
 import com.mohiva.play.silhouette.api.Provider
 import com.mohiva.play.silhouette.api.util.HTTPLayer
@@ -38,6 +39,7 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
     // Automatic database schema migrations
     bind[SchemaMigration].to[SchemaMigrationImpl]
     bind[SchemaMigrationLauncher].asEagerSingleton()
+    bind[StartupService].to[StartupServiceImpl].asEagerSingleton()
 
     bind[DataPlugEndpointDAO].to[DataPlugEndpointDAOImpl]
     bind[DataPlugSharedNotableDAO].to[DataPlugSharedNotableDAOImpl]
@@ -85,8 +87,7 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   @Provides
   def provideSocialProviderRegistry(twitterProvider: TwitterProvider): SocialProviderRegistry = {
     SocialProviderRegistry(Seq(
-      twitterProvider
-    ))
+      twitterProvider))
   }
 
   /**
@@ -105,5 +106,10 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
 
     val settings = configuration.underlying.as[OAuth1Settings]("silhouette.twitter")
     new TwitterProvider(httpLayer, new PlayOAuth1Service(settings), tokenSecretProvider, settings)
+  }
+
+  @Provides
+  def providesAkkaActorScheduler(actorSystem: ActorSystem): Scheduler = {
+    actorSystem.scheduler
   }
 }

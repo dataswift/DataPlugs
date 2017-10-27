@@ -11,68 +11,62 @@ package org.hatdex.dataplugTwitter.models
 import play.api.libs.json._
 
 case class TwitterPlaceAttributes(
-  street_address: Option[String],
-  locality: Option[String],
-  region: Option[String],
-  iso3: Option[String],
-  postal_code: Option[String],
-  phone: Option[String],
-  twitter: Option[String],
-  url: Option[String]
-)
+    street_address: Option[String],
+    locality: Option[String],
+    region: Option[String],
+    iso3: Option[String],
+    postal_code: Option[String],
+    phone: Option[String],
+    twitter: Option[String],
+    url: Option[String])
 
 case class TwitterBoundingBox(
-  `type`: String
-)
+    `type`: String)
 
 case class TwitterPlace(
-  attributes: Option[TwitterPlaceAttributes],
-  boundingBox: Option[TwitterBoundingBox],
-  country: Option[String],
-  country_code: Option[String],
-  full_name: Option[String],
-  id: String,
-  name: Option[String],
-  place_type: Option[String],
-  url: Option[String]
-)
+    attributes: Option[TwitterPlaceAttributes],
+    boundingBox: Option[TwitterBoundingBox],
+    country: Option[String],
+    country_code: Option[String],
+    full_name: Option[String],
+    id: String,
+    name: Option[String],
+    place_type: Option[String],
+    url: Option[String])
 
 case class TwitterCoordinates(
-  `type`: String
-)
+    `type`: String)
 
 case class TwitterUserShort(
-  id: Long,
-  name: String,
-  screen_name: String,
-  followers_count: Int,
-  friends_count: Int,
-  listed_count: Int,
-  favourites_count: Int,
-  statuses_count: Int,
-  lang: String
-)
+    id: Long,
+    name: String,
+    screen_name: String,
+    followers_count: Int,
+    friends_count: Int,
+    listed_count: Int,
+    favourites_count: Int,
+    statuses_count: Int,
+    lang: String)
 
 case class TwitterTweet(
-  coordinates: Option[TwitterCoordinates], // Represents the geographic location of this Tweet as reported by the user or client application. The inner coordinates array is formatted as geoJSON (longitude first, then latitude).
-  created_at: String, // UTC time when this Tweet was created.
-  favorite_count: Option[Int],
-  favorited: Option[Boolean],
-  id: Long,
-  in_reply_to_screen_name: Option[String],
-  in_reply_to_status_id: Option[Long],
-  in_reply_to_user_id: Option[Long],
-  lang: Option[String],
-  place: Option[TwitterPlace],
-  possibly_sensitive: Option[Boolean],
-  quoted_status_id: Option[Long],
-  retweet_count: Int,
-  retweeted: Boolean,
-  source: String,
-  text: String,
-  truncated: Boolean,
-  user: TwitterUserShort
-)
+    coordinates: Option[TwitterCoordinates], // Represents the geographic location of this Tweet as reported by the user or client application. The inner coordinates array is formatted as geoJSON (longitude first, then latitude).
+    created_at: String, // UTC time when this Tweet was created.
+    favorite_count: Option[Int],
+    favorited: Option[Boolean],
+    id: Long,
+    in_reply_to_screen_name: Option[String],
+    in_reply_to_status_id: Option[Long],
+    in_reply_to_user_id: Option[Long],
+    lang: Option[String],
+    place: Option[TwitterPlace],
+    possibly_sensitive: Option[Boolean],
+    quoted_status_id: Option[Long],
+    retweet_count: Int,
+    retweeted: Boolean,
+    source: String,
+    text: String,
+    truncated: Boolean,
+    user: TwitterUserShort)
 
 object TwitterTweet {
   implicit val placeAttributesFormat = Json.format[TwitterPlaceAttributes]

@@ -55,8 +55,7 @@ class TwitterTweetsCheck @Inject() (
             val variant = ApiEndpointVariant(
               ApiEndpoint("tweets", "Tweets", None),
               Some(""), Some(""),
-              Some(TwitterTweetInterface.defaultApiEndpoint)
-            )
+              Some(TwitterTweetInterface.defaultApiEndpoint))
 
             val choices = Seq(ApiEndpointVariantChoice("tweets", "My Tweets", active = true, variant))
             Future.successful(choices)

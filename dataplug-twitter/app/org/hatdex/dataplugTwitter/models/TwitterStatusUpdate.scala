@@ -11,8 +11,7 @@ package org.hatdex.dataplugTwitter.models
 import play.api.libs.json._
 
 case class TwitterStatusUpdate(
-    id_str: String
-) {
+    id_str: String) {
   implicit val twitterStatusUpdateFormat = TwitterStatusUpdate.twitterStatusUpdateFormat
 }
 

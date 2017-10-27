@@ -106,6 +106,5 @@ class Api @Inject() (
   private def generateResponseJson(message: String, error: String): JsValue =
     Json.toJson(Map(
       "message" -> message,
-      "error" -> error
-    ))
+      "error" -> error))
 }
