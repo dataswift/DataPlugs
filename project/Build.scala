@@ -16,6 +16,13 @@ object Build extends Build {
     base = file("dataplug")
   )
 
+  lazy val dataplugFacebook = Project(
+    id = "dataplug-facebook",
+    base = file("dataplug-facebook"),
+    dependencies = Seq(
+      dataplug % "compile->compile;test->test")
+  )
+
   lazy val dataplugTwitter = Project(
     id = "dataplug-twitter",
     base = file("dataplug-twitter"),
@@ -49,6 +56,7 @@ object Build extends Build {
     base = file("."),
     aggregate = Seq(
       dataplug,
+      dataplugFacebook,
       dataplugTwitter,
       dataplugGoogleCalendar,
       dataplugMonzo,
