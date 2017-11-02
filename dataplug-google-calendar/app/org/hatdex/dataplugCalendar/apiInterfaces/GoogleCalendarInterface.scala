@@ -80,7 +80,7 @@ class GoogleCalendarInterface @Inject() (
     resultsPosted
   }
 
-  private def transformData(rawData: JsValue, calendarId: String) = {
+  def transformData(rawData: JsValue, calendarId: String): JsResult[JsObject] = {
     import play.api.libs.json.Reads._
     import play.api.libs.json._
 
@@ -88,7 +88,7 @@ class GoogleCalendarInterface @Inject() (
       of[JsArray].map {
         case JsArray(arr) => JsArray(
           arr.map { item =>
-            item.transform((__ \ 'calendarId).json.put(JsString(calendarId)))
+            item.transform(__.read[JsObject].map(o => o ++ Json.obj("calendarId" -> calendarId)))
           }.collect {
             case JsSuccess(v, _) => v
           }
