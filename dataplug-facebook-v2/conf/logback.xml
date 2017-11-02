@@ -35,8 +35,8 @@
   <logger name="MonzoTransactionsInterface" level="DEBUG"/>
   <logger name="SchemaMigration" level="INFO" />
 
-  <logger name="org.hatdex.dataplugFacebook.*" level="DEBUG" />
-  <logger name="org.hatdex.dataplug.*" level="INFO" />
+  <logger name="org.hatdex.dataplugFacebook" level="DEBUG" />
+  <logger name="org.hatdex.dataplug" level="INFO" />
   <logger name="org.hatdex.dataplugFacebook.controllers.Api" level="DEBUG" />
 
   <logger name="HatClientActor" level="WARN" />

@@ -92,15 +92,14 @@ class FacebookFeedInterface @Inject() (
       val maybePreviousPage = (content \ "paging" \ "previous").asOpt[String]
 
       logger.debug("'Since' parameter not found (likely no continuation runs), setting one now")
-      val freshSinceParam = maybePreviousPage.flatMap { previousPage =>
-        Uri(previousPage).query().get("since")
+      maybePreviousPage.flatMap { previousPage =>
+        Uri(previousPage).query().get("since").map { newSinceParam =>
+          params.copy(queryParameters = params.queryParameters + ("since" -> newSinceParam))
+        }
       }.getOrElse {
-        logger.warn("Unexpected API behaviour: previous page field not found. Setting 'since' to current datetime")
-        (new DateTime().getMillis / 1000).toString
+        logger.warn("Could not extract previous page 'since' parameter so the new value is not set. Was the feed list empty?")
+        params
       }
-
-      logger.debug(s"Building next sync parameters $updatedQueryParams with 'since': $freshSinceParam")
-      params.copy(queryParameters = params.queryParameters + ("since" -> freshSinceParam))
     }
   }
 
@@ -143,7 +142,7 @@ object FacebookFeedInterface {
     "/me/feed",
     ApiEndpointMethod.Get("Get"),
     Map(),
-    Map("limit" -> "10", "format" -> "json", "fields" -> ("id,admin_creator,application,call_to_action,caption,created_time,description," +
+    Map("limit" -> "500", "format" -> "json", "fields" -> ("id,admin_creator,application,call_to_action,caption,created_time,description," +
       "feed_targeting,from,icon,is_hidden,is_published,link,message,message_tags,name,object_id,picture,place," +
       "privacy,properties,shares,source,status_type,story,targeting,to,type,updated_time,with_tags,full_picture")),
     Map())

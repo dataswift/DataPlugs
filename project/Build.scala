@@ -17,8 +17,8 @@ object Build extends Build {
   )
 
   lazy val dataplugFacebook = Project(
-    id = "dataplug-facebook",
-    base = file("dataplug-facebook"),
+    id = "dataplug-facebook-v2",
+    base = file("dataplug-facebook-v2"),
     dependencies = Seq(
       dataplug % "compile->compile;test->test")
   )
