@@ -32,7 +32,7 @@ class Api @Inject() (
     syncerActorManager: DataplugSyncerActorManager) extends Controller {
 
   protected val ioEC: ExecutionContext = IoExecutionContext.ioThreadPool
-  protected val provider: String = configuration.getString("service.name").getOrElse("")
+  protected val provider: String = configuration.getString("service.provider").getOrElse("")
 
   def tickle: Action[AnyContent] = tokenUserAuthenticatedAction.async { implicit request =>
     syncerActorManager.runPhataActiveVariantChoices(request.identity.userId) map { _ =>

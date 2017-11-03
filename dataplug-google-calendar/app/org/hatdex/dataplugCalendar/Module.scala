@@ -7,6 +7,7 @@
 
 package org.hatdex.dataplugCalendar
 
+import akka.actor.{ ActorSystem, Scheduler }
 import com.google.inject.{ AbstractModule, Provides }
 import com.mohiva.play.silhouette.api.Provider
 import com.mohiva.play.silhouette.api.util.HTTPLayer
@@ -57,8 +58,7 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
     googleCalendarEndpoint: GoogleCalendarInterface): DataPlugRegistry = {
 
     DataPlugRegistry(Seq(
-      googleCalendarEndpoint
-    ))
+      googleCalendarEndpoint))
   }
 
   @Provides
@@ -81,8 +81,7 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
     googleProvider: GoogleProvider): SocialProviderRegistry = {
 
     SocialProviderRegistry(Seq(
-      googleProvider
-    ))
+      googleProvider))
   }
 
   /**
@@ -99,5 +98,10 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
     stateProvider: OAuth2StateProvider,
     configuration: Configuration): GoogleProvider = {
     new GoogleProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.google"))
+  }
+
+  @Provides
+  def providesAkkaActorScheduler(actorSystem: ActorSystem): Scheduler = {
+    actorSystem.scheduler
   }
 }

@@ -35,8 +35,8 @@ class GoogleCalendarInterface @Inject() (
   // JSON type formatters
   import GoogleCalendarEventJsonProtocol.eventFormat
 
-  val namespace: String = "google"
-  val endpoint: String = "calendar"
+  val namespace: String = "calendar"
+  val endpoint: String = "google/events"
   protected val logger: Logger = Logger(this.getClass)
 
   val defaultApiEndpoint: ApiEndpointCall = GoogleCalendarInterface.defaultApiEndpoint
@@ -91,23 +91,22 @@ class GoogleCalendarInterface @Inject() (
             item.transform(__.read[JsObject].map(o => o ++ Json.obj("calendarId" -> calendarId)))
           }.collect {
             case JsSuccess(v, _) => v
-          }
-        )
-      }
-    )
+          })
+      })
+
     rawData.transform(transformation)
   }
 
   def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     (rawData \ "items").toOption.map {
       case data: JsArray if data.validate[List[GoogleCalendarEvent]].isSuccess =>
-        logger.debug(s"Validated JSON object: ${data.toString}")
+        logger.debug(s"Validated JSON object: ${data.value.length}")
         Success(data)
       case data: JsObject =>
         logger.error(s"Error validating data, some of the required fields missing: ${data.toString}")
         Failure(SourceDataProcessingException(s"Error validating data, some of the required fields missing."))
-      case _ =>
-        logger.error(s"Error parsing JSON object: ${rawData.toString}")
+      case data =>
+        logger.error(s"Error parsing JSON object: ${data.toString} ${data.validate[List[GoogleCalendarEvent]]}")
         Failure(SourceDataProcessingException(s"Error parsing JSON object."))
     }.getOrElse {
       logger.error(s"Error parsing JSON object: ${rawData.toString}")

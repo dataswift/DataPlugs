@@ -120,7 +120,7 @@ class FacebookFeedInterface @Inject() (
   def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     (rawData \ "data").toOption.map {
       case data: JsArray if data.validate[List[FacebookPost]].isSuccess =>
-        logger.debug(s"Validated JSON object:\n${data.toString}")
+        logger.debug(s"Validated JSON array:\n${data.value.length}")
         Success(data)
       case data: JsObject =>
         logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")

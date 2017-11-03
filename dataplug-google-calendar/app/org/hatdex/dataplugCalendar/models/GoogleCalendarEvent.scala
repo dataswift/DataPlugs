@@ -5,37 +5,37 @@ import play.api.libs.json._
 import play.api.libs.functional.syntax._
 
 case class GoogleCalendarEventCreator(
-  displayName: Option[String], // The creator's name, if available.
-  email: Option[String], // The creator's email address, if available.
-  id: Option[String], // The creator's Profile ID, if available. It corresponds to theid field in the People collection of the Google+ API
-  self: Option[Boolean] // Whether the creator corresponds to the calendar on which this copy of the event appears. The default is False.
+    displayName: Option[String], // The creator's name, if available.
+    email: Option[String], // The creator's email address, if available.
+    id: Option[String], // The creator's Profile ID, if available. It corresponds to theid field in the People collection of the Google+ API
+    self: Option[Boolean] // Whether the creator corresponds to the calendar on which this copy of the event appears. The default is False.
 )
 
 case class GoogleCalendarDate(
-  date: Option[String], // The date, in the format "yyyy-mm-dd", if this is an all-day event.
-  dateTime: Option[String], // The time, as a combined date-time value (formatted according to RFC3339). A time zone offset is required unless a time zone is explicitly specified in timeZone.
-  timeZone: Option[String], // The time zone in which the time is specified. (Formatted as an IANA Time Zone Database name, e.g. "Europe/Zurich".) For recurring events this field is required and specifies the time zone in which the recurrence is expanded. For single events this field is optional and indicates a custom time zone for the event start/end.
-  endTimeUnspecified: Option[Boolean] // Whether the end time is actually unspecified. An end time is still provided for compatibility reasons, even if this attribute is set to True. The default is False.
+    date: Option[String], // The date, in the format "yyyy-mm-dd", if this is an all-day event.
+    dateTime: Option[String], // The time, as a combined date-time value (formatted according to RFC3339). A time zone offset is required unless a time zone is explicitly specified in timeZone.
+    timeZone: Option[String], // The time zone in which the time is specified. (Formatted as an IANA Time Zone Database name, e.g. "Europe/Zurich".) For recurring events this field is required and specifies the time zone in which the recurrence is expanded. For single events this field is optional and indicates a custom time zone for the event start/end.
+    endTimeUnspecified: Option[Boolean] // Whether the end time is actually unspecified. An end time is still provided for compatibility reasons, even if this attribute is set to True. The default is False.
 )
 
 case class GoogleCalendarGadget(
-  display: Option[String], // The gadget's display mode. Optional. Possible values are: 'icon' - The gadget displays next to the event's title in the calendar view; 'chip' - The gadget displays when the event is clicked.
-  iconLink: String, // The gadget's icon URL. The URL scheme must be HTTPS.
-  link: String, // The gadget's URL. The URL scheme must be HTTPS.
-  title: String, // The gadget's title.
-  `type`: String, // The gadget's type.
-  height: Option[Int], // The gadget's height in pixels. The height must be an integer greater than 0. Optional.
-  width: Option[Int] // The gadget's width in pixels. The width must be an integer greater than 0. Optional.
+    display: Option[String], // The gadget's display mode. Optional. Possible values are: 'icon' - The gadget displays next to the event's title in the calendar view; 'chip' - The gadget displays when the event is clicked.
+    iconLink: String, // The gadget's icon URL. The URL scheme must be HTTPS.
+    link: String, // The gadget's URL. The URL scheme must be HTTPS.
+    title: String, // The gadget's title.
+    `type`: String, // The gadget's type.
+    height: Option[Int], // The gadget's height in pixels. The height must be an integer greater than 0. Optional.
+    width: Option[Int] // The gadget's width in pixels. The width must be an integer greater than 0. Optional.
 )
 
 case class GoogleCalendarReminders(
-  overrides: Option[String], // If the event doesn't use the default reminders, this lists the reminders specific to the event, or, if not set, indicates that no reminders are set for this event. The maximum number of override reminders is 5. JSON object with 'method'	(The method used by this reminder, "email" - reminders are sent via email, "sms" - reminders are sent via SMS or "popup" - reminders are sent via a UI popup) and "minutes" (Number of minutes before the start of the event when the reminder should trigger)
-  useDefault: Option[String] // Whether the default reminders of the calendar apply to the event.
+    overrides: Option[String], // If the event doesn't use the default reminders, this lists the reminders specific to the event, or, if not set, indicates that no reminders are set for this event. The maximum number of override reminders is 5. JSON object with 'method'	(The method used by this reminder, "email" - reminders are sent via email, "sms" - reminders are sent via SMS or "popup" - reminders are sent via a UI popup) and "minutes" (Number of minutes before the start of the event when the reminder should trigger)
+    useDefault: Option[String] // Whether the default reminders of the calendar apply to the event.
 )
 
 case class GoogleCalendarSource(
-  title: String, // Title of the source; for example a title of a web page or an email subject.
-  url: String // URL of the source pointing to a resource. The URL scheme must be HTTP or HTTPS.
+    title: String, // Title of the source; for example a title of a web page or an email subject.
+    url: String // URL of the source pointing to a resource. The URL scheme must be HTTP or HTTPS.
 )
 
 case class GoogleCalendarEvent(
@@ -90,8 +90,7 @@ object GoogleCalendarEvent extends ApiEndpointTableStructure {
     Some(GoogleCalendarDate(Some("date"), Some("dateTime"), Some("timeZone"), Some(false))),
     Some("status"),
     Some("summary"),
-    Some("updated")
-  )
+    Some("updated"))
 
   import GoogleCalendarEventJsonProtocol.eventFormat
   def toJson: JsValue = Json.toJson(dummyEntity)
@@ -130,8 +129,7 @@ object GoogleCalendarAttendee extends ApiEndpointTableStructure {
     Some(false),
     Some(false),
     Some("responseStatus"),
-    Some(false)
-  )
+    Some(false))
 
   import GoogleCalendarEventJsonProtocol.attendeeFormat
   def toJson: JsValue = Json.toJson(dummyEntity)

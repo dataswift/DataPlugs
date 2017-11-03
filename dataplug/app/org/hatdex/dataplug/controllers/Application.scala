@@ -36,7 +36,7 @@ class Application @Inject() (
     clock: Clock) extends SilhouettePhataAuthenticationController(silhouette, clock, configuration) {
 
   protected val logger: Logger = Logger(this.getClass)
-  protected val provider: String = configuration.getString("service.name").getOrElse("").toLowerCase
+  protected val provider: String = configuration.getString("service.provider").getOrElse("").toLowerCase
   protected val chooseVariants: Boolean = configuration.getBoolean("service.chooseVariants").getOrElse(false)
   protected implicit val ioEC: ExecutionContext = IoExecutionContext.ioThreadPool
 

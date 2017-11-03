@@ -29,8 +29,8 @@ class GoogleCalendarList @Inject() (
     val mailer: Mailer,
     val provider: GoogleProvider) extends DataPlugOptionsCollector with RequestAuthenticatorOAuth2 {
 
-  val namespace: String = "google"
-  val endpoint: String = "calendar"
+  val namespace: String = "calendar"
+  val endpoint: String = "google/events"
   protected val logger: Logger = Logger(this.getClass)
 
   val defaultApiEndpoint = ApiEndpointCall(
@@ -54,7 +54,7 @@ class GoogleCalendarList @Inject() (
             val summary = (calendar \ "summary").as[String]
             val pathParameters = GoogleCalendarInterface.defaultApiEndpoint.pathParameters + ("calendarId" -> calendarId)
             val variant = ApiEndpointVariant(
-              ApiEndpoint("calendar", "Google Calendars", None),
+              ApiEndpoint("google/events", "Google Calendars", None),
               Some(calendarId), Some(summary),
               Some(GoogleCalendarInterface.defaultApiEndpoint.copy(pathParameters = pathParameters)))
 
