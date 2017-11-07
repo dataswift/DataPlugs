@@ -15,3 +15,6 @@ GET         /authenticate/:provider        org.hatdex.dataplug.controllers.Socia
 GET         /api/tickle                    org.hatdex.dataplug.controllers.Api.tickle
 GET         /api/status                    org.hatdex.dataplug.controllers.Api.status
 GET         /api/permissions               org.hatdex.dataplug.controllers.Api.permissions
+
+POST        /api/content                   org.hatdex.dataplugFacebook.controllers.Api.create
+DELETE      /api/content/:id               org.hatdex.dataplugFacebook.controllers.Api.delete(id: String)

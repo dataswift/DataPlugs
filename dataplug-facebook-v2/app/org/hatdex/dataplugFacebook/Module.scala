@@ -19,7 +19,7 @@ import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.dataplug.actors.DataPlugManagerActor
 import org.hatdex.dataplug.apiInterfaces.{ DataPlugOptionsCollector, DataPlugOptionsCollectorRegistry, DataPlugRegistry }
 import org.hatdex.dataplug.controllers.{ DataPlugViewSet, DataPlugViewSetDefault }
-import org.hatdex.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl }
+import org.hatdex.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl, DataPlugSharedNotableDAO, DataPlugSharedNotableDAOImpl }
 import org.hatdex.dataplug.services._
 import org.hatdex.dataplugFacebook.apiInterfaces._
 import play.api.Configuration
@@ -40,7 +40,9 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
     bind[StartupService].to[StartupServiceImpl].asEagerSingleton()
 
     bind[DataPlugEndpointDAO].to[DataPlugEndpointDAOImpl]
+    bind[DataPlugSharedNotableDAO].to[DataPlugSharedNotableDAOImpl]
     bind[DataPlugEndpointService].to[DataPlugEndpointServiceImpl]
+    bind[DataPlugNotablesService].to[DataPlugNotablesServiceImpl]
 
     bind[DataPlugViewSet].to[DataPlugViewSetDefault]
 

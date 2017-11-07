@@ -148,7 +148,8 @@ class TwitterStatusUpdateInterface @Inject() (
           case OK =>
             Future.successful(())
           case status =>
-            Future.failed(SourceApiCommunicationException(s"Unexpected response from twitter (status code $status): ${result.body}"))
+            Future.failed(SourceApiCommunicationException(
+              s"Unexpected response from twitter (status code $status): ${result.body}"))
         }
       }
     }

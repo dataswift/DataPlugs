@@ -14,7 +14,6 @@ import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMe
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugFacebook.models.FacebookPost
-import org.joda.time.DateTime
 import play.api.Logger
 import play.api.cache.CacheApi
 import play.api.libs.json._

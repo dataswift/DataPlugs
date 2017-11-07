@@ -68,7 +68,7 @@ trait RequestAuthenticatorOAuth2 extends RequestAuthenticator {
     }
 
     eventualAuthInfo map { authInfo =>
-      params.copy(headers = Map("Authorization" -> s"Bearer ${authInfo.accessToken}"))
+      params.copy(headers = params.headers + ("Authorization" -> s"Bearer ${authInfo.accessToken}"))
     }
   }
 }
