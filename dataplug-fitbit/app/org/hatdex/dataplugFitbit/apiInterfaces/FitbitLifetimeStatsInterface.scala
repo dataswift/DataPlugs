@@ -103,6 +103,7 @@ object FitbitLifetimeStatsInterface {
     ApiEndpointMethod.Get("Get"),
     Map(),
     Map(),
+    Map(),
     Map())
 }
 

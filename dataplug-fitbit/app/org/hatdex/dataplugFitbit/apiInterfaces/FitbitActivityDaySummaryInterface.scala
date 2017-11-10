@@ -13,7 +13,7 @@ import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugFitbit.apiInterfaces.authProviders.FitbitProvider
 import org.hatdex.dataplugFitbit.models.FitbitActivitySummary
-import org.joda.time.DateTime
+import org.joda.time.{ DateTime, Days }
 import org.joda.time.format.{ DateTimeFormat, DateTimeFormatter }
 import play.api.Logger
 import play.api.cache.CacheApi
@@ -39,15 +39,37 @@ class FitbitActivityDaySummaryInterface @Inject() (
   protected val logger: Logger = Logger(this.getClass)
 
   val defaultApiEndpoint = FitbitActivityDaySummaryInterface.defaultApiEndpoint
+  val defaultApiDateFormat = FitbitActivityDaySummaryInterface.apiDateFormat
 
   val refreshInterval = 24.hours
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
-    None
+    val dateParam = params.pathParameters.getOrElse("date", "")
+    val syncDate = DateTime.parse(dateParam, defaultApiDateFormat)
+    val maybeEarliestDateSynced = params.storageParameters.get("earliestDateSynced")
+
+    maybeEarliestDateSynced.map { earliestDateSynced =>
+      val earliestDate = DateTime.parse(earliestDateSynced, defaultApiDateFormat)
+
+      logger.warn(s"Days between: ${Days.daysBetween(earliestDate, DateTime.now).getDays}")
+
+      if (Days.daysBetween(earliestDate, DateTime.now).getDays > 10) {
+        None
+      }
+      else {
+        Some(params.copy(
+          storageParameters = params.storageParameters + ("earliestDateSynced" -> dateParam),
+          pathParameters = params.pathParameters + ("date" -> syncDate.minus(1).toString(defaultApiDateFormat))))
+      }
+    }.getOrElse {
+      Some(params.copy(
+        storageParameters = params.storageParameters + ("earliestDateSynced" -> dateParam),
+        pathParameters = params.pathParameters + ("date" -> syncDate.minusDays(1).toString(defaultApiDateFormat))))
+    }
   }
 
   def buildNextSync(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
-    val nextSyncDate = DateTime.now.toString(FitbitActivityDaySummaryInterface.apiDateFormat)
+    val nextSyncDate = DateTime.now.toString(defaultApiDateFormat)
     val nextPathParameters = params.copy(pathParameters = params.pathParameters + ("date" -> nextSyncDate))
 
     nextPathParameters
@@ -58,11 +80,11 @@ class FitbitActivityDaySummaryInterface @Inject() (
 
     val finalFetchParams = params.map { p =>
       p.pathParameters.get("date").map { _ => p }.getOrElse {
-        val updatedParameters = p.pathParameters + ("date" -> DateTime.now.minusDays(1).toString(FitbitActivityDaySummaryInterface.apiDateFormat))
+        val updatedParameters = p.pathParameters + ("date" -> DateTime.now.minusDays(1).toString(defaultApiDateFormat))
         p.copy(pathParameters = updatedParameters)
       }
     }.getOrElse {
-      val updatedParameters = defaultApiEndpoint.pathParameters + ("date" -> DateTime.now.minusDays(1).toString(FitbitActivityDaySummaryInterface.apiDateFormat))
+      val updatedParameters = defaultApiEndpoint.pathParameters + ("date" -> DateTime.now.minusDays(1).toString(defaultApiDateFormat))
 
       defaultApiEndpoint.copy(pathParameters = updatedParameters)
     }
@@ -95,7 +117,7 @@ class FitbitActivityDaySummaryInterface @Inject() (
     import play.api.libs.json._
 
     val transformation = (__ \ "summary").json.update(
-      __.read[JsObject].map(o => o ++ JsObject(Map("dateCreated" -> JsString(date)))))
+      __.read[JsObject].map(o => o ++ JsObject(Map("dateCreated" -> JsString(DateTime.now.toString), "summaryDate" -> JsString(date)))))
 
     rawData.transform(transformation)
   }
@@ -126,6 +148,7 @@ object FitbitActivityDaySummaryInterface {
     "https://api.fitbit.com",
     "/1/user/-/activities/date/[date].json",
     ApiEndpointMethod.Get("Get"),
+    Map(),
     Map(),
     Map(),
     Map())

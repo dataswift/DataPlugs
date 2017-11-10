@@ -40,7 +40,7 @@ class FitbitProfileInterface @Inject() (
 
   val defaultApiEndpoint = FitbitProfileInterface.defaultApiEndpoint
 
-  val refreshInterval = 24.hours
+  val refreshInterval = 7.days
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     None
@@ -57,7 +57,7 @@ class FitbitProfileInterface @Inject() (
     fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Unit] = {
 
     val dataValidation =
-      transformData(content, DateTime.now.toString(FitbitProfileInterface.apiDateFormat))
+      transformData(content)
         .map(validateMinDataStructure)
         .getOrElse(Failure(SourceDataProcessingException("Source data malformed, could not insert date in to the structure")))
 
@@ -69,11 +69,11 @@ class FitbitProfileInterface @Inject() (
     }
   }
 
-  private def transformData(rawData: JsValue, date: String): JsResult[JsObject] = {
+  private def transformData(rawData: JsValue): JsResult[JsObject] = {
     import play.api.libs.json._
 
     val transformation = (__ \ "user").json.update(
-      __.read[JsObject].map(o => o ++ JsObject(Map("dateCreated" -> JsString(date)))))
+      __.read[JsObject].map(o => o ++ JsObject(Map("dateCreated" -> JsString(DateTime.now.toString)))))
 
     rawData.transform(transformation)
   }
@@ -104,6 +104,7 @@ object FitbitProfileInterface {
     "https://api.fitbit.com",
     "/1/user/-/profile.json",
     ApiEndpointMethod.Get("Get"),
+    Map(),
     Map(),
     Map(),
     Map())
