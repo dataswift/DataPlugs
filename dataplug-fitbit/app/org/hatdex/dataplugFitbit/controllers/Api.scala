@@ -52,52 +52,52 @@ class Api @Inject() (
   private val provider: String = configuration.getString("service.name").getOrElse("").toLowerCase
   private val oauth2Provider = socialProviderRegistry.get[OAuth2Provider](provider).get
 
-  def webhookVerify(verify: String): EssentialAction = Action {
-    if (verify == verificationCode) {
-      NoContent
-    }
-    else {
-      NotFound
-    }
-  }
-
-  implicit val notificationFormat: Format[FitbitActivityNotification] = Json.format[FitbitActivityNotification]
-  def handleNotification(): Action[AnyContent] = Action { implicit request =>
-    request.body.asText map { textContent =>
-      val signature = generateSignature(textContent, oauth2Provider.ClientSecret)
-      val headerSignature = request.headers.get("X-Fitbit-Signature")
-      if (headerSignature.contains(signature)) {
-        Json.parse(textContent).asOpt[FitbitActivityNotification] map { notification =>
-          userService.retrieve(LoginInfo(provider, notification.ownerId)) map { user =>
-            logger.info(s"Got activity notification for $user: $notification")
-          }
-        } getOrElse {
-          logger.error("Failed to parse content to notifications")
-        }
-        NoContent
-      }
-      else {
-        logger.warn(s"Signatures did not match: $signature != $headerSignature")
-        logger.warn(s"Attempted notification was: ${request.body}")
-        NotFound
-      }
-    } getOrElse {
-      NotFound
-    }
-  }
-
-  protected def generateSignature(content: String, secretKey: String): String = {
-    val keyspec = new SecretKeySpec(secretKey.getBytes(), "HmacSHA512")
-    val shaMac = Mac.getInstance("HmacSHA512")
-    shaMac.init(keyspec)
-
-    val macData = shaMac.doFinal(content.getBytes())
-    BaseEncoding.base64().encode(macData)
-  }
-
-  subscriptionEventBus.subscribe(
-    actorSystem.actorOf(SubscriptionManagerActor.props(fitbitSubscription)),
-    classOf[SubscriptionEventBus.SubscriptionEvent])
+  //  def webhookVerify(verify: String): EssentialAction = Action {
+  //    if (verify == verificationCode) {
+  //      NoContent
+  //    }
+  //    else {
+  //      NotFound
+  //    }
+  //  }
+  //
+  //  implicit val notificationFormat: Format[FitbitActivityNotification] = Json.format[FitbitActivityNotification]
+  //  def handleNotification(): Action[AnyContent] = Action { implicit request =>
+  //    request.body.asText map { textContent =>
+  //      val signature = generateSignature(textContent, oauth2Provider.ClientSecret)
+  //      val headerSignature = request.headers.get("X-Fitbit-Signature")
+  //      if (headerSignature.contains(signature)) {
+  //        Json.parse(textContent).asOpt[FitbitActivityNotification] map { notification =>
+  //          userService.retrieve(LoginInfo(provider, notification.ownerId)) map { user =>
+  //            logger.info(s"Got activity notification for $user: $notification")
+  //          }
+  //        } getOrElse {
+  //          logger.error("Failed to parse content to notifications")
+  //        }
+  //        NoContent
+  //      }
+  //      else {
+  //        logger.warn(s"Signatures did not match: $signature != $headerSignature")
+  //        logger.warn(s"Attempted notification was: ${request.body}")
+  //        NotFound
+  //      }
+  //    } getOrElse {
+  //      NotFound
+  //    }
+  //  }
+  //
+  //  protected def generateSignature(content: String, secretKey: String): String = {
+  //    val keyspec = new SecretKeySpec(secretKey.getBytes(), "HmacSHA512")
+  //    val shaMac = Mac.getInstance("HmacSHA512")
+  //    shaMac.init(keyspec)
+  //
+  //    val macData = shaMac.doFinal(content.getBytes())
+  //    BaseEncoding.base64().encode(macData)
+  //  }
+  //
+  //  subscriptionEventBus.subscribe(
+  //    actorSystem.actorOf(SubscriptionManagerActor.props(fitbitSubscription)),
+  //    classOf[SubscriptionEventBus.SubscriptionEvent])
 
 }
 
@@ -108,27 +108,27 @@ case class FitbitActivityNotification(
     ownerType: String,
     subscriptionId: String)
 
-object SubscriptionManagerActor {
-  def props(fitbitSubscription: FitbitSubscription): Props = Props(new SubscriptionManagerActor(fitbitSubscription))
-}
+//object SubscriptionManagerActor {
+//  def props(fitbitSubscription: FitbitSubscription): Props = Props(new SubscriptionManagerActor(fitbitSubscription))
+//}
 
-class SubscriptionManagerActor(fitbitSubscription: FitbitSubscription) extends Actor {
-  def receive: Receive = {
-    case SubscriptionEventBus.UserSubscribedEvent(user, _, variantChoice) =>
-      variantChoiceToCollectionKey(variantChoice)
-        .map(fitbitSubscription.create(_, user.userId))
-
-    case SubscriptionEventBus.UserUnsubscribedEvent(user, _, variantChoice) =>
-      variantChoiceToCollectionKey(variantChoice)
-        .map(fitbitSubscription.delete(_, user.userId))
-  }
-
-  protected def variantChoiceToCollectionKey(variantChoice: ApiEndpointVariantChoice): Option[String] = {
-    variantChoice.key match {
-      case "activity" => Some("activities")
-      case "weight"   => Some("body")
-      case "sleep"    => Some("sleep")
-      case _          => None
-    }
-  }
-}
+//class SubscriptionManagerActor(fitbitSubscription: FitbitSubscription) extends Actor {
+//  def receive: Receive = {
+//    case SubscriptionEventBus.UserSubscribedEvent(user, _, variantChoice) =>
+//      variantChoiceToCollectionKey(variantChoice)
+//        .map(fitbitSubscription.create(_, user.userId))
+//
+//    case SubscriptionEventBus.UserUnsubscribedEvent(user, _, variantChoice) =>
+//      variantChoiceToCollectionKey(variantChoice)
+//        .map(fitbitSubscription.delete(_, user.userId))
+//  }
+//
+//  protected def variantChoiceToCollectionKey(variantChoice: ApiEndpointVariantChoice): Option[String] = {
+//    variantChoice.key match {
+//      case "activity" => Some("activities")
+//      case "weight"   => Some("body")
+//      case "sleep"    => Some("sleep")
+//      case _          => None
+//    }
+//  }
+//}

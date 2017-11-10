@@ -12,8 +12,8 @@ GET         /authenticate/hat              org.hatdex.dataplug.controllers.HatLo
 POST        /signin/hat                    org.hatdex.dataplug.controllers.HatLoginController.signinHat()
 GET         /authenticate/:provider        org.hatdex.dataplug.controllers.SocialAuthController.authenticate(provider)
 
-GET         /webhook                       org.hatdex.dataplugFitbit.controllers.Api.webhookVerify(verify: String)
-POST        /webhook                       org.hatdex.dataplugFitbit.controllers.Api.handleNotification
+# GET         /webhook                       org.hatdex.dataplugFitbit.controllers.Api.webhookVerify(verify: String)
+# POST        /webhook                       org.hatdex.dataplugFitbit.controllers.Api.handleNotification
 
 GET         /api/tickle                    org.hatdex.dataplug.controllers.Api.tickle
 GET         /api/status                    org.hatdex.dataplug.controllers.Api.status

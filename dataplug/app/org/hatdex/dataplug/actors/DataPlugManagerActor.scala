@@ -96,17 +96,20 @@ class DataPlugManagerActor @Inject() (
       dataPlugRegistry.get[DataPlugEndpointInterface](variant.endpoint.name).map { endpointInterface =>
         val actorKey = syncerActorKey(phata, variant)
         logger.info(s"Starting actor fetch $actorKey")
-        val eventualSyncMessage = for {
-          endpointCall <- dataplugEndpointService.retrieveLastSuccessfulEndpointVariant(phata, variant.endpoint.name, variant.variant)
-            .map(maybeEndpointVariant => maybeEndpointVariant.flatMap(_.configuration).orElse(maybeEndpointCall))
-          syncerActor <- startSyncerActor(phata, variant, endpointInterface, actorKey)
-        } yield Forward(Fetch(endpointCall, 0), syncerActor)
+        context.system.scheduler.schedule(1.second, endpointInterface.refreshInterval) {
 
-        eventualSyncMessage.onFailure {
-          case e => logger.error(s"Error while trying to start sycning dat for $phata, variant $variant: ${e.getMessage}", e)
+          val eventualSyncMessage = for {
+            endpointCall <- dataplugEndpointService.retrieveLastSuccessfulEndpointVariant(phata, variant.endpoint.name, variant.variant)
+              .map(maybeEndpointVariant => maybeEndpointVariant.flatMap(_.configuration).orElse(maybeEndpointCall))
+            syncerActor <- startSyncerActor(phata, variant, endpointInterface, actorKey)
+          } yield Forward(Fetch(endpointCall, 0), syncerActor)
+
+          eventualSyncMessage.onFailure {
+            case e => logger.error(s"Error while trying to start sycning dat for $phata, variant $variant: ${e.getMessage}", e)
+          }
+
+          eventualSyncMessage pipeTo throttledSyncActor
         }
-
-        eventualSyncMessage pipeTo throttledSyncActor
       } getOrElse {
         val message = s"No such plug ${variant.endpoint.name} in DataPlug Registry"
         logger.error(message)

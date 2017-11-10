@@ -40,6 +40,7 @@ class FitbitSubscription @Inject() (
     ApiEndpointMethod.Post("Post", ""),
     Map(),
     Map(),
+    Map(),
     Map())
 
   def create(collectionPath: String, hatAddress: String)(implicit ec: ExecutionContext): Future[Done] = {
