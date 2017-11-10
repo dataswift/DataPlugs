@@ -14,6 +14,7 @@ import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugFitbit.apiInterfaces.authProviders.FitbitProvider
 import org.hatdex.dataplugFitbit.models.FitbitSleep
+import org.joda.time.DateTime
 import org.joda.time.format.{ DateTimeFormat, DateTimeFormatter, ISODateTimeFormat }
 import play.api.Logger
 import play.api.cache.CacheApi
@@ -39,66 +40,74 @@ class FitbitSleepInterface @Inject() (
   protected val logger: Logger = Logger(this.getClass)
 
   val defaultApiEndpoint = FitbitSleepInterface.defaultApiEndpoint
+  val defaultApiDateFormat = FitbitSleepInterface.apiDateFormat
+
+  val cutoffDate = DateTime.parse("2017-01-01", defaultApiDateFormat)
 
   val refreshInterval = 24.hours
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     logger.debug("Building continuation...")
-    val continuationPathParams = params.pathParameters.get("nextSyncTimestamp").map { timestamp =>
-      logger.debug(s"Next Sync Timestamp found: $timestamp")
-      params.pathParameters
-    }.getOrElse {
-      extractNextSyncTimestamp(content).map { nextSyncTimestamp =>
-        logger.debug(s"Next Sync Timestamp NOT found. Setting it to $nextSyncTimestamp")
-        params.pathParameters + ("nextSyncTimestamp" -> nextSyncTimestamp)
-      }.getOrElse {
-        logger.debug(s"Next Sync Timestamp NOT found and CANNOT be set!")
-        params.pathParameters
+
+    (
+      params.pathParameters.get("baseDate"),
+      params.pathParameters.get("endDate"),
+      params.storageParameters.get("earliestSyncedDate")) match {
+        case (Some(baseDateStr), Some(endDateStr), Some(earliestSyncedDateStr)) =>
+          val baseDate = DateTime.parse(baseDateStr, defaultApiDateFormat)
+          val earliestSyncedDate = DateTime.parse(earliestSyncedDateStr, defaultApiDateFormat)
+
+          if (baseDateStr == endDateStr && earliestSyncedDate.isAfter(cutoffDate)) {
+            Some(params.copy(
+              pathParameters = params.pathParameters +
+                ("baseDate" -> earliestSyncedDate.minusDays(99).toString(defaultApiDateFormat),
+                  "endDate" -> earliestSyncedDate.minusDays(1).toString(defaultApiDateFormat))))
+          }
+          else if (earliestSyncedDate.isAfter(cutoffDate)) {
+            Some(params.copy(
+              pathParameters = params.pathParameters +
+                ("baseDate" -> baseDate.minusDays(99).toString(defaultApiDateFormat),
+                  "endDate" -> baseDate.minusDays(1).toString(defaultApiDateFormat)),
+              storageParameters = params.storageParameters + ("earliestSyncedDate" -> baseDateStr)))
+          }
+          else {
+            None
+          }
+        case (_, _, _) => None
       }
-    }
-
-    val nextLink = (content \ "pagination" \ "next").as[String]
-
-    if (nextLink.nonEmpty) {
-      logger.debug(s"Next link found: $nextLink")
-      val maybeOffset = Uri(nextLink).queryString().flatMap { queryString =>
-        queryString.split("&").find(_.contains("offset")).flatMap(_.split("=").lastOption)
-      }
-
-      maybeOffset.map { offset =>
-        logger.debug(s"Setting offset to: $offset")
-        logger.debug(s"Next continuation Params: ${params.copy(pathParameters = continuationPathParams, queryParameters = params.queryParameters + ("offset" -> offset))}")
-        params.copy(
-          pathParameters = continuationPathParams,
-          queryParameters = params.queryParameters + ("offset" -> offset))
-      }
-    }
-    else {
-      logger.debug(s"Next link NOT found. Terminating continuation.")
-      None
-    }
-
   }
 
   def buildNextSync(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
     logger.debug(s"Building next sync...")
-    params.pathParameters.get("nextSyncTimestamp").map { nextSyncTimestamp =>
-      val nextPathParameters = params.pathParameters - "nextSyncTimestamp"
-      val nextQueryParameters = params.queryParameters - "beforeDate" + ("afterDate" -> nextSyncTimestamp, "offset" -> "0")
-      logger.debug(s"Next sync params: ${params.copy(pathParameters = nextPathParameters, queryParameters = nextQueryParameters)}")
-      params.copy(pathParameters = nextPathParameters, queryParameters = nextQueryParameters)
-    }.getOrElse {
-      logger.debug(s"No continuation built. Updating query parameters...")
 
-      extractNextSyncTimestamp(content).map { nextSyncTimestamp =>
-        val nextQueryParameters = params.queryParameters - "beforeDate" + ("afterDate" -> nextSyncTimestamp)
-        logger.debug(s"New data added. Updating query params to $nextQueryParameters")
-        params.copy(queryParameters = nextQueryParameters)
-      }.getOrElse {
-        logger.debug("Nothing to update. Leaving query params as is.")
-        params
+    params.copy(pathParameters = params.pathParameters +
+      ("baseDate" -> DateTime.now.toString(defaultApiDateFormat),
+        "endDate" -> DateTime.now.toString(defaultApiDateFormat)))
+  }
+
+  override def buildFetchParameters(params: Option[ApiEndpointCall])(implicit ec: ExecutionContext): Future[ApiEndpointCall] = {
+    logger.debug(s"Custom building fetch params: \n $params")
+
+    val finalFetchParams = params.map { p =>
+      p.pathParameters.get("baseDate").map { _ => p }.getOrElse {
+        val updatedPathParams = p.pathParameters +
+          ("baseDate" -> DateTime.now.minusDays(99).toString(defaultApiDateFormat),
+            "endDate" -> DateTime.now.minusDays(1).toString(defaultApiDateFormat))
+        val updatedStorageParams = p.storageParameters + ("earliestSyncedDate" -> DateTime.now.minusDays(1).toString(defaultApiDateFormat))
+
+        p.copy(pathParameters = updatedPathParams, storageParameters = updatedStorageParams)
       }
+    }.getOrElse {
+      val updatedPathParams = defaultApiEndpoint.pathParameters +
+        ("baseDate" -> DateTime.now.minusDays(99).toString(defaultApiDateFormat),
+          "endDate" -> DateTime.now.minusDays(1).toString(defaultApiDateFormat))
+      val updatedStorageParams = defaultApiEndpoint.storageParameters + ("earliestSyncedDate" -> DateTime.now.minusDays(1).toString(defaultApiDateFormat))
+      defaultApiEndpoint.copy(pathParameters = updatedPathParams, storageParameters = updatedStorageParams)
     }
+
+    logger.debug(s"Final fetch parameters: \n $finalFetchParams")
+
+    Future.successful(finalFetchParams)
   }
 
   override protected def processResults(
@@ -118,7 +127,7 @@ class FitbitSleepInterface @Inject() (
   def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     (rawData \ "sleep").toOption.map {
       case data: JsArray if data.validate[List[FitbitSleep]].isSuccess =>
-        logger.debug(s"Validated JSON object:\n${data.toString}")
+        logger.debug(s"Validated JSON object with ${data.value.length} values.")
         Success(data)
       case data: JsObject =>
         logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")
@@ -132,28 +141,17 @@ class FitbitSleepInterface @Inject() (
     }
   }
 
-  private def extractNextSyncTimestamp(content: JsValue): Option[String] = {
-    val maybeFirstActivityTimestamp = (content \ "sleep").asOpt[JsArray].flatMap { activityList =>
-      activityList.value.headOption.flatMap { firstActivity => (firstActivity \ "endTime").asOpt[String] }
-    }
-
-    maybeFirstActivityTimestamp.map { firstActivityTimestamp =>
-      val timestamp = ISODateTimeFormat.dateTimeParser().parseDateTime(firstActivityTimestamp)
-      val afterDate = timestamp.plusSeconds(1)
-      afterDate.toString(FitbitSleepInterface.apiDateFormat)
-    }
-  }
-
 }
 
 object FitbitSleepInterface {
-  val apiDateFormat: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss")
+  val apiDateFormat: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd")
 
   val defaultApiEndpoint = ApiEndpointCall(
     "https://api.fitbit.com",
-    "/1.2/user/-/sleep/list.json",
+    "/1.2/user/-/sleep/date/[baseDate]/[endDate].json",
     ApiEndpointMethod.Get("Get"),
     Map(),
-    Map("sort" -> "desc", "limit" -> "2", "offset" -> "0", "beforeDate" -> "today"),
+    Map(),
+    Map(),
     Map())
 }

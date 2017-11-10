@@ -35,11 +35,9 @@
   <logger name="MonzoTransactionsInterface" level="DEBUG"/>
   <logger name="SchemaMigration" level="INFO" />
 
-  <logger name="org.hatdex.dataplugFitbit.*" level="INFO" />
+  <logger name="org.hatdex.dataplugFitbit" level="DEBUG" />
   <logger name="org.hatdex.dataplug.*" level="INFO" />
   <logger name="org.hatdex.dataplugFitbit.controllers.Api" level="DEBUG" />
-  <!--<logger name="org.hatdex.dataplug.controllers" level="DEBUG" />-->
-  <!--<logger name="org.hatdex.dataplug.apiInterfaces.authProviders" level="DEBUG" />-->
 
   <logger name="HatClientActor" level="WARN" />
 

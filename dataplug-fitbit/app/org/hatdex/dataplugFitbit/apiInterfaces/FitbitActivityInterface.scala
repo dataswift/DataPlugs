@@ -44,58 +44,48 @@ class FitbitActivityInterface @Inject() (
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     logger.debug("Building continuation...")
-    val continuationPathParams = params.pathParameters.get("nextSyncTimestamp").map { timestamp =>
-      logger.debug(s"Next Sync Timestamp found: $timestamp")
-      params.pathParameters
-    }.getOrElse {
-      extractNextSyncTimestamp(content).map { nextSyncTimestamp =>
-        logger.debug(s"Next Sync Timestamp NOT found. Setting it to $nextSyncTimestamp")
-        params.pathParameters + ("nextSyncTimestamp" -> nextSyncTimestamp)
-      }.getOrElse {
-        logger.debug(s"Next Sync Timestamp NOT found and CANNOT be set!")
-        params.pathParameters
-      }
+
+    val nextQueryParams = for {
+      nextLink <- Try((content \ "pagination" \ "next").as[String]) if nextLink.nonEmpty
+      queryParams <- Try(Uri(nextLink).query().toMap) if queryParams.size == 4
+    } yield queryParams
+
+    (nextQueryParams, params.storageParameters.get("afterDate")) match {
+      case (Success(qp), Some(_)) =>
+        logger.debug(s"Next continuation params: $qp")
+        Some(params.copy(queryParameters = params.queryParameters ++ qp))
+
+      case (Success(qp), None) =>
+        val afterDate = extractNextSyncTimestamp(content).get
+        logger.debug(s"Next continuation params: $qp, setting AfterDate to $afterDate")
+        Some(params.copy(queryParameters = params.queryParameters ++ qp, storageParameters = params.storageParameters +
+          ("afterDate" -> afterDate)))
+
+      case (Failure(e), _) =>
+        logger.debug(s"Next link NOT found. Terminating continuation. ${e.getMessage}")
+        None
     }
-
-    val nextLink = (content \ "pagination" \ "next").as[String]
-
-    if (nextLink.nonEmpty) {
-      logger.debug(s"Next link found: $nextLink")
-      val maybeOffset = Uri(nextLink).queryString().flatMap { queryString =>
-        queryString.split("&").find(_.contains("offset")).flatMap(_.split("=").lastOption)
-      }
-
-      maybeOffset.map { offset =>
-        logger.debug(s"Setting offset to: $offset")
-        logger.debug(s"Next continuation Params: ${params.copy(pathParameters = continuationPathParams, queryParameters = params.queryParameters + ("offset" -> offset))}")
-        params.copy(
-          pathParameters = continuationPathParams,
-          queryParameters = params.queryParameters + ("offset" -> offset))
-      }
-    }
-    else {
-      logger.debug(s"Next link NOT found. Terminating continuation.")
-      None
-    }
-
   }
 
   def buildNextSync(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
     logger.debug(s"Building next sync...")
-    params.pathParameters.get("nextSyncTimestamp").map { nextSyncTimestamp =>
-      val nextPathParameters = params.pathParameters - "nextSyncTimestamp"
-      val nextQueryParameters = params.queryParameters - "beforeDate" + ("afterDate" -> nextSyncTimestamp, "offset" -> "0")
-      logger.debug(s"Next sync params: ${params.copy(pathParameters = nextPathParameters, queryParameters = nextQueryParameters)}")
-      params.copy(pathParameters = nextPathParameters, queryParameters = nextQueryParameters)
-    }.getOrElse {
-      logger.debug(s"No continuation built. Updating query parameters...")
 
-      extractNextSyncTimestamp(content).map { nextSyncTimestamp =>
-        val nextQueryParameters = params.queryParameters - "beforeDate" + ("afterDate" -> nextSyncTimestamp)
-        logger.debug(s"New data added. Updating query params to $nextQueryParameters")
-        params.copy(queryParameters = nextQueryParameters)
-      }.getOrElse {
-        logger.debug("Nothing to update. Leaving query params as is.")
+    params.storageParameters.get("afterDate").map { afterDate => // After date set (there was at least one continuation step)
+      Try((content \ "activities").as[JsArray].value) match {
+        case Success(_) => // Did continuation but there was no `nextPage` found, if activities array present it's a successful completion
+          val nextStorage = params.storageParameters - "afterDate"
+          val nextQuery = params.queryParameters - "beforeDate" + ("afterDate" -> afterDate, "offset" -> "0")
+          params.copy(queryParameters = nextQuery, storageParameters = nextStorage)
+
+        case Failure(e) => // Cannot extract activities array value, most likely an error was returned by the API, continue from where finished
+          logger.error(s"Provider API request error while performing continuation: $content")
+          params
+      }
+    }.getOrElse { // After date not set, no continuation steps took place
+      extractNextSyncTimestamp(content).map { latestActivityTimestamp => // Extract new after date if there is any content
+        val nextQuery = params.queryParameters - "beforeDate" + ("afterDate" -> latestActivityTimestamp, "offset" -> "0")
+        params.copy(queryParameters = nextQuery)
+      }.getOrElse { // There is no content or failed to extract new date
         params
       }
     }
@@ -155,5 +145,6 @@ object FitbitActivityInterface {
     ApiEndpointMethod.Get("Get"),
     Map(),
     Map("sort" -> "desc", "limit" -> "2", "offset" -> "0", "beforeDate" -> "today"),
+    Map(),
     Map())
 }

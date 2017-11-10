@@ -39,33 +39,69 @@ class FitbitWeightInterface @Inject() (
   protected val logger: Logger = Logger(this.getClass)
 
   val defaultApiEndpoint: ApiEndpointCall = FitbitWeightInterface.defaultApiEndpoint
+  val defaultApiDateFormat = FitbitWeightInterface.defaultApiDateFormat
+
+  val cutoffDate = DateTime.parse("2017-01-01", defaultApiDateFormat)
 
   val refreshInterval: FiniteDuration = 24.hours
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
-    None
+    logger.debug("Building continuation...")
+
+    (
+      params.pathParameters.get("baseDate"),
+      params.pathParameters.get("endDate"),
+      params.storageParameters.get("earliestSyncedDate")) match {
+        case (Some(baseDateStr), Some(endDateStr), Some(earliestSyncedDateStr)) =>
+          val baseDate = DateTime.parse(baseDateStr, defaultApiDateFormat)
+          val earliestSyncedDate = DateTime.parse(earliestSyncedDateStr, defaultApiDateFormat)
+
+          if (baseDateStr == endDateStr && earliestSyncedDate.isAfter(cutoffDate)) {
+            Some(params.copy(
+              pathParameters = params.pathParameters +
+                ("baseDate" -> earliestSyncedDate.minusDays(99).toString(defaultApiDateFormat),
+                  "endDate" -> earliestSyncedDate.minusDays(1).toString(defaultApiDateFormat))))
+          }
+          else if (earliestSyncedDate.isAfter(cutoffDate)) {
+            Some(params.copy(
+              pathParameters = params.pathParameters +
+                ("baseDate" -> baseDate.minusDays(99).toString(defaultApiDateFormat),
+                  "endDate" -> baseDate.minusDays(1).toString(defaultApiDateFormat)),
+              storageParameters = params.storageParameters + ("earliestSyncedDate" -> baseDateStr)))
+          }
+          else {
+            None
+          }
+        case (_, _, _) => None
+      }
   }
 
   def buildNextSync(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
-    val nextSyncDate = DateTime.now.toString(FitbitWeightInterface.apiDateFormat)
-    val nextPathParameters = params.copy(pathParameters = params.pathParameters + ("date" -> nextSyncDate))
+    logger.debug(s"Building next sync...")
 
-    nextPathParameters
+    params.copy(pathParameters = params.pathParameters +
+      ("baseDate" -> DateTime.now.toString(defaultApiDateFormat),
+        "endDate" -> DateTime.now.toString(defaultApiDateFormat)))
   }
 
   override def buildFetchParameters(params: Option[ApiEndpointCall])(implicit ec: ExecutionContext): Future[ApiEndpointCall] = {
     logger.debug(s"Custom building fetch params: \n $params")
 
     val finalFetchParams = params.map { p =>
-      p.pathParameters.get("date").map { _ => p }.getOrElse {
-        val updatedParameters = p.pathParameters + ("date" -> DateTime.now.minusDays(1).toString(FitbitWeightInterface.apiDateFormat))
-        p.copy(pathParameters = updatedParameters)
+      p.pathParameters.get("baseDate").map { _ => p }.getOrElse {
+        val updatedPathParams = p.pathParameters +
+          ("baseDate" -> DateTime.now.minusDays(99).toString(defaultApiDateFormat),
+            "endDate" -> DateTime.now.minusDays(1).toString(defaultApiDateFormat))
+        val updatedStorageParams = p.storageParameters + ("earliestSyncedDate" -> DateTime.now.minusDays(1).toString(defaultApiDateFormat))
+
+        p.copy(pathParameters = updatedPathParams, storageParameters = updatedStorageParams)
       }
-
     }.getOrElse {
-      val updatedParameters = defaultApiEndpoint.pathParameters + ("date" -> DateTime.now.minusDays(1).toString(FitbitWeightInterface.apiDateFormat))
-
-      defaultApiEndpoint.copy(pathParameters = updatedParameters)
+      val updatedPathParams = defaultApiEndpoint.pathParameters +
+        ("baseDate" -> DateTime.now.minusDays(99).toString(defaultApiDateFormat),
+          "endDate" -> DateTime.now.minusDays(1).toString(defaultApiDateFormat))
+      val updatedStorageParams = defaultApiEndpoint.storageParameters + ("earliestSyncedDate" -> DateTime.now.minusDays(1).toString(defaultApiDateFormat))
+      defaultApiEndpoint.copy(pathParameters = updatedPathParams, storageParameters = updatedStorageParams)
     }
 
     logger.debug(s"Final fetch parameters: \n $finalFetchParams")
@@ -90,7 +126,7 @@ class FitbitWeightInterface @Inject() (
   def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     (rawData \ "weight").toOption.map {
       case data: JsArray if data.validate[List[FitbitWeight]].isSuccess =>
-        logger.debug(s"Validated JSON object:\n${data.toString}")
+        logger.debug(s"Validated JSON object with ${data.value.length} values")
         Success(data)
       case data: JsObject =>
         logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")
@@ -107,12 +143,13 @@ class FitbitWeightInterface @Inject() (
 }
 
 object FitbitWeightInterface {
-  val apiDateFormat: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd")
+  val defaultApiDateFormat: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd")
 
   val defaultApiEndpoint = ApiEndpointCall(
     "https://api.fitbit.com",
-    "/1/user/-/body/log/weight/date/[date].json",
+    "/1/user/-/body/log/weight/date/[baseDate]/[endDate].json",
     ApiEndpointMethod.Get("Get"),
+    Map(),
     Map(),
     Map(),
     Map())
