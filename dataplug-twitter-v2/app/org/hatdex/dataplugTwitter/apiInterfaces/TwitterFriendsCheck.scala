@@ -25,7 +25,7 @@ import play.api.libs.ws.{ WSClient, WSResponse }
 
 import scala.concurrent.{ ExecutionContext, Future }
 
-class TwitterTweetsCheck @Inject() (
+class TwitterFriendsCheck @Inject() (
     val wsClient: WSClient,
     val userService: UserService,
     val authInfoRepository: AuthInfoRepository,
@@ -34,15 +34,16 @@ class TwitterTweetsCheck @Inject() (
     val provider: TwitterProvider) extends DataPlugOptionsCollector with RequestAuthenticatorOAuth1 {
 
   val namespace: String = "twitter"
-  val endpoint: String = "tweets"
-  protected val logger: Logger = Logger("TwitterTweetsInterface")
+  val endpoint: String = "friends"
+  protected val logger: Logger = Logger("TwitterFriendsInterface")
 
   val defaultApiEndpoint = ApiEndpointCall(
     "https://api.twitter.com",
-    "/1.1/statuses/user_timeline.json",
+    "/1.1/friends/list.json",
     ApiEndpointMethod.Get("Get"),
     Map(),
     Map("count" -> "1"),
+    Map(),
     Map())
 
   def get(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext): Future[Seq[ApiEndpointVariantChoice]] = {
@@ -53,11 +54,11 @@ class TwitterTweetsCheck @Inject() (
         result.status match {
           case OK =>
             val variant = ApiEndpointVariant(
-              ApiEndpoint("tweets", "Tweets", None),
+              ApiEndpoint("friends", "Accounts the current user is following", None),
               Some(""), Some(""),
-              Some(TwitterTweetInterface.defaultApiEndpoint))
+              Some(TwitterFriendInterface.defaultApiEndpoint))
 
-            val choices = Seq(ApiEndpointVariantChoice("tweets", "My Tweets", active = true, variant))
+            val choices = Seq(ApiEndpointVariantChoice("friends", "Friends Followed", active = true, variant))
             Future.successful(choices)
           case _ =>
             logger.warn(s"Unsuccessful response from api endpoint $fetchParams - ${result.status}: ${result.body}")
@@ -65,11 +66,9 @@ class TwitterTweetsCheck @Inject() (
         }
       }
     }
-
   }
 
   override protected def buildRequest(params: ApiEndpointCall)(implicit ec: ExecutionContext): Future[WSResponse] =
     super[RequestAuthenticatorOAuth1].buildRequest(params)
 
 }
-

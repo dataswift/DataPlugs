@@ -136,5 +136,6 @@ object TwitterTweetInterface {
     ApiEndpointMethod.Get("Get"),
     Map(),
     Map("count" -> "200"),
+    Map(),
     Map())
 }

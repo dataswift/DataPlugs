@@ -37,6 +37,7 @@ class FitbitProfileCheck @Inject() (
     ApiEndpointMethod.Get("Get"),
     Map(),
     Map(),
+    Map(),
     Map())
 
   def get(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext): Future[Seq[ApiEndpointVariantChoice]] = {
@@ -80,7 +81,7 @@ class FitbitProfileCheck @Inject() (
               ApiEndpointVariantChoice("activity", "User's Fitbit activity list", active = true, activityVariant),
               ApiEndpointVariantChoice("sleep", "User's Fitbit activity list", active = true, sleepVariant),
               ApiEndpointVariantChoice("weight", "Body weight and BMI measurement", active = true, weightVariant),
-              ApiEndpointVariantChoice("lifetime/stats", "User's Fitbit lifetime statistics", active = true, lifetimeVariant),
+              //ApiEndpointVariantChoice("lifetime/stats", "User's Fitbit lifetime statistics", active = true, lifetimeVariant),
               ApiEndpointVariantChoice("activity/day/summary", "Summary of user's activity throughout the day", active = true, activitySummaryVariant))
 
             logger.info(s"API endpoint FitbitProfile validated for $hatAddress")

@@ -43,6 +43,7 @@ class TwitterFollowersCheck @Inject() (
     ApiEndpointMethod.Get("Get"),
     Map(),
     Map("count" -> "1"),
+    Map(),
     Map())
 
   def get(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext): Future[Seq[ApiEndpointVariantChoice]] = {

@@ -40,74 +40,56 @@ class FitbitSleepInterface @Inject() (
   protected val logger: Logger = Logger(this.getClass)
 
   val defaultApiEndpoint = FitbitSleepInterface.defaultApiEndpoint
-  val defaultApiDateFormat = FitbitSleepInterface.apiDateFormat
 
-  val cutoffDate = DateTime.parse("2017-01-01", defaultApiDateFormat)
-
-  val refreshInterval = 24.hours
+  val refreshInterval = 6.hours
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     logger.debug("Building continuation...")
 
-    (
-      params.pathParameters.get("baseDate"),
-      params.pathParameters.get("endDate"),
-      params.storageParameters.get("earliestSyncedDate")) match {
-        case (Some(baseDateStr), Some(endDateStr), Some(earliestSyncedDateStr)) =>
-          val baseDate = DateTime.parse(baseDateStr, defaultApiDateFormat)
-          val earliestSyncedDate = DateTime.parse(earliestSyncedDateStr, defaultApiDateFormat)
+    val nextQueryParams = for {
+      nextLink <- Try((content \ "pagination" \ "next").as[String]) if nextLink.nonEmpty
+      queryParams <- Try(Uri(nextLink).query().toMap) if queryParams.size == 4
+    } yield queryParams
 
-          if (baseDateStr == endDateStr && earliestSyncedDate.isAfter(cutoffDate)) {
-            Some(params.copy(
-              pathParameters = params.pathParameters +
-                ("baseDate" -> earliestSyncedDate.minusDays(99).toString(defaultApiDateFormat),
-                  "endDate" -> earliestSyncedDate.minusDays(1).toString(defaultApiDateFormat))))
-          }
-          else if (earliestSyncedDate.isAfter(cutoffDate)) {
-            Some(params.copy(
-              pathParameters = params.pathParameters +
-                ("baseDate" -> baseDate.minusDays(99).toString(defaultApiDateFormat),
-                  "endDate" -> baseDate.minusDays(1).toString(defaultApiDateFormat)),
-              storageParameters = params.storageParameters + ("earliestSyncedDate" -> baseDateStr)))
-          }
-          else {
-            None
-          }
-        case (_, _, _) => None
-      }
+    (nextQueryParams, params.storageParameters.get("afterDate")) match {
+      case (Success(qp), Some(_)) =>
+        logger.debug(s"Next continuation params: $qp")
+        Some(params.copy(queryParameters = params.queryParameters ++ qp))
+
+      case (Success(qp), None) =>
+        val afterDate = extractNextSyncTimestamp(content).get
+        logger.debug(s"Next continuation params: $qp, setting AfterDate to $afterDate")
+        Some(params.copy(queryParameters = params.queryParameters ++ qp, storageParameters = params.storageParameters +
+          ("afterDate" -> afterDate)))
+
+      case (Failure(e), _) =>
+        logger.debug(s"Next link NOT found. Terminating continuation. ${e.getMessage}")
+        None
+    }
   }
 
   def buildNextSync(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
     logger.debug(s"Building next sync...")
 
-    params.copy(pathParameters = params.pathParameters +
-      ("baseDate" -> DateTime.now.toString(defaultApiDateFormat),
-        "endDate" -> DateTime.now.toString(defaultApiDateFormat)))
-  }
+    params.storageParameters.get("afterDate").map { afterDate => // After date set (there was at least one continuation step)
+      Try((content \ "sleep").as[JsArray].value) match {
+        case Success(_) => // Did continuation but there was no `nextPage` found, if sleep array present it's a successful completion
+          val nextStorage = params.storageParameters - "afterDate"
+          val nextQuery = params.queryParameters - "beforeDate" + ("afterDate" -> afterDate, "offset" -> "0")
+          params.copy(queryParameters = nextQuery, storageParameters = nextStorage)
 
-  override def buildFetchParameters(params: Option[ApiEndpointCall])(implicit ec: ExecutionContext): Future[ApiEndpointCall] = {
-    logger.debug(s"Custom building fetch params: \n $params")
-
-    val finalFetchParams = params.map { p =>
-      p.pathParameters.get("baseDate").map { _ => p }.getOrElse {
-        val updatedPathParams = p.pathParameters +
-          ("baseDate" -> DateTime.now.minusDays(99).toString(defaultApiDateFormat),
-            "endDate" -> DateTime.now.minusDays(1).toString(defaultApiDateFormat))
-        val updatedStorageParams = p.storageParameters + ("earliestSyncedDate" -> DateTime.now.minusDays(1).toString(defaultApiDateFormat))
-
-        p.copy(pathParameters = updatedPathParams, storageParameters = updatedStorageParams)
+        case Failure(e) => // Cannot extract activities array value, most likely an error was returned by the API, continue from where finished previously
+          logger.error(s"Provider API request error while performing continuation: $content")
+          params
       }
-    }.getOrElse {
-      val updatedPathParams = defaultApiEndpoint.pathParameters +
-        ("baseDate" -> DateTime.now.minusDays(99).toString(defaultApiDateFormat),
-          "endDate" -> DateTime.now.minusDays(1).toString(defaultApiDateFormat))
-      val updatedStorageParams = defaultApiEndpoint.storageParameters + ("earliestSyncedDate" -> DateTime.now.minusDays(1).toString(defaultApiDateFormat))
-      defaultApiEndpoint.copy(pathParameters = updatedPathParams, storageParameters = updatedStorageParams)
+    }.getOrElse { // After date not set, no continuation steps took place
+      extractNextSyncTimestamp(content).map { latestActivityTimestamp => // Extract new after date if there is any content
+        val nextQuery = params.queryParameters - "beforeDate" + ("afterDate" -> latestActivityTimestamp, "offset" -> "0")
+        params.copy(queryParameters = nextQuery)
+      }.getOrElse { // There is no content or failed to extract new date
+        params
+      }
     }
-
-    logger.debug(s"Final fetch parameters: \n $finalFetchParams")
-
-    Future.successful(finalFetchParams)
   }
 
   override protected def processResults(
@@ -141,17 +123,29 @@ class FitbitSleepInterface @Inject() (
     }
   }
 
+  private def extractNextSyncTimestamp(content: JsValue): Option[String] = {
+    val maybeLatestSleepTimestamp = (content \ "sleep").asOpt[JsArray].flatMap { sleepList =>
+      sleepList.value.headOption.flatMap { latestSleep => (latestSleep \ "endTime").asOpt[String] }
+    }
+
+    maybeLatestSleepTimestamp.map { latestSleepTimestamp =>
+      val timestamp = ISODateTimeFormat.dateTimeParser().parseDateTime(latestSleepTimestamp)
+      val afterDate = timestamp.plusSeconds(1)
+      afterDate.toString(FitbitSleepInterface.apiDateFormat)
+    }
+  }
+
 }
 
 object FitbitSleepInterface {
-  val apiDateFormat: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd")
+  val apiDateFormat: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss")
 
   val defaultApiEndpoint = ApiEndpointCall(
     "https://api.fitbit.com",
-    "/1.2/user/-/sleep/date/[baseDate]/[endDate].json",
+    "/1.2/user/-/sleep/list.json",
     ApiEndpointMethod.Get("Get"),
     Map(),
-    Map(),
+    Map("sort" -> "desc", "limit" -> "100", "offset" -> "0", "beforeDate" -> "today"),
     Map(),
     Map())
 }

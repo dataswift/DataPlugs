@@ -144,7 +144,7 @@ object FitbitActivityInterface {
     "/1/user/-/activities/list.json",
     ApiEndpointMethod.Get("Get"),
     Map(),
-    Map("sort" -> "desc", "limit" -> "2", "offset" -> "0", "beforeDate" -> "today"),
+    Map("sort" -> "desc", "limit" -> "100", "offset" -> "0", "beforeDate" -> "today"),
     Map(),
     Map())
 }

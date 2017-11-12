@@ -24,8 +24,8 @@ object Build extends Build {
   )
 
   lazy val dataplugTwitter = Project(
-    id = "dataplug-twitter",
-    base = file("dataplug-twitter"),
+    id = "dataplug-twitter-v2",
+    base = file("dataplug-twitter-v2"),
     dependencies = Seq(
       dataplug % "compile->compile;test->test")
   )
