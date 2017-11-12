@@ -90,7 +90,8 @@ object FacebookFeedUploadInterface {
     ApiEndpointMethod.Post("Post", ""),
     Map(),
     Map(),
-    Map("Content-Type" -> "application/json"))
+    Map("Content-Type" -> "application/json"),
+    Map())
 
   val photoUploadApiEndpoint = ApiEndpointCall(
     "https://graph.facebook.com/v2.10",
@@ -98,12 +99,14 @@ object FacebookFeedUploadInterface {
     ApiEndpointMethod.Post("Post", ""),
     Map(),
     Map(),
-    Map("Content-Type" -> "application/json"))
+    Map("Content-Type" -> "application/json"),
+    Map())
 
   val deleteApiEndpoint = ApiEndpointCall(
     "https://graph.facebook.com/v2.10",
     "/[post-id]",
     ApiEndpointMethod.Delete("Delete"),
+    Map(),
     Map(),
     Map(),
     Map())

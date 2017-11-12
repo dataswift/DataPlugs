@@ -121,6 +121,9 @@ class FacebookFeedInterface @Inject() (
       case data: JsArray if data.validate[List[FacebookPost]].isSuccess =>
         logger.debug(s"Validated JSON array:\n${data.value.length}")
         Success(data)
+      case data: JsArray =>
+        logger.warn(s"Could not validate full item list. Parsing ${data.value.length} data items one by one.")
+        Success(JsArray(data.value.filter(_.validate[FacebookPost].isSuccess)))
       case data: JsObject =>
         logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")
         Failure(SourceDataProcessingException(s"Error validating data, some of the required fields missing."))
@@ -144,5 +147,6 @@ object FacebookFeedInterface {
     Map("limit" -> "500", "format" -> "json", "fields" -> ("id,admin_creator,application,call_to_action,caption,created_time,description," +
       "feed_targeting,from,icon,is_hidden,is_published,link,message,message_tags,name,object_id,picture,place," +
       "privacy,properties,shares,source,status_type,story,targeting,to,type,updated_time,with_tags,full_picture")),
+    Map(),
     Map())
 }

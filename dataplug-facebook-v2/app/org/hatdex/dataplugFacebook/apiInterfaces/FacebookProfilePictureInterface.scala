@@ -12,7 +12,7 @@ import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, Requ
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
-import org.hatdex.dataplugFacebook.models.FacebookProfile
+import org.hatdex.dataplugFacebook.models.FacebookProfilePicture
 import play.api.Logger
 import play.api.cache.CacheApi
 import play.api.libs.json._
@@ -22,7 +22,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
 
-class FacebookProfileInterface @Inject() (
+class FacebookProfilePictureInterface @Inject() (
     val wsClient: WSClient,
     val userService: UserService,
     val authInfoRepository: AuthInfoRepository,
@@ -33,7 +33,7 @@ class FacebookProfileInterface @Inject() (
     val provider: FacebookProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
 
   val namespace: String = "facebook"
-  val endpoint: String = "profile"
+  val endpoint: String = "profile/picture"
   protected val logger: Logger = Logger(this.getClass)
 
   val defaultApiEndpoint = FacebookProfileInterface.defaultApiEndpoint
@@ -63,8 +63,8 @@ class FacebookProfileInterface @Inject() (
   }
 
   def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
-    rawData match {
-      case data: JsObject if data.validate[FacebookProfile].isSuccess =>
+    (rawData \ "data").toOption.map {
+      case data: JsObject if data.validate[FacebookProfilePicture].isSuccess =>
         logger.debug(s"Validated JSON object:\n${data.toString}")
         Success(JsArray(Seq(data)))
       case data: JsObject =>
@@ -73,18 +73,20 @@ class FacebookProfileInterface @Inject() (
       case _ =>
         logger.error(s"Error parsing JSON object: ${rawData.toString}")
         Failure(SourceDataProcessingException(s"Error parsing JSON object."))
+    }.getOrElse {
+      logger.error(s"Error parsing JSON object, necessary property not found: ${rawData.toString}")
+      Failure(SourceDataProcessingException(s"Error parsing JSON object, necessary property not found."))
     }
   }
 }
 
-object FacebookProfileInterface {
+object FacebookProfilePictureInterface {
   val defaultApiEndpoint = ApiEndpointCall(
     "https://graph.facebook.com/v2.10",
-    "/me",
+    "/me/picture",
     ApiEndpointMethod.Get("Get"),
     Map(),
-    Map("fields" -> ("id,birthday,email,first_name,gender,hometown,is_verified,last_name,locale,name,political," +
-      "relationship_status,religion,quotes,significant_other,third_party_id,timezone,updated_time,verified,website")),
+    Map("height" -> "320", "width" -> "320", "redirect" -> "false"),
     Map(),
     Map())
 }

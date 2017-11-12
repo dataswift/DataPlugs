@@ -37,6 +37,7 @@ class FacebookProfileCheck @Inject() (
     ApiEndpointMethod.Get("Get"),
     Map(),
     Map(),
+    Map(),
     Map())
 
   def get(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext): Future[Seq[ApiEndpointVariantChoice]] = {
@@ -50,6 +51,11 @@ class FacebookProfileCheck @Inject() (
               Some(""), Some(""),
               Some(FacebookProfileInterface.defaultApiEndpoint))
 
+            val profilePictureVariant = ApiEndpointVariant(
+              ApiEndpoint("profile/picture", "User's Facebook profile picture", None),
+              Some(""), Some(""),
+              Some(FacebookProfilePictureInterface.defaultApiEndpoint))
+
             val feedVariant = ApiEndpointVariant(
               ApiEndpoint("feed", "User's Facebook posts feed", None),
               Some(""), Some(""),
@@ -62,6 +68,7 @@ class FacebookProfileCheck @Inject() (
 
             val choices = Seq(
               ApiEndpointVariantChoice("profile", "User's Facebook profile information", active = true, profileVariant),
+              ApiEndpointVariantChoice("profile/picture", "User's Facebook profile picture", active = true, profilePictureVariant),
               ApiEndpointVariantChoice("feed", "User's Facebook posts feed", active = false, feedVariant),
               ApiEndpointVariantChoice("events", "Facebook events the user has been invited to", active = false, eventsVariant))
 
