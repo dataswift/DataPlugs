@@ -51,7 +51,7 @@ class FitbitSleepInterface @Inject() (
       queryParams <- Try(Uri(nextLink).query().toMap) if queryParams.size == 4
     } yield queryParams
 
-    (nextQueryParams, params.storageParameters.get("afterDate")) match {
+    (nextQueryParams, params.storage.get("afterDate")) match {
       case (Success(qp), Some(_)) =>
         logger.debug(s"Next continuation params: $qp")
         Some(params.copy(queryParameters = params.queryParameters ++ qp))
@@ -59,8 +59,8 @@ class FitbitSleepInterface @Inject() (
       case (Success(qp), None) =>
         val afterDate = extractNextSyncTimestamp(content).get
         logger.debug(s"Next continuation params: $qp, setting AfterDate to $afterDate")
-        Some(params.copy(queryParameters = params.queryParameters ++ qp, storageParameters = params.storageParameters +
-          ("afterDate" -> afterDate)))
+        Some(params.copy(queryParameters = params.queryParameters ++ qp, storageParameters = Some(params.storage +
+          ("afterDate" -> afterDate))))
 
       case (Failure(e), _) =>
         logger.debug(s"Next link NOT found. Terminating continuation. ${e.getMessage}")
@@ -71,12 +71,12 @@ class FitbitSleepInterface @Inject() (
   def buildNextSync(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
     logger.debug(s"Building next sync...")
 
-    params.storageParameters.get("afterDate").map { afterDate => // After date set (there was at least one continuation step)
+    params.storage.get("afterDate").map { afterDate => // After date set (there was at least one continuation step)
       Try((content \ "sleep").as[JsArray].value) match {
         case Success(_) => // Did continuation but there was no `nextPage` found, if sleep array present it's a successful completion
-          val nextStorage = params.storageParameters - "afterDate"
+          val nextStorage = params.storage - "afterDate"
           val nextQuery = params.queryParameters - "beforeDate" + ("afterDate" -> afterDate, "offset" -> "0")
-          params.copy(queryParameters = nextQuery, storageParameters = nextStorage)
+          params.copy(queryParameters = nextQuery, storageParameters = Some(nextStorage))
 
         case Failure(e) => // Cannot extract activities array value, most likely an error was returned by the API, continue from where finished previously
           logger.error(s"Provider API request error while performing continuation: $content")
@@ -147,5 +147,5 @@ object FitbitSleepInterface {
     Map(),
     Map("sort" -> "desc", "limit" -> "100", "offset" -> "0", "beforeDate" -> "today"),
     Map(),
-    Map())
+    Some(Map()))
 }

@@ -38,7 +38,7 @@ class FitbitProfileCheck @Inject() (
     Map(),
     Map(),
     Map(),
-    Map())
+    Some(Map()))
 
   def get(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext): Future[Seq[ApiEndpointVariantChoice]] = {
     authenticateRequest(fetchParams, hatAddress, refreshToken = false).flatMap { requestParams =>

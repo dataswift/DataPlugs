@@ -88,5 +88,5 @@ object FacebookProfilePictureInterface {
     Map(),
     Map("height" -> "320", "width" -> "320", "redirect" -> "false"),
     Map(),
-    Map())
+    Some(Map()))
 }

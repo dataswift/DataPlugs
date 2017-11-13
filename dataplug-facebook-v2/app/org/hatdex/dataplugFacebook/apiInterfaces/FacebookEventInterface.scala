@@ -149,5 +149,5 @@ object FacebookEventInterface {
       "can_guests_invite,guest_list_enabled,name,owner,parent_group,place,start_time,ticket_uri,timezone,updated_time," +
       "attending_count,declined_count,maybe_count,noreply_count,rsvp_status")),
     Map(),
-    Map())
+    Some(Map()))
 }

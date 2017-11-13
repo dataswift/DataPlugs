@@ -46,7 +46,7 @@ class FitbitActivityDaySummaryInterface @Inject() (
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     val dateParam = params.pathParameters.getOrElse("date", "")
     val syncDate = DateTime.parse(dateParam, defaultApiDateFormat)
-    val maybeEarliestDateSynced = params.storageParameters.get("earliestDateSynced")
+    val maybeEarliestDateSynced = params.storage.get("earliestDateSynced")
 
     maybeEarliestDateSynced.map { earliestDateSynced =>
       val earliestDate = DateTime.parse(earliestDateSynced, defaultApiDateFormat)
@@ -58,12 +58,12 @@ class FitbitActivityDaySummaryInterface @Inject() (
       }
       else {
         Some(params.copy(
-          storageParameters = params.storageParameters + ("earliestDateSynced" -> dateParam),
+          storageParameters = Some(params.storage + ("earliestDateSynced" -> dateParam)),
           pathParameters = params.pathParameters + ("date" -> syncDate.minus(1).toString(defaultApiDateFormat))))
       }
     }.getOrElse {
       Some(params.copy(
-        storageParameters = params.storageParameters + ("earliestDateSynced" -> dateParam),
+        storageParameters = Some(params.storage + ("earliestDateSynced" -> dateParam)),
         pathParameters = params.pathParameters + ("date" -> syncDate.minusDays(1).toString(defaultApiDateFormat))))
     }
   }
@@ -151,6 +151,6 @@ object FitbitActivityDaySummaryInterface {
     Map(),
     Map(),
     Map(),
-    Map())
+    Some(Map()))
 }
 

@@ -41,7 +41,7 @@ class FitbitSubscription @Inject() (
     Map(),
     Map(),
     Map(),
-    Map())
+    Some(Map()))
 
   def create(collectionPath: String, hatAddress: String)(implicit ec: ExecutionContext): Future[Done] = {
     val params = defaultApiEndpoint.copy(pathParameters =

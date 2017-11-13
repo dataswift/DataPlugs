@@ -91,7 +91,7 @@ object FacebookFeedUploadInterface {
     Map(),
     Map(),
     Map("Content-Type" -> "application/json"),
-    Map())
+    Some(Map()))
 
   val photoUploadApiEndpoint = ApiEndpointCall(
     "https://graph.facebook.com/v2.10",
@@ -100,7 +100,7 @@ object FacebookFeedUploadInterface {
     Map(),
     Map(),
     Map("Content-Type" -> "application/json"),
-    Map())
+    Some(Map()))
 
   val deleteApiEndpoint = ApiEndpointCall(
     "https://graph.facebook.com/v2.10",
@@ -109,5 +109,5 @@ object FacebookFeedUploadInterface {
     Map(),
     Map(),
     Map(),
-    Map())
+    Some(Map()))
 }

@@ -107,5 +107,5 @@ object FitbitProfileInterface {
     Map(),
     Map(),
     Map(),
-    Map())
+    Some(Map()))
 }

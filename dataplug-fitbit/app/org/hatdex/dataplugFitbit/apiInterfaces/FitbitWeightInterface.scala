@@ -51,7 +51,7 @@ class FitbitWeightInterface @Inject() (
     (
       params.pathParameters.get("baseDate"),
       params.pathParameters.get("endDate"),
-      params.storageParameters.get("earliestSyncedDate")) match {
+      params.storage.get("earliestSyncedDate")) match {
         case (Some(baseDateStr), Some(endDateStr), Some(earliestSyncedDateStr)) =>
           val baseDate = DateTime.parse(baseDateStr, defaultApiDateFormat)
           val earliestSyncedDate = DateTime.parse(earliestSyncedDateStr, defaultApiDateFormat)
@@ -67,7 +67,7 @@ class FitbitWeightInterface @Inject() (
               pathParameters = params.pathParameters +
                 ("baseDate" -> baseDate.minusDays(99).toString(defaultApiDateFormat),
                   "endDate" -> baseDate.minusDays(1).toString(defaultApiDateFormat)),
-              storageParameters = params.storageParameters + ("earliestSyncedDate" -> baseDateStr)))
+              storageParameters = Some(params.storage + ("earliestSyncedDate" -> baseDateStr))))
           }
           else {
             None
@@ -92,16 +92,16 @@ class FitbitWeightInterface @Inject() (
         val updatedPathParams = p.pathParameters +
           ("baseDate" -> DateTime.now.minusDays(99).toString(defaultApiDateFormat),
             "endDate" -> DateTime.now.minusDays(1).toString(defaultApiDateFormat))
-        val updatedStorageParams = p.storageParameters + ("earliestSyncedDate" -> DateTime.now.minusDays(1).toString(defaultApiDateFormat))
+        val updatedStorageParams = p.storage + ("earliestSyncedDate" -> DateTime.now.minusDays(1).toString(defaultApiDateFormat))
 
-        p.copy(pathParameters = updatedPathParams, storageParameters = updatedStorageParams)
+        p.copy(pathParameters = updatedPathParams, storageParameters = Some(updatedStorageParams))
       }
     }.getOrElse {
       val updatedPathParams = defaultApiEndpoint.pathParameters +
         ("baseDate" -> DateTime.now.minusDays(99).toString(defaultApiDateFormat),
           "endDate" -> DateTime.now.minusDays(1).toString(defaultApiDateFormat))
-      val updatedStorageParams = defaultApiEndpoint.storageParameters + ("earliestSyncedDate" -> DateTime.now.minusDays(1).toString(defaultApiDateFormat))
-      defaultApiEndpoint.copy(pathParameters = updatedPathParams, storageParameters = updatedStorageParams)
+      val updatedStorageParams = defaultApiEndpoint.storage + ("earliestSyncedDate" -> DateTime.now.minusDays(1).toString(defaultApiDateFormat))
+      defaultApiEndpoint.copy(pathParameters = updatedPathParams, storageParameters = Some(updatedStorageParams))
     }
 
     logger.debug(s"Final fetch parameters: \n $finalFetchParams")
@@ -152,6 +152,6 @@ object FitbitWeightInterface {
     Map(),
     Map(),
     Map(),
-    Map())
+    Some(Map()))
 }
 

@@ -104,6 +104,6 @@ object FitbitLifetimeStatsInterface {
     Map(),
     Map(),
     Map(),
-    Map())
+    Some(Map()))
 }
 

@@ -42,7 +42,10 @@ case class ApiEndpointCall(
     pathParameters: Map[String, String], // for pathParameter name=value replaces [name] in path (/[name]/...)
     queryParameters: Map[String, String],
     headers: Map[String, String],
-    storageParameters: Map[String, String]) // Optional storage parameter to persist additional information between calls, not used in the request building process
+    storageParameters: Option[Map[String, String]]) { // Optional storage parameter to persist additional information between calls, not used in the request building process
+
+  def storage = storageParameters.getOrElse(Map())
+}
 
 case class ApiEndpoint(
     name: String,

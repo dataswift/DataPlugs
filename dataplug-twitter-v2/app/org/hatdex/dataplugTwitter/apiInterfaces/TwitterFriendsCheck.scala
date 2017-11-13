@@ -44,7 +44,7 @@ class TwitterFriendsCheck @Inject() (
     Map(),
     Map("count" -> "1"),
     Map(),
-    Map())
+    Some(Map()))
 
   def get(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext): Future[Seq[ApiEndpointVariantChoice]] = {
     val authenticatedFetchParameters = authenticateRequest(fetchParams, hatAddress)

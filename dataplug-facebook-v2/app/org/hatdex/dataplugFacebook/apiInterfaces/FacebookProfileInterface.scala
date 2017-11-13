@@ -86,5 +86,5 @@ object FacebookProfileInterface {
     Map("fields" -> ("id,birthday,email,first_name,gender,hometown,is_verified,last_name,locale,name,political," +
       "relationship_status,religion,quotes,significant_other,third_party_id,timezone,updated_time,verified,website")),
     Map(),
-    Map())
+    Some(Map()))
 }

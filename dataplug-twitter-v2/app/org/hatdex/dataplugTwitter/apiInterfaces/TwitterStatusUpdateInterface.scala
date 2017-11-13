@@ -49,7 +49,7 @@ class TwitterStatusUpdateInterface @Inject() (
     Map(),
     Map(),
     Map("Content-Type" -> "application/json"),
-    Map())
+    Some(Map()))
 
   val mediaShareApiEndpoint = ApiEndpointCall(
     "https://upload.twitter.com",
@@ -58,7 +58,7 @@ class TwitterStatusUpdateInterface @Inject() (
     Map("command" -> "INIT", "total_bytes" -> "10240", "media_type" -> "image/jpeg"),
     Map(),
     Map("Content-Type" -> "application/x-www-form-urlencoded"),
-    Map())
+    Some(Map()))
 
   /*
    * Uploads media from a provided URL to twitter by ascynhronously downloading a file and uploading

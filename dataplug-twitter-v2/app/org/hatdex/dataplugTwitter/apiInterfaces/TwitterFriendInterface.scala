@@ -148,5 +148,5 @@ object TwitterFriendInterface {
     Map(),
     Map("count" -> "200"),
     Map(),
-    Map())
+    Some(Map()))
 }
