@@ -125,6 +125,9 @@ class FacebookEventInterface @Inject() (
       case data: JsArray if data.validate[List[FacebookEvent]].isSuccess =>
         logger.debug(s"Validated JSON object:\n${data.value.length}")
         Success(data)
+      case data: JsArray =>
+        logger.warn(s"Could not validate full item list. Parsing ${data.value.length} data items one by one.")
+        Success(JsArray(data.value.filter(_.validate[FacebookEvent].isSuccess)))
       case data: JsObject =>
         logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")
         Failure(SourceDataProcessingException(s"Error validating data, some of the required fields missing."))

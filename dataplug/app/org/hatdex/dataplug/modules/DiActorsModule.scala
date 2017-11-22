@@ -31,7 +31,7 @@ class DiActorsModule extends AbstractModule with ScalaModule with AkkaGuiceSuppo
 
   @Provides @Named("syncThrottler")
   def provideDataPlugCollection(@Named("syncDispatcher") syncDispatcher: ActorRef)(implicit materializer: Materializer): ActorRef = {
-    Source.actorRef(bufferSize = 1000, OverflowStrategy.dropNew)
+    Source.actorRef[DataPlugManagerActor.DataPlugSyncDispatcherActorMessage](bufferSize = 1000, OverflowStrategy.dropNew)
       .throttle(elements = 50, per = 15.minutes, maximumBurst = 3, ThrottleMode.Shaping)
       .to(Sink.actorRef(syncDispatcher, NotUsed))
       .run()

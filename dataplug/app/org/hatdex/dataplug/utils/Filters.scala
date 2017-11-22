@@ -10,10 +10,51 @@ package org.hatdex.dataplug.utils
 
 import javax.inject.Inject
 
+import akka.stream.Materializer
 import play.api.http.DefaultHttpFilters
+import play.api.mvc._
+import play.api.{Environment, Logger}
 import play.filters.cors.CORSFilter
 import play.filters.csrf.CSRFFilter
 import play.filters.headers.SecurityHeadersFilter
 
-class Filters @Inject() (corsFilter: CORSFilter, csrfFilter: CSRFFilter, securityHeadersFilter: SecurityHeadersFilter)
-  extends DefaultHttpFilters(corsFilter, csrfFilter)
+import scala.concurrent.{ExecutionContext, Future}
+
+class Filters @Inject() (
+    loggingFilter: LoggingFilter,
+    tlsFilter: TLSFilter,
+    corsFilter: CORSFilter,
+    csrfFilter: CSRFFilter,
+    securityHeadersFilter: SecurityHeadersFilter)
+  extends DefaultHttpFilters(tlsFilter, corsFilter, csrfFilter, loggingFilter)
+
+class TLSFilter @Inject() (
+                            implicit
+                            val mat: Materializer, ec: ExecutionContext, env: Environment) extends Filter {
+  def apply(nextFilter: RequestHeader => Future[Result])(requestHeader: RequestHeader): Future[Result] = {
+    if (requestHeader.headers.get("X-Forwarded-Proto").getOrElse("http") != "https" && env.mode == play.api.Mode.Prod)
+      Future.successful(Results.MovedPermanently("https://" + requestHeader.host + requestHeader.uri))
+    else
+      nextFilter(requestHeader).map(_.withHeaders("Strict-Transport-Security" -> "max-age=31536000"))
+  }
+}
+
+class LoggingFilter @Inject() (implicit val mat: Materializer, ec: ExecutionContext) extends Filter {
+  val logger = Logger("http")
+
+  def apply(nextFilter: RequestHeader => Future[Result])(requestHeader: RequestHeader): Future[Result] = {
+
+    val startTime = System.currentTimeMillis
+
+    for {
+      result <- nextFilter(requestHeader)
+    } yield {
+      val endTime = System.currentTimeMillis
+      val requestTime = endTime - startTime
+
+      logger.info(s"[${requestHeader.remoteAddress}] [${requestHeader.method}:${requestHeader.host}${requestHeader.uri}] [${result.header.status}] TIME [${requestTime}]ms")
+
+      result.withHeaders("Request-Time" -> requestTime.toString)
+    }
+  }
+}

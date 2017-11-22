@@ -39,6 +39,9 @@ class PhataDataPlugVariantSyncer(
       context.become(syncing)
       fetch(endpointInterface, apiEndpointVariant, phata, endpointCall, retries, hatClient)
         .map(Forward(_, self))
+        .collect {
+          case msg: DataPlugManagerActor.Forward => msg
+        }
         .pipeTo(throttledSyncActor)
     case message =>
       logger.debug(s"UNKNOWN Received by $phata-${apiEndpointVariant.endpoint.name}-${apiEndpointVariant.variant}: $message")
@@ -49,12 +52,16 @@ class PhataDataPlugVariantSyncer(
       logger.debug(s"FETCH CONTINUATION Received by $phata-${apiEndpointVariant.endpoint.name}-${apiEndpointVariant.variant}")
       fetchContinuation(endpointInterface, apiEndpointVariant, phata, fetchEndpoint, retries, hatClient)
         .map(Forward(_, self))
+        .collect {
+          case msg: DataPlugManagerActor.Forward => msg
+        }
         .pipeTo(throttledSyncActor)
     case Complete(fetchEndpoint) =>
       logger.debug(s"COMPLETE Received by $phata-${apiEndpointVariant.endpoint.name}-${apiEndpointVariant.variant} in FETCH")
       context.become(receive)
       complete(endpointInterface, apiEndpointVariant, phata, fetchEndpoint)
       context.parent ! Completed(apiEndpointVariant, phata)
+      self ! PoisonPill
     case SyncingFailed(error, exception) =>
       logger.warn(s"FAILED Received by $phata-${apiEndpointVariant.endpoint.name}-${apiEndpointVariant.variant}: $error")
 

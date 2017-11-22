@@ -31,9 +31,6 @@ class DataplugModule extends AbstractModule with ScalaModule with AkkaGuiceSuppo
     bind[DataPlugSharedNotableDAO].to[DataPlugSharedNotableDAOImpl]
     bind[DataPlugEndpointService].to[DataPlugEndpointServiceImpl]
     bind[DataPlugNotablesService].to[DataPlugNotablesServiceImpl]
-
-    //    bindActorFactory[InjectedHatClientActor, InjectedHatClientActor.Factory]
-    bindActor[DataPlugManagerActor]("dataplug-manager")
   }
 
   /**

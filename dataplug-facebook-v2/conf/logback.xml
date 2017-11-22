@@ -38,7 +38,9 @@
   <logger name="org.hatdex.dataplugFacebook" level="DEBUG" />
   <logger name="org.hatdex.dataplug.*" level="INFO" />
   <logger name="org.hatdex.dataplugFacebook.controllers.Api" level="DEBUG" />
+  <!--<logger name="org.hatdex.dataplug.actors.ForwardingActor" level="DEBUG" />-->
 
+  <logger name="http" level="INFO" />
   <logger name="HatClientActor" level="WARN" />
 
   <root level="WARN">

@@ -11,7 +11,7 @@ package org.hatdex.dataplug.actors
 import java.util.UUID
 import javax.inject.{ Inject, Named }
 
-import akka.actor.{ Actor, ActorRef, PoisonPill, Props, Scheduler }
+import akka.actor.{ Actor, ActorRef, Cancellable, PoisonPill, Props, Scheduler }
 import akka.pattern.{ Backoff, BackoffSupervisor, pipe }
 import akka.stream.ActorMaterializer
 import org.hatdex.dataplug.actors.Errors.DataPlugError
@@ -28,7 +28,7 @@ import play.api.{ Configuration, Logger }
 
 import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.Success
+import scala.util.{ Success, Try }
 
 object DataPlugManagerActor {
 
@@ -58,6 +58,7 @@ object DataPlugManagerActor {
   sealed trait DataPlugSyncDispatcherActorMessage
 
   case class Forward(message: PhataDataPlugVariantSyncerMessage, to: ActorRef) extends DataPlugSyncDispatcherActorMessage
+  case class Nop() extends DataPlugSyncDispatcherActorMessage
 
   sealed trait PhataDataPlugVariantSyncerMessage
 
@@ -96,20 +97,13 @@ class DataPlugManagerActor @Inject() (
       dataPlugRegistry.get[DataPlugEndpointInterface](variant.endpoint.name).map { endpointInterface =>
         val actorKey = syncerActorKey(phata, variant)
         logger.info(s"Starting actor fetch $actorKey")
-        context.system.scheduler.schedule(1.second, endpointInterface.refreshInterval) {
-
-          val eventualSyncMessage = for {
-            endpointCall <- dataplugEndpointService.retrieveLastSuccessfulEndpointVariant(phata, variant.endpoint.name, variant.variant)
-              .map(maybeEndpointVariant => maybeEndpointVariant.flatMap(_.configuration).orElse(maybeEndpointCall))
-            syncerActor <- startSyncerActor(phata, variant, endpointInterface, actorKey)
-          } yield Forward(Fetch(endpointCall, 0), syncerActor)
-
-          eventualSyncMessage.onFailure {
-            case e => logger.error(s"Error while trying to start sycning dat for $phata, variant $variant: ${e.getMessage}", e)
+        Try(createSyncingSchedule(phata, endpointInterface, variant, maybeEndpointCall))
+          .map { _ =>
+            logger.warn(s"Started syncing actor for $phata, $endpointInterface")
           }
-
-          eventualSyncMessage pipeTo throttledSyncActor
-        }
+          .recover {
+            case e => logger.warn(s"Creating actor syncing schedule for $phata, $endpointInterface failed: ${e.getMessage}")
+          }
       } getOrElse {
         val message = s"No such plug ${variant.endpoint.name} in DataPlug Registry"
         logger.error(message)
@@ -128,6 +122,30 @@ class DataPlugManagerActor @Inject() (
     ws,
     configuration.getString("service.dex.address").get,
     configuration.getString("service.dex.scheme").get)
+
+  private def createSyncingSchedule(
+    phata: String,
+    endpointInterface: DataPlugEndpointInterface,
+    variant: ApiEndpointVariant,
+    maybeEndpointCall: Option[ApiEndpointCall]): Cancellable = {
+    val actorKey = syncerActorKey(phata, variant)
+    context.system.scheduler.schedule(1.second, endpointInterface.refreshInterval) {
+
+      val eventualSyncMessage = for {
+        endpointCall <- dataplugEndpointService.retrieveLastSuccessfulEndpointVariant(phata, variant.endpoint.name, variant.variant)
+          .map(maybeEndpointVariant => maybeEndpointVariant.flatMap(_.configuration).orElse(maybeEndpointCall))
+        syncerActor <- startSyncerActor(phata, variant, endpointInterface, actorKey)
+      } yield Forward(Fetch(endpointCall, 0), syncerActor)
+
+      eventualSyncMessage.onFailure {
+        case e => logger.error(s"Error while trying to start sycning dat for $phata, variant $variant: ${e.getMessage}", e)
+      }
+
+      eventualSyncMessage.recover {
+        case _ => DataPlugManagerActor.Nop()
+      } pipeTo throttledSyncActor
+    }
+  }
 
   private def startSyncerActor(phata: String, variant: ApiEndpointVariant, endpointInterface: DataPlugEndpointInterface, actorKey: String): Future[ActorRef] = {
     val hatActorProps = HatClientActor.props(ws, phata, HatClientCredentials(
