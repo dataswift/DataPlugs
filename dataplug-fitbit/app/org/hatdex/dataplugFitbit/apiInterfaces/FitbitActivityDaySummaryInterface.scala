@@ -125,7 +125,7 @@ class FitbitActivityDaySummaryInterface @Inject() (
   def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     (rawData \ "summary").toOption.map {
       case data: JsObject if data.validate[FitbitActivitySummary].isSuccess =>
-        logger.debug(s"Validated JSON object:\n${data.toString}")
+        logger.info(s"Validated JSON day summary object.")
         Success(JsArray(Seq(data)))
       case data: JsObject =>
         logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")

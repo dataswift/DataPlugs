@@ -20,8 +20,6 @@
   <logger name="ch.qos.logback" level="WARN" />
   <logger name="play" level="INFO" />
   <logger name="application" level="INFO" />
-  <logger name="DatabaseNotableStore" level="INFO" />
-  <logger name="BulletinService" level="INFO" />
   <logger name="JwtPhataAuthenticatedAction" level="INFO" />
   <logger name="JwtPhataAwareAction" level="INFO" />
 
@@ -29,16 +27,15 @@
   <logger name="NetworkUpdateService" level="INFO"/>
   <logger name="HatClientActor" level="INFO" />
 
-  <logger name="MarketsquareNoticeService" level="INFO"/>
   <logger name="JwtPhataAuthentication" level="INFO"/>
-  <logger name="HatLoginController" level="INFO"/>
-  <logger name="MonzoTransactionsInterface" level="DEBUG"/>
   <logger name="SchemaMigration" level="INFO" />
 
-  <logger name="org.hatdex.dataplugFitbit" level="DEBUG" />
+  <logger name="org.hatdex.dataplugFitbit" level="INFO" />
   <logger name="org.hatdex.dataplug.*" level="INFO" />
+  <logger name="org.hatdex.dataplug.actors.PhataDataPlugVariantSyncer" level="DEBUG" />
   <logger name="org.hatdex.dataplugFitbit.controllers.Api" level="DEBUG" />
 
+  <logger name="http" level="INFO" />
   <logger name="HatClientActor" level="WARN" />
 
   <root level="WARN">

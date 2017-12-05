@@ -51,6 +51,14 @@ object Build extends Build {
     )
   )
 
+  lazy val dataplugSpotify = Project(
+    id = "dataplug-spotify",
+    base = file("dataplug-spotify"),
+    dependencies = Seq(
+      dataplug % "compile->compile;test->test"
+    )
+  )
+
   val root = Project(
     id = "dataplug-project",
     base = file("."),
@@ -60,7 +68,8 @@ object Build extends Build {
       dataplugTwitter,
       dataplugGoogleCalendar,
       dataplugMonzo,
-      dataplugFitbit
+      dataplugFitbit,
+      dataplugSpotify
     ),
     settings = Defaults.coreDefaultSettings ++
       // APIDoc.settings ++

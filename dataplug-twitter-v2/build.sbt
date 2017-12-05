@@ -28,7 +28,7 @@ routesGenerator := InjectedRoutesGenerator
 
 pipelineStages := Seq(uglify, digest, gzip)
 includeFilter in gzip := "*.js || *.css || *.svg || *.png"
-sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "dataplugSocial" / "assets"
+sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "dataplugTwitter" / "assets"
 
 import com.typesafe.sbt.packager.docker._
 packageName in Docker := "social-dataplug"

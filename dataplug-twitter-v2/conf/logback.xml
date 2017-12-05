@@ -22,18 +22,19 @@
   <logger name="play" level="INFO" />
   <logger name="application" level="INFO" />
   <logger name="DatabaseNotableStore" level="INFO" />
-  <logger name="BulletinService" level="INFO" />
   <logger name="JwtPhataAuthenticatedAction" level="INFO" />
   <logger name="JwtPhataAwareAction" level="INFO" />
 
   <logger name="org.hatdex.hat.api.services.HatClient" level="INFO" />
   <logger name="NetworkUpdateService" level="INFO"/>
-  <logger name="HatClientActor" level="INFO" />
-  <logger name="SyncerActorManager" level="INFO" />
 
-  <logger name="org.hatdex.dataplugTwitter" level="DEBUG" />
+  <logger name="org.hatdex.dataplugTwitter" level="INFO" />
   <logger name="org.hatdex.dataplug.*" level="INFO" />
-  <logger name="org.hatdex.dataplugFacebook.controllers.Api" level="DEBUG" />
+  <logger name="org.hatdex.dataplug.actors.PhataDataPlugVariantSyncer" level="DEBUG" />
+  <logger name="org.hatdex.dataplugTwitter.controllers.Api" level="DEBUG" />
+
+  <logger name="http" level="INFO" />
+  <logger name="HatClientActor" level="WARN" />
 
   <root level="WARN">
     <appender-ref ref="ASYNCSTDOUT" />

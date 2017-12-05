@@ -109,7 +109,7 @@ class FitbitSleepInterface @Inject() (
   def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     (rawData \ "sleep").toOption.map {
       case data: JsArray if data.validate[List[FitbitSleep]].isSuccess =>
-        logger.debug(s"Validated JSON object with ${data.value.length} values.")
+        logger.info(s"Validated JSON array of ${data.value.length} items.")
         Success(data)
       case data: JsObject =>
         logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")

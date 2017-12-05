@@ -13,12 +13,12 @@ import javax.inject.Inject
 import akka.stream.Materializer
 import play.api.http.DefaultHttpFilters
 import play.api.mvc._
-import play.api.{Environment, Logger}
+import play.api.{ Environment, Logger }
 import play.filters.cors.CORSFilter
 import play.filters.csrf.CSRFFilter
 import play.filters.headers.SecurityHeadersFilter
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 class Filters @Inject() (
     loggingFilter: LoggingFilter,
@@ -28,9 +28,8 @@ class Filters @Inject() (
     securityHeadersFilter: SecurityHeadersFilter)
   extends DefaultHttpFilters(tlsFilter, corsFilter, csrfFilter, loggingFilter)
 
-class TLSFilter @Inject() (
-                            implicit
-                            val mat: Materializer, ec: ExecutionContext, env: Environment) extends Filter {
+class TLSFilter @Inject() (implicit val mat: Materializer, ec: ExecutionContext, env: Environment) extends Filter {
+
   def apply(nextFilter: RequestHeader => Future[Result])(requestHeader: RequestHeader): Future[Result] = {
     if (requestHeader.headers.get("X-Forwarded-Proto").getOrElse("http") != "https" && env.mode == play.api.Mode.Prod)
       Future.successful(Results.MovedPermanently("https://" + requestHeader.host + requestHeader.uri))

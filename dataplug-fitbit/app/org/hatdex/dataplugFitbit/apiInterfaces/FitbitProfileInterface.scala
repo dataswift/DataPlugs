@@ -81,7 +81,7 @@ class FitbitProfileInterface @Inject() (
   def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     (rawData \ "user").toOption.map {
       case data: JsObject if data.validate[FitbitProfile].isSuccess =>
-        logger.debug(s"Validated JSON object:\n${data.toString}")
+        logger.info(s"Validated JSON fitbit profile object.")
         Success(JsArray(Seq(data)))
       case data: JsObject =>
         logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")

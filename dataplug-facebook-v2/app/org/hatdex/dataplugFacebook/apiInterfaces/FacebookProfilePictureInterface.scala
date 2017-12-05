@@ -65,7 +65,7 @@ class FacebookProfilePictureInterface @Inject() (
   def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     (rawData \ "data").toOption.map {
       case data: JsObject if data.validate[FacebookProfilePicture].isSuccess =>
-        logger.debug(s"Validated JSON object:\n${data.toString}")
+        logger.info(s"Validated JSON facebook profile photo object.")
         Success(JsArray(Seq(data)))
       case data: JsObject =>
         logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")
