@@ -5,10 +5,10 @@ import play.api.libs.json._
 case class FacebookProfile(
     id: String,
     // birthday: Option[String],
-    email: String,
+    email: Option[String],
     first_name: String,
     last_name: String,
-    gender: String,
+    gender: Option[String],
     is_verified: Boolean,
     locale: String,
     name: String,

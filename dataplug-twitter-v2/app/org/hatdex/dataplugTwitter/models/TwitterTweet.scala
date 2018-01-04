@@ -49,6 +49,7 @@ case class TwitterUserShort(
     lang: String)
 
 case class TwitterTweet(
+    lastUpdated: String, // Field inserted by the plug and derived from 'created_at' value; here only for backwards compatibility
     coordinates: Option[TwitterCoordinates], // Represents the geographic location of this Tweet as reported by the user or client application. The inner coordinates array is formatted as geoJSON (longitude first, then latitude).
     created_at: String, // UTC time when this Tweet was created.
     favorite_count: Option[Int],

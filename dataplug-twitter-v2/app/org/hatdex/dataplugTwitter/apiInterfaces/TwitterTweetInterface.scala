@@ -8,6 +8,8 @@
 
 package org.hatdex.dataplugTwitter.apiInterfaces
 
+import java.util.Locale
+
 import akka.actor.{ ActorRef, Scheduler }
 import akka.util.Timeout
 import com.google.inject.Inject
@@ -21,6 +23,8 @@ import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMe
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugTwitter.models._
+import org.joda.time.DateTime
+import org.joda.time.format.DateTimeFormat
 import play.api.Logger
 import play.api.cache.CacheApi
 import play.api.libs.json._
@@ -46,6 +50,7 @@ class TwitterTweetInterface @Inject() (
   protected val logger: Logger = Logger(this.getClass)
 
   val defaultApiEndpoint = TwitterTweetInterface.defaultApiEndpoint
+  val defaultDateFormat = TwitterTweetInterface.defaultDateFormat
 
   val refreshInterval = 60.minutes
 
@@ -105,8 +110,12 @@ class TwitterTweetInterface @Inject() (
     hatClientActor: ActorRef,
     fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Unit] = {
 
+    val dataValidation = transformData(content)
+      .map(validateMinDataStructure)
+      .getOrElse(Failure(SourceDataProcessingException("Source data malformed, could not insert date in to the structure")))
+
     for {
-      tweets <- FutureTransformations.transform(validateMinDataStructure(content))
+      tweets <- FutureTransformations.transform(dataValidation)
       _ <- uploadHatData(namespace, endpoint, tweets, hatAddress, hatClientActor)
     } yield {
       logger.debug(s"Successfully synced new records for HAT $hatAddress")
@@ -127,9 +136,31 @@ class TwitterTweetInterface @Inject() (
     }
   }
 
+  private def transformData(rawData: JsValue): JsResult[JsArray] = {
+    import play.api.libs.json._
+    import play.api.libs.json.Reads._
+
+    val transformation = of[JsArray].map {
+      case JsArray(arr) => JsArray(
+        arr.map { tweet =>
+          tweet.transform(__.read[JsObject].map { o =>
+            val createdAtValue = (o \ "created_at").as[String]
+            val isoStandardDateTime = defaultDateFormat.parseDateTime(createdAtValue)
+
+            o ++ JsObject(Map("lastUpdated" -> JsString(isoStandardDateTime.toString)))
+          })
+        }.collect {
+          case JsSuccess(v, _) => v
+        })
+    }
+
+    rawData.transform(transformation)
+  }
 }
 
 object TwitterTweetInterface {
+  val defaultDateFormat = DateTimeFormat.forPattern("EEE MMM dd HH:mm:ss Z yyyy").withLocale(Locale.ENGLISH)
+
   val defaultApiEndpoint = ApiEndpointCall(
     "https://api.twitter.com",
     "/1.1/statuses/user_timeline.json",
