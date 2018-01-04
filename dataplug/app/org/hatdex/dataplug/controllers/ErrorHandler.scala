@@ -28,9 +28,12 @@ class ErrorHandler @Inject() (
     val messagesApi: MessagesApi) extends DefaultHttpErrorHandler(env, config, sourceMapper, router)
   with SecuredErrorHandler with UnsecuredErrorHandler with I18nSupport with ContentTypes with RequestExtractors with Rendering {
 
+  val logger: Logger = Logger(this.getClass)
+
   // 401 - Unauthorized
   override def onNotAuthenticated(implicit request: RequestHeader): Future[Result] = {
-    Logger.debug("[Silhouette] Not authenticated")
+    logger.info("[Silhouette] Not authenticated")
+    logger.debug(s"Headers: ${request.headers} \n Query params: ${request.queryString} \n Cookies: ${request.cookies}")
     Future.successful {
       render {
         case Accepts.Json() => Unauthorized(Json.obj("error" -> "Not Authenticated", "message" -> s"Not Authenticated"))
@@ -41,6 +44,8 @@ class ErrorHandler @Inject() (
 
   // 403 - Forbidden
   override def onNotAuthorized(implicit request: RequestHeader): Future[Result] = {
+    logger.error(s"[Silhouette] Forbidden")
+    logger.debug(s"Headers: ${request.headers} \n Query params: ${request.queryString} \n Cookies: ${request.cookies}")
     Future.successful {
       render {
         case Accepts.Json() => Forbidden(Json.obj("error" -> "Forbidden", "message" -> s"Access Denied"))
@@ -56,7 +61,8 @@ class ErrorHandler @Inject() (
    * @param message The error message.
    */
   override protected def onForbidden(request: RequestHeader, message: String): Future[Result] = {
-    Logger.error(s"On forbidden: $message")
+    logger.error(s"[Silhouette] Forbidden: $message")
+    logger.debug(s"Headers: ${request.headers} \n Query params: ${request.queryString} \n Cookies: ${request.cookies}")
     Future.successful(Redirect(routes.Application.signIn()))
   }
 
