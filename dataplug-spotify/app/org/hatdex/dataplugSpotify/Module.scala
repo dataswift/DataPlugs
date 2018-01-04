@@ -56,9 +56,10 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
    */
   @Provides
   def provideDataPlugCollection(
-    spotifyProfileInterface: SpotifyProfileInterface): DataPlugRegistry = {
+    spotifyProfileInterface: SpotifyProfileInterface,
+    spotifyRecentlyPlayedInterface: SpotifyRecentlyPlayedInterface): DataPlugRegistry = {
 
-    DataPlugRegistry(Seq(spotifyProfileInterface))
+    DataPlugRegistry(Seq(spotifyProfileInterface, spotifyRecentlyPlayedInterface))
   }
 
   @Provides

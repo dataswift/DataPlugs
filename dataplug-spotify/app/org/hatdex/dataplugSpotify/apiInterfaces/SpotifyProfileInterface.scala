@@ -34,7 +34,7 @@ class SpotifyProfileInterface @Inject() (
     val scheduler: Scheduler,
     val provider: SpotifyProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
 
-  val namespace: String = "facebook"
+  val namespace: String = "spotify"
   val endpoint: String = "profile"
   protected val logger: Logger = Logger(this.getClass)
 

@@ -12,17 +12,12 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import javax.inject.Inject
 
-import akka.actor.{ Actor, ActorSystem, Props }
-import com.google.common.io.BaseEncoding
-import com.mohiva.play.silhouette.api.LoginInfo
+import akka.actor.{ ActorSystem }
 import com.mohiva.play.silhouette.impl.providers.{ OAuth2Provider, SocialProviderRegistry }
 import org.hatdex.dataplug.actors.IoExecutionContext
-import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointVariantChoice
 import org.hatdex.dataplug.services.{ DataPlugEndpointService, DataplugSyncerActorManager, SubscriptionEventBus, UserService }
 import org.hatdex.dataplug.utils.{ JwtPhataAuthenticatedAction, JwtPhataAwareAction }
-import org.hatdex.dataplugFitbit.apiInterfaces.FitbitSubscription
 import play.api.i18n.MessagesApi
-import play.api.libs.json.{ Format, Json }
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
@@ -41,7 +36,6 @@ class Api @Inject() (
     socialProviderRegistry: SocialProviderRegistry,
     subscriptionEventBus: SubscriptionEventBus,
     actorSystem: ActorSystem,
-    fitbitSubscription: FitbitSubscription,
     syncerActorManager: DataplugSyncerActorManager) extends Controller {
 
   private val logger = Logger(this.getClass)

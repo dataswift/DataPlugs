@@ -30,7 +30,8 @@ class JwtPhataAuthenticatedAction @Inject() (
     configuration: play.api.Configuration,
     userService: UserService) extends ActionBuilder[JwtPhataAuthenticatedRequest] {
 
-  val logger = Logger("JwtPhataAuthentication")
+  val logger = Logger(this.getClass)
+
   def invokeBlock[A](request: Request[A], block: (JwtPhataAuthenticatedRequest[A]) => Future[Result]): Future[Result] = {
     request.headers.get("X-Auth-Token")
       .orElse(request.getQueryString("X-Auth-Token"))
@@ -56,6 +57,8 @@ class JwtPhataAuthenticatedAction @Inject() (
   }
 
   def validateJwtToken(token: String): Future[Option[User]] = {
+    logger.debug(s"Starting JWT token validation, token --- $token")
+
     val expectedResources = configuration.getStringSeq("auth.allowedResources").get
     val expectedAccessCope = "validate"
     val maybeSignedJWT = Try(SignedJWT.parse(token))
@@ -71,11 +74,12 @@ class JwtPhataAuthenticatedAction @Inject() (
       val accessScopeMatches = Option(claimSet.getClaim("accessScope")).contains(expectedAccessCope)
 
       if (fresh && resourceMatches && accessScopeMatches) {
+        logger.debug(s"JWT token validation succeeded: issuer --- ${claimSet.getIssuer}")
         val identity = User("hatlogin", claimSet.getIssuer, List())
         identityVerification.verifiedIdentity(identity, signedJWT)
       }
       else {
-        logger.debug(s"JWT token validation failed: fresh - $fresh, resource - $resourceMatches, scope - $accessScopeMatches")
+        logger.warn(s"JWT token validation failed: fresh - $fresh, resource - $resourceMatches, scope - $accessScopeMatches")
         Future(None)
       }
     } getOrElse {
@@ -94,7 +98,7 @@ class JwtPhataAwareAction @Inject() (
     userService: UserService,
     jwtAuthenticatedAction: JwtPhataAuthenticatedAction) extends ActionBuilder[JwtPhataAwareRequest] {
 
-  val logger = Logger("JwtPhataAuthentication")
+  val logger = Logger(this.getClass)
 
   def invokeBlock[A](request: Request[A], block: (JwtPhataAwareRequest[A]) => Future[Result]): Future[Result] = {
     request.headers.get("X-Auth-Token")

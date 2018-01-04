@@ -51,21 +51,21 @@ class SpotifyProfileCheck @Inject() (
               Some(""), Some(""),
               Some(SpotifyProfileInterface.defaultApiEndpoint))
 
-            //            val activityVariant = ApiEndpointVariant(
-            //              ApiEndpoint("temp", "User's Spotify activity list", None),
-            //              Some(""), Some(""),
-            //              Some(SpotifyTempInterface.defaultApiEndpoint))
+            val recentlyPlayedVariant = ApiEndpointVariant(
+              ApiEndpoint("feed", "A feed of Spotify tracks played", None),
+              Some(""), Some(""),
+              Some(SpotifyRecentlyPlayedInterface.defaultApiEndpoint))
 
             val choices = Seq(
-              ApiEndpointVariantChoice("profile", "User's Spotify profile information", active = true, profileVariant))
-            //              ApiEndpointVariantChoice("activity", "User's Spotify activity list", active = true, activityVariant))
+              ApiEndpointVariantChoice("profile", "User's Spotify profile information", active = true, profileVariant),
+              ApiEndpointVariantChoice("feed", "A feed of Spotify tracks played", active = true, recentlyPlayedVariant))
 
             logger.info(s"API endpoint SpotifyProfile validated for $hatAddress")
             Future.successful(choices)
 
           case _ =>
             logger.warn(s"Could not validate SpotifyProfile API endpoint $fetchParams - ${response.status}: ${response.body}")
-            Future.failed(SourceDataProcessingException("Could not validate FitbitProfile API endpoint"))
+            Future.failed(SourceDataProcessingException("Could not validate SpotifyProfile API endpoint"))
         }
       }
     }.recover {
