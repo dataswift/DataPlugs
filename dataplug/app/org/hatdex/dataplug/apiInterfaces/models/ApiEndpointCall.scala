@@ -36,31 +36,46 @@ object ApiEndpointMethod {
 }
 
 case class ApiEndpointCall(
-  url: String,
-  path: String,
-  method: ApiEndpointMethod.EndpointMethod,
-  pathParameters: Map[String, String], // for pathParameter name=value replaces [name] in path (/[name]/...)
-  queryParameters: Map[String, String],
-  headers: Map[String, String])
+    url: String,
+    path: String,
+    method: ApiEndpointMethod.EndpointMethod,
+    pathParameters: Map[String, String], // for pathParameter name=value replaces [name] in path (/[name]/...)
+    queryParameters: Map[String, String],
+    headers: Map[String, String],
+    storageParameters: Option[Map[String, String]]) { // Optional storage parameter to persist additional information between calls, not used in the request building process
+
+  def storage = storageParameters.getOrElse(Map())
+}
 
 case class ApiEndpoint(
-  name: String,
-  description: String,
-  details: Option[String])
+    name: String,
+    description: String,
+    details: Option[String]) {
+  lazy val sanitizedName: String = name.replace("/", "_")
+
+}
 
 case class ApiEndpointVariant(
-  endpoint: ApiEndpoint,
-  variant: Option[String],
-  variantDescription: Option[String],
-  configuration: Option[ApiEndpointCall])
+    endpoint: ApiEndpoint,
+    variant: Option[String],
+    variantDescription: Option[String],
+    configuration: Option[ApiEndpointCall]) {
+  lazy val sanitizedVariantName: String = variant.getOrElse("").replace("#", "").replace("/", "_")
+
+  override def toString: String = s"${endpoint.name} (variant ${variant}) ${
+    configuration.map(c =>
+      s"${c.method} ${c.url}${c.path} with path: ${c.pathParameters}, query: ${c.queryParameters}, headers: ${c.headers}")
+      .getOrElse("")
+  }"
+}
 
 case class ApiEndpointStatus(
-  phata: String,
-  apiEndpoint: ApiEndpointVariant,
-  endpointCall: ApiEndpointCall,
-  timestamp: DateTime,
-  successful: Boolean,
-  message: Option[String])
+    phata: String,
+    apiEndpoint: ApiEndpointVariant,
+    endpointCall: ApiEndpointCall,
+    timestamp: DateTime,
+    successful: Boolean,
+    message: Option[String])
 
 object JsonProtocol {
   implicit val endpointMethodGetFormat = Json.format[ApiEndpointMethod.Get]

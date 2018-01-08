@@ -16,4 +16,5 @@ import scala.concurrent.{ ExecutionContext, Future }
 
 trait DataPlugOptionsCollector extends RequestAuthenticator with DataPlugApiEndpointClient {
   def get(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext): Future[Seq[ApiEndpointVariantChoice]]
+  def staticEndpointChoices: Seq[ApiEndpointVariantChoice]
 }

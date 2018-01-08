@@ -1,0 +1,27 @@
+@import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+
+@import org.hatdex.dataplug.models.User
+@import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointVariantChoice
+
+@(socialProviders: SocialProviderRegistry, endpointVariants: Option[Seq[ApiEndpointVariantChoice]], redirect: String)(implicit user: User, request: RequestHeader, messages: Messages)
+
+@menubarContent = {
+    <li class="text-lowercase">
+        <a href="@redirect">
+        @user.userId
+        </a>
+    </li>
+}
+
+@org.hatdex.dataplug.views.html.templates.main(Messages("sign.in.title"), menubarContent = menubarContent) {
+    <div class="row">
+        <div class="plug-content">
+            <div class="complete-instructions">
+            @Messages("complete.instructions")
+            </div>
+            <a class="btn btn-block btn-dataplug" id="rumpel-link" href="@redirect">
+            @Messages("button.rumpel")
+            </a>
+        </div>
+    </div>
+}

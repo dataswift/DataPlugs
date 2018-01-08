@@ -7,21 +7,25 @@
 @import org.hatdex.dataplug.controllers.routes
 
 @templates.main(Messages("sign.in.title")) {
-    <h2 class="signin-header">@Messages("signin.hat.header")</h2>
-    <fieldset class="signin col-md-6 col-md-offset-3">
-        <legend>@Messages("signin.hat.info")</legend>
-        @b3.form(action = routes.HatLoginController.signinHat()) {
-            @helper.CSRF.formField
+    <div class="row">
+        <div class="plug-content">
+            <h2 class="signin-header">@Messages("signin.hat.header")</h2>
+            <fieldset class="signin">
+                <legend>@Messages("signin.hat.info")</legend>
+                @b3.form(action = routes.HatLoginController.signinHat()) {
+                    @helper.CSRF.formField
 
-            @b3.text(signInForm("hataddress"),
-                '_label -> Messages("field.hataddress"),
-                'placeholder -> "yourhat.hubofallthings.net",
-                'autofocus -> true,
-                '_help -> Messages("signin.hat.hint"))
+                    @b3.text(signInForm("hataddress"),
+                        '_label -> Messages("field.hataddress"),
+                        'placeholder -> "yourhat.hubofallthings.net",
+                        'autofocus -> true,
+                        '_help -> Messages("signin.hat.hint"))
 
-            @b3.submit('class -> "btn btn-block btn-dataplug") {
-                @Messages("signin.hat.signin")
-            }
-        }
-    </fieldset>
+                    @b3.submit('class -> "btn btn-block btn-dataplug") {
+                        @Messages("signin.hat.signin")
+                    }
+                }
+            </fieldset>
+        </div>
+    </div>
 }

@@ -13,17 +13,20 @@
 $base-white: white;
 $base-black: black;
 $base-color: rgb(188, 51, 51); /*rgb(233, 58, 63);*/
-$base-active-color: rgb(17, 134, 117);
+$base-active-color: #6297b1;
 $text-light: white;
 $text-dark: lighten(black, 20%);
-$base-background-color: #262626;
-$base-rump: #009688;
+$base-background-color: #eee;
+$color-content-background: #fff;
+$text-base: #939393;
+$base-rump: #6297b1;
+$color-navigation: #4a556b;
 
 body {
   font-family: 'Open Sans Regular', sans-serif;
   font-size: 11px;
   font-weight: 500;
-  background: $base-black;
+  background: $color-navigation;
 }
 
 h1, h2, h3, h4, h5 {
@@ -55,6 +58,16 @@ h1, h2, h3, h4, h5 {
 
 .content-main {
   width: 100%;
+  min-height: 65vh;
+  background-color: $base-background-color;
+
+  color: $text-base;
+
+  h2 {
+    margin-top: 1.25em;
+    margin-bottom: 0;
+    text-align: center;
+  }
 }
 
 .share {
@@ -70,17 +83,6 @@ h1, h2, h3, h4, h5 {
     padding: 0.1em;
     background: #00a0d1;
     font-size: 2em;
-  }
-}
-
-.content-main {
-  background-color: $base-background-color;
-  color: $base-white;
-
-  h2 {
-    margin-top: 1.25em;
-    margin-bottom: 0;
-    text-align: center;
   }
 }
 
@@ -127,7 +129,7 @@ input[type="text"] {
 }
 
 .signin {
-  color: $base-white;
+  color: $text-base;
   font-family: "Open Sans Regular", sans-serif;
   margin-top: 3em;
   margin-bottom: 10%;
@@ -142,12 +144,12 @@ input[type="text"] {
   }
 
   .help-block {
-    color: $base-white;
+    color: $text-base;
   }
 }
 
 legend {
-  color: $base-white;
+  color: $text-base;
   font-size: 1.25em;
   border: none;
 }
@@ -189,7 +191,11 @@ legend {
 }
 
 .plug-content {
+  background-color: $color-content-background;
   margin-top: 3em;
+  margin-bottom: 3em;
+  border-radius: 8px;
+
   min-height: 80vh;
   font-size: 1.25em;
 
@@ -215,6 +221,15 @@ legend {
     margin-bottom: 2em;
     text-align: left;
   }
+
+  @include make-xs-column(10);
+  @include make-xs-column-offset(1);
+  @include make-sm-column(8);
+  @include make-sm-column-offset(2);
+  @include make-md-column(8);
+  @include make-md-column-offset(2);
+  @include make-lg-column(6);
+  @include make-lg-column-offset(3);
 }
 
 @import "headerFooter";

@@ -59,14 +59,10 @@ class SocialAuthController @Inject() (
             profile <- p.retrieveProfile(authInfo)
             socialUser <- userService.save(profile)
             _ <- userService.link(request.identity, socialUser)
-            authInfo <- authInfoRepository.save(profile.loginInfo, authInfo)
-            //            authenticator <- silhouette.env.authenticatorService.create(profile.loginInfo)
-            //            value <- silhouette.env.authenticatorService.init(authenticator)
-            //            result <- silhouette.env.authenticatorService.embed(value, Redirect(routes.Application.index()))
-            result <- Future.successful(Redirect(dataPlugViewSet.indexRedirect))
+            _ <- authInfoRepository.save(profile.loginInfo, authInfo)
           } yield {
             silhouette.env.eventBus.publish(LoginEvent(socialUser, request))
-            result
+            Redirect(dataPlugViewSet.indexRedirect)
           }
         }
       case _ => Future.failed(new ProviderException(s"Cannot authenticate with unexpected social provider $provider"))

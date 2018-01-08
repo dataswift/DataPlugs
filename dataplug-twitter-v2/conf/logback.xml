@@ -1,0 +1,43 @@
+<!--
+  ~ Copyright (C) 2017 HAT Data Exchange Ltd - All Rights Reserved
+  ~ This Source Code Form is subject to the terms of the Mozilla Public
+  ~ License, v. 2.0. If a copy of the MPL was not distributed with this
+  ~ file, You can obtain one at http://mozilla.org/MPL/2.0/.
+  ~ Written by Augustinas Markevicius <augustinas.markevicius@hatdex.org> 2, 2017
+  -->
+
+<configuration>
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <target>System.out</target>
+    <encoder>
+      <pattern>[%-5level] [%date{MM/dd/YYYY HH:mm:ss}] %logger{1} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="ASYNCSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
+    <appender-ref ref="STDOUT" />
+  </appender>
+
+  <logger name="ch.qos.logback" level="WARN" />
+  <logger name="play" level="INFO" />
+  <logger name="application" level="INFO" />
+  <logger name="DatabaseNotableStore" level="INFO" />
+  <logger name="org.hatdex.dataplug.utils.JwtPhataAuthenticatedAction" level="WARN" />
+  <logger name="org.hatdex.dataplug.utils.JwtPhataAwareAction" level="WARN" />
+
+  <logger name="org.hatdex.hat.api.services.HatClient" level="INFO" />
+  <logger name="NetworkUpdateService" level="INFO"/>
+
+  <logger name="org.hatdex.dataplugTwitter" level="INFO" />
+  <logger name="org.hatdex.dataplug.*" level="INFO" />
+  <logger name="org.hatdex.dataplug.actors.PhataDataPlugVariantSyncer" level="DEBUG" />
+  <logger name="org.hatdex.dataplugTwitter.controllers.Api" level="DEBUG" />
+
+  <logger name="http" level="INFO" />
+  <logger name="HatClientActor" level="WARN" />
+
+  <root level="WARN">
+    <appender-ref ref="ASYNCSTDOUT" />
+  </root>
+
+</configuration>

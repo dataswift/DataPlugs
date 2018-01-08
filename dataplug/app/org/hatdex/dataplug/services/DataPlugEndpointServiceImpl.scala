@@ -124,7 +124,7 @@ class DataPlugEndpointServiceImpl @Inject() (dataPlugEndpointDao: DataPlugEndpoi
     retrievePhataEndpoints(phata) map { activeEndpoints =>
       activeEndpoints.map { endpointVariant =>
         ApiEndpointVariantChoice(
-          endpointVariant.variant.getOrElse(endpointVariant.endpoint.name),
+          endpointVariant.variant.filter(_.trim.nonEmpty).getOrElse(endpointVariant.endpoint.name),
           endpointVariant.variantDescription.getOrElse(endpointVariant.endpoint.description),
           active = true, endpointVariant)
       }

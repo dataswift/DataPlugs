@@ -23,7 +23,9 @@ class DataPlugViewSetDefault extends DataPlugViewSet {
     endpointVariants: Option[Seq[ApiEndpointVariantChoice]],
     variantsForm: Form[List[String]])(implicit request: RequestHeader, user: User, messages: Messages): Html = {
 
-    dataplugViews.html.connect(socialProviderRegistry)
+    dataplugViews.html.connect(socialProviderRegistry, endpointVariants,
+      request.session.get("redirect").getOrElse(defaultRedirect),
+      variantsForm)
   }
 
   def signIn(form: Form[String])(implicit request: RequestHeader, messages: Messages): Html =
@@ -31,4 +33,22 @@ class DataPlugViewSetDefault extends DataPlugViewSet {
 
   def indexRedirect: Call =
     org.hatdex.dataplug.controllers.routes.Application.index()
+
+  def signupComplete(
+    socialProviderRegistry: SocialProviderRegistry,
+    endpointVariants: Option[Seq[ApiEndpointVariantChoice]])(implicit user: User, request: RequestHeader, messages: Messages): Html = {
+    dataplugViews.html.complete(socialProviderRegistry, endpointVariants,
+      request.session.get("redirect").getOrElse(defaultRedirect))
+  }
+
+  def disconnect(
+    socialProviderRegistry: SocialProviderRegistry,
+    endpointVariants: Option[Seq[ApiEndpointVariantChoice]],
+    chooseVariants: Boolean)(implicit user: User, request: RequestHeader, messages: Messages): Html = {
+    dataplugViews.html.disconnect(socialProviderRegistry, endpointVariants,
+      request.session.get("redirect").getOrElse(defaultRedirect),
+      chooseVariants)
+  }
+
+  protected def defaultRedirect(implicit user: User) = s"https://${user.userId}/#/dashboard"
 }

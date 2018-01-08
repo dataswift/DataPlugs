@@ -1,0 +1,45 @@
+<!--
+  ~ Copyright (C) HAT Data Exchange Ltd - All Rights Reserved
+  ~  Unauthorized copying of this file, via any medium is strictly prohibited
+  ~  Proprietary and confidential
+  ~  Written by Andrius Aucinas <andrius.aucinas@hatdex.org>, 10 2016
+  -->
+
+<configuration>
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <target>System.out</target>
+    <encoder>
+      <pattern>[%-5level] [%date{MM/dd/YYYY HH:mm:ss}] %logger{1} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="ASYNCSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
+    <appender-ref ref="STDOUT" />
+  </appender>
+
+  <logger name="ch.qos.logback" level="WARN" />
+  <logger name="play" level="INFO" />
+  <logger name="application" level="INFO" />
+  <logger name="DatabaseNotableStore" level="INFO" />
+  <logger name="org.hatdex.dataplug.utils.JwtPhataAuthenticatedAction" level="WARN" />
+  <logger name="org.hatdex.dataplug.utils.JwtPhataAwareAction" level="WARN" />
+
+  <logger name="org.hatdex.hat.api.services.HatClient" level="INFO" />
+  <logger name="NetworkUpdateService" level="INFO"/>
+
+  <logger name="JwtPhataAuthentication" level="INFO"/>
+  <logger name="SchemaMigration" level="INFO" />
+
+  <logger name="org.hatdex.dataplugFacebook" level="INFO" />
+  <logger name="org.hatdex.dataplug.*" level="INFO" />
+  <logger name="org.hatdex.dataplug.actors.PhataDataPlugVariantSyncer" level="DEBUG" />
+  <logger name="org.hatdex.dataplugFacebook.controllers.Api" level="INFO" />
+
+  <logger name="http" level="INFO" />
+  <logger name="HatClientActor" level="WARN" />
+
+  <root level="WARN">
+    <appender-ref ref="ASYNCSTDOUT" />
+  </root>
+
+</configuration>

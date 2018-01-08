@@ -1,0 +1,83 @@
+@import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+
+@import org.hatdex.dataplug.models.User
+@import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointVariantChoice
+@import org.hatdex.dataplug.controllers.routes
+
+@(socialProviders: SocialProviderRegistry,
+        endpointVariants: Option[Seq[ApiEndpointVariantChoice]],
+        redirect: String,
+        chooseVariants: Boolean = false)(implicit user: User, request: RequestHeader, messages: Messages)
+
+@import b3.vertical.fieldConstructor
+
+@menubarContent = {
+    <li class="text-lowercase">
+        <a href="@redirect">
+        @user.userId
+        </a>
+    </li>
+}
+
+@org.hatdex.dataplug.views.html.templates.main(Messages("sign.in.title"), menubarContent = menubarContent) {
+    <div class="row">
+        <div class="plug-content">
+            @endpointVariants.map { _ =>
+                <div class="complete-instructions">
+                    @Messages("disconnect.instructions")
+                </div>
+                <div class="complete-instructions">
+                    @Messages("disconnect.note")
+                </div>
+                <a class="btn btn-block btn-dataplug" href="@routes.Application.disconnect()">
+                    @Messages("disconnect.button")
+                </a>
+            }.getOrElse {
+                <div class="complete-instructions">
+                    @Messages("disconnect.disconnected")
+                </div>
+                <div class="complete-instructions">
+                    @Messages("disconnect.noteDisconnected")
+                </div>
+                <a class="btn btn-block btn-dataplug" href="@routes.Application.index()">
+                    @Messages("disconnect.reconnectButton")
+                </a>
+            }
+            <a class="btn btn-block btn-dataplug" id="rumpel-link" href="@redirect">
+            @Messages("button.rumpel")
+            </a>
+        </div>
+    </div>
+
+
+
+    @endpointVariants.map { variants =>
+        <div class="row">
+            <div class="plug-content">
+            @b3.form(org.hatdex.dataplug.controllers.routes.Application.connectVariants(), 'class -> "synchronisation-options") {
+                <legend><h3>@Messages("setup.dataplug.info")</h3></legend>
+                <fieldset>
+                    @helper.CSRF.formField
+
+                    @for((variant, index) <- variants.zipWithIndex) {
+                        <div class="form-group" id="endpointVariants_@(index)_field">
+                            <div class="checkbox checkbox-circle checkbox-rump">
+                                <input type="checkbox" name="endpointVariants[@index]"
+                                id="endpointVariants_@index"
+                                value="@variant.key" @("checked".when(variant.active)) @("disabled".when(!chooseVariants))>
+                                <label for="endpointVariants_@index">@variant.description</label>
+                            </div>
+                        </div>
+                    }
+                </fieldset>
+                @if(chooseVariants){
+                    @b3.submit('class -> "btn btn-dataplug") {
+                        @Messages("connect")
+                    }
+                }
+            }
+            </div>
+        </div>
+
+    }
+}

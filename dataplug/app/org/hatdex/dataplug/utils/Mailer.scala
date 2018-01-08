@@ -20,7 +20,7 @@ import play.api.mvc.RequestHeader
 import scala.util.Try
 
 class Mailer @Inject() (configuration: play.api.Configuration, ms: MailService)
-    extends commonPlay.utils.Mailer(configuration, ms) {
+  extends commonPlay.utils.Mailer(configuration, ms) {
 
   private val plugName = configuration.getString("service.name").getOrElse("MISCONFIGURED")
   private val adminEmails = configuration.getStringSeq("administrators").getOrElse(Seq())

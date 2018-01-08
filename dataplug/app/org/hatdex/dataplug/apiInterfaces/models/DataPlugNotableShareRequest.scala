@@ -14,8 +14,7 @@ case class DataPlugNotableShareRequest(
     message: String,
     hatDomain: String,
     notableId: String,
-    photo: Option[String]
-) {
+    photo: Option[String]) {
   implicit val notableShareRequestFormat = DataPlugNotableShareRequest.notableShareRequestFormat
 
   def dataPlugSharedNotable = DataPlugSharedNotable(notableId, hatDomain, posted = false, None, None, deleted = false, None)

@@ -15,6 +15,6 @@ import scala.concurrent.{ ExecutionContext, Future }
 
 trait RequestAuthenticator {
   type AuthInfoType <: AuthInfo
-  def authenticateRequest(params: ApiEndpointCall, hatAddress: String)(implicit ec: ExecutionContext): Future[ApiEndpointCall]
+  def authenticateRequest(params: ApiEndpointCall, hatAddress: String, refreshToken: Boolean = true)(implicit ec: ExecutionContext): Future[ApiEndpointCall]
 }
 

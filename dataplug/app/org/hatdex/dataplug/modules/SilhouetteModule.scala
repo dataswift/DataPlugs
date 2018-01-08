@@ -10,6 +10,7 @@ package org.hatdex.dataplug.modules
 
 import com.google.inject.name.Named
 import com.google.inject.{ AbstractModule, Provides }
+import com.mohiva.play.silhouette.api.actions.{ SecuredErrorHandler, UnsecuredErrorHandler }
 import com.mohiva.play.silhouette.api.crypto._
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services._
@@ -27,6 +28,7 @@ import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepo
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.codingwell.scalaguice.ScalaModule
+import org.hatdex.dataplug.controllers.ErrorHandler
 import org.hatdex.dataplug.dao.{ OAuth1InfoDAOImpl, OAuth2InfoDAOImpl, UserDAO, UserDAOImpl }
 import org.hatdex.dataplug.services.{ UserService, UserServiceImpl }
 import org.hatdex.dataplug.utils.{ IdentityVerificationCachedImpl, JwtIdentityVerification, PhataAuthenticationEnvironment }
@@ -45,8 +47,8 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   def configure() {
     bind[JwtIdentityVerification].to[IdentityVerificationCachedImpl]
     bind[Silhouette[PhataAuthenticationEnvironment]].to[SilhouetteProvider[PhataAuthenticationEnvironment]]
-    //    bind[UnsecuredErrorHandler].to[CustomUnsecuredErrorHandler]
-    //    bind[SecuredErrorHandler].to[CustomSecuredErrorHandler]
+    bind[SecuredErrorHandler].to[ErrorHandler]
+    bind[UnsecuredErrorHandler].to[ErrorHandler]
     bind[UserService].to[UserServiceImpl]
     bind[UserDAO].to[UserDAOImpl]
     bind[CacheLayer].to[PlayCacheLayer]
@@ -88,8 +90,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
       userService,
       authenticatorService,
       Seq(),
-      eventBus
-    )
+      eventBus)
   }
 
   /**
