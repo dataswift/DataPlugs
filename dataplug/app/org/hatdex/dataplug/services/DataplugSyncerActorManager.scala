@@ -108,4 +108,27 @@ class DataplugSyncerActorManager @Inject() (
     Future.sequence(optionsLists).map(_.flatten)
   }
 
+  def currentProviderStaticApiVariantChoices(userId: String, providerName: String)(implicit executionContext: ExecutionContext): Future[Seq[ApiEndpointVariantChoice]] = {
+    val socialProvider = socialProviderRegistry.get[SocialProvider](providerName)
+
+    val optionsCollectors = socialProvider.map { provider =>
+      optionsCollectionRegistry.getSeqProvider[provider.type, DataPlugOptionsCollector]
+    } getOrElse Seq()
+
+    val optionsLists = optionsCollectors.map { collector =>
+      for {
+        choices <- Future.successful(collector.staticEndpointChoices)
+        enabledVariants <- dataPlugEndpointService.enabledApiVariantChoices(userId)
+      } yield {
+        choices.map { choice =>
+          choice.copy(
+            active = enabledVariants.exists(v => v.key == choice.key && v.variant.variant == choice.variant.variant),
+            variant = enabledVariants.find(_.key == choice.key).map(_.variant).getOrElse(choice.variant))
+        }
+      }
+    }
+
+    Future.sequence(optionsLists).map(_.flatten)
+  }
+
 }

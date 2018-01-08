@@ -12,6 +12,8 @@ GET         /authenticate/hat              org.hatdex.dataplug.controllers.HatLo
 POST        /signin/hat                    org.hatdex.dataplug.controllers.HatLoginController.signinHat
 GET         /authenticate/:provider        org.hatdex.dataplug.controllers.SocialAuthController.authenticate(provider)
 
+GET         /api/admin/disconnect              org.hatdex.dataplug.controllers.Api.adminDisconnect(hat: Option[String])
+
 GET         /api/tickle                    org.hatdex.dataplug.controllers.Api.tickle
 GET         /api/status                    org.hatdex.dataplug.controllers.Api.status
 GET         /api/permissions               org.hatdex.dataplug.controllers.Api.permissions
