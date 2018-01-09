@@ -46,34 +46,8 @@ class FacebookProfileCheck @Inject() (
       buildRequest(requestParams).flatMap { response =>
         response.status match {
           case OK =>
-            val profileVariant = ApiEndpointVariant(
-              ApiEndpoint("profile", "User's Facebook profile information", None),
-              Some(""), Some(""),
-              Some(FacebookProfileInterface.defaultApiEndpoint))
-
-            val profilePictureVariant = ApiEndpointVariant(
-              ApiEndpoint("profile/picture", "User's Facebook profile picture", None),
-              Some(""), Some(""),
-              Some(FacebookProfilePictureInterface.defaultApiEndpoint))
-
-            val feedVariant = ApiEndpointVariant(
-              ApiEndpoint("feed", "User's Facebook posts feed", None),
-              Some(""), Some(""),
-              Some(FacebookFeedInterface.defaultApiEndpoint))
-
-            val eventsVariant = ApiEndpointVariant(
-              ApiEndpoint("events", "Facebook events the user has been invited to", None),
-              Some(""), Some(""),
-              Some(FacebookEventInterface.defaultApiEndpoint))
-
-            val choices = Seq(
-              ApiEndpointVariantChoice("profile", "User's Facebook profile information", active = true, profileVariant),
-              ApiEndpointVariantChoice("profile/picture", "User's Facebook profile picture", active = true, profilePictureVariant),
-              ApiEndpointVariantChoice("feed", "User's Facebook posts feed", active = false, feedVariant),
-              ApiEndpointVariantChoice("events", "Facebook events the user has been invited to", active = false, eventsVariant))
-
             logger.info(s"API endpoint FacebookProfile validated for $hatAddress")
-            Future.successful(choices)
+            Future.successful(staticEndpointChoices)
 
           case _ =>
             logger.warn(s"Could not validate FacebookProfile API endpoint $fetchParams - ${response.status}: ${response.body}")
@@ -85,6 +59,36 @@ class FacebookProfileCheck @Inject() (
         logger.error(s"Failed to validate FacebookProfile API endpoint. Reason: ${e.getMessage}", e)
         throw e
     }
+  }
+
+  def staticEndpointChoices: Seq[ApiEndpointVariantChoice] = {
+    val profileVariant = ApiEndpointVariant(
+      ApiEndpoint("profile", "User's Facebook profile information", None),
+      Some(""), Some(""),
+      Some(FacebookProfileInterface.defaultApiEndpoint))
+
+    val profilePictureVariant = ApiEndpointVariant(
+      ApiEndpoint("profile/picture", "User's Facebook profile picture", None),
+      Some(""), Some(""),
+      Some(FacebookProfilePictureInterface.defaultApiEndpoint))
+
+    val feedVariant = ApiEndpointVariant(
+      ApiEndpoint("feed", "User's Facebook posts feed", None),
+      Some(""), Some(""),
+      Some(FacebookFeedInterface.defaultApiEndpoint))
+
+    val eventsVariant = ApiEndpointVariant(
+      ApiEndpoint("events", "Facebook events the user has been invited to", None),
+      Some(""), Some(""),
+      Some(FacebookEventInterface.defaultApiEndpoint))
+
+    val choices = Seq(
+      ApiEndpointVariantChoice("profile", "User's Facebook profile information", active = true, profileVariant),
+      ApiEndpointVariantChoice("profile/picture", "User's Facebook profile picture", active = true, profilePictureVariant),
+      ApiEndpointVariantChoice("feed", "User's Facebook posts feed", active = false, feedVariant),
+      ApiEndpointVariantChoice("events", "Facebook events the user has been invited to", active = false, eventsVariant))
+
+    choices
   }
 
 }

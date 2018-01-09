@@ -33,7 +33,7 @@ class Api @Inject() (
     facebookFeedUpdateInterface: FacebookFeedUploadInterface,
     syncerActorManager: DataplugSyncerActorManager) extends Controller {
 
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   val ioEC = IoExecutionContext.ioThreadPool
 
@@ -47,13 +47,19 @@ class Api @Inject() (
         dataPlugNotablesService.find(notableShareRequest.notableId) flatMap { maybeNotableStatus =>
           if (!maybeNotableStatus.exists(_.posted)) {
             val sharedNotable = maybeNotableStatus.getOrElse(notableShareRequest.dataPlugSharedNotable)
-            for {
+            val eventualNotablePost = for {
               statusUpdate <- facebookFeedUpdateInterface.post(notableShareRequest.hatDomain, notableShareRequest)
               _ <- dataPlugNotablesService.save(sharedNotable.copy(posted = true, postedTime = Some(DateTime.now()), providerId = Some(statusUpdate.id)))
               mns <- dataPlugNotablesService.find(notableShareRequest.notableId)
             } yield {
               logger.info(s"Found inserted notable: $mns")
               Ok(Json.toJson(Map("message" -> "Notable accepted for posting")))
+            }
+
+            eventualNotablePost.recover {
+              case e =>
+                logger.error(s"Failed to post notable for ${notableShareRequest.hatDomain}. Notable ID: ${notableShareRequest.notableId}\nReason: ${e.getMessage}")
+                InternalServerError(generateResponseJson("Internal Server Error", "The request cannot be completed at this time."))
             }
           }
           else {
@@ -77,11 +83,17 @@ class Api @Inject() (
         dataPlugNotablesService.find(id) flatMap {
           case Some(status) =>
             if (status.posted && !status.deleted && status.providerId.isDefined) {
-              for {
+              val eventualNotableDelete = for {
                 _ <- facebookFeedUpdateInterface.delete(status.phata, status.providerId.get)
                 _ <- dataPlugNotablesService.save(status.copy(posted = false, deleted = true, deletedTime = Some(DateTime.now())))
               } yield {
                 Ok(Json.toJson(Map("message" -> "Notable deleted.")))
+              }
+
+              eventualNotableDelete.recover {
+                case e =>
+                  logger.error(s"Failed to delete notable. Notable ID: $id\nReason: ${e.getMessage}")
+                  InternalServerError(generateResponseJson("Internal Server Error", "The request cannot be completed at this time."))
               }
             }
             else if (status.posted && status.deleted) {
@@ -102,7 +114,7 @@ class Api @Inject() (
     }
   }
 
-  private def generateResponseJson(message: String, error: String): JsValue =
+  private def generateResponseJson(error: String, message: String): JsValue =
     Json.toJson(Map(
       "message" -> message,
       "error" -> error))
