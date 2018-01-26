@@ -66,15 +66,10 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   @Provides
   def provideDataPlugEndpointChoiceCollection(
     twitterProvider: TwitterProvider,
-    twitterTweetsCheck: TwitterTweetsCheck,
-    twitterFriendsCheck: TwitterFriendsCheck,
-    twitterFollowersCheck: TwitterFollowersCheck): DataPlugOptionsCollectorRegistry = {
+    twitterTweetsCheck: TwitterTweetsCheck): DataPlugOptionsCollectorRegistry = {
 
     val variants: Seq[(Provider, DataPlugOptionsCollector)] = Seq(
-      (twitterProvider, twitterTweetsCheck)
-    //(twitterProvider, twitterFriendsCheck)
-    //(twitterProvider, twitterFollowersCheck)
-    )
+      (twitterProvider, twitterTweetsCheck))
     DataPlugOptionsCollectorRegistry(variants)
   }
 

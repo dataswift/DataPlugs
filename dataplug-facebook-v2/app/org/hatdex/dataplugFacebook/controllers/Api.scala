@@ -45,6 +45,7 @@ class Api @Inject() (
         val notableShareRequest = request.body
 
         dataPlugNotablesService.find(notableShareRequest.notableId) flatMap { maybeNotableStatus =>
+          // If notable status exists and the notable is posted - skip, all other cases - post
           if (!maybeNotableStatus.exists(_.posted)) {
             val sharedNotable = maybeNotableStatus.getOrElse(notableShareRequest.dataPlugSharedNotable)
             val eventualNotablePost = for {

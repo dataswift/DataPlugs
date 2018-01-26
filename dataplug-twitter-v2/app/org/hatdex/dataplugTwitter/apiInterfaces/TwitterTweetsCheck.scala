@@ -53,13 +53,8 @@ class TwitterTweetsCheck @Inject() (
       buildRequest(requestParams) flatMap { result =>
         result.status match {
           case OK =>
-            val variant = ApiEndpointVariant(
-              ApiEndpoint("tweets", "Tweets", None),
-              Some(""), Some(""),
-              Some(TwitterTweetInterface.defaultApiEndpoint))
-
-            val choices = Seq(ApiEndpointVariantChoice("tweets", "My Tweets", active = true, variant))
-            Future.successful(choices)
+            logger.info(s"API endpoint TwitterTweets validated for $hatAddress")
+            Future.successful(staticEndpointChoices)
           case _ =>
             logger.warn(s"Unsuccessful response from api endpoint $fetchParams - ${result.status}: ${result.body}")
             Future.failed(SourceApiCommunicationException(s"Unsuccessful response from api endpoint $fetchParams - ${result.status}: ${result.body}"))
@@ -67,6 +62,15 @@ class TwitterTweetsCheck @Inject() (
       }
     }
 
+  }
+
+  def staticEndpointChoices: Seq[ApiEndpointVariantChoice] = {
+    val variant = ApiEndpointVariant(
+      ApiEndpoint("tweets", "Tweets", None),
+      Some(""), Some(""),
+      Some(TwitterTweetInterface.defaultApiEndpoint))
+
+    Seq(ApiEndpointVariantChoice("tweets", "My Tweets", active = true, variant))
   }
 
   override protected def buildRequest(params: ApiEndpointCall)(implicit ec: ExecutionContext): Future[WSResponse] =
