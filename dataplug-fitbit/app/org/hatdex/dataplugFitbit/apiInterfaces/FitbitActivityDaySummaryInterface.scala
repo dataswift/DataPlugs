@@ -117,7 +117,10 @@ class FitbitActivityDaySummaryInterface @Inject() (
     import play.api.libs.json._
 
     val transformation = (__ \ "summary").json.update(
-      __.read[JsObject].map(o => o ++ JsObject(Map("dateCreated" -> JsString(DateTime.now.toString), "summaryDate" -> JsString(date)))))
+      __.read[JsObject].map(o => o ++ JsObject(Map(
+        "dateCreated" -> JsString(
+        defaultApiDateFormat.withZoneUTC().parseDateTime(date).toString),
+        "summaryDate" -> JsString(date)))))
 
     rawData.transform(transformation)
   }
