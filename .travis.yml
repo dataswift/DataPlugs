@@ -31,7 +31,7 @@ matrix:
 
 script:
   - |
-    if [[$(git rev-list -1 HEAD -- $DATAPLUG) != $(git rev-list -1 HEAD~1 -- $DATAPLUG)] || [$(git rev-list -1 HEAD -- dataplug) != $(git rev-list -1 HEAD~1 -- dataplug)]]; then
+    if [[$(git rev-list -1 HEAD -- $DATAPLUG) != $(git rev-list -1 HEAD~1 -- $DATAPLUG) || $(git rev-list -1 HEAD -- dataplug) != $(git rev-list -1 HEAD~1 -- dataplug)]]; then
       sbt "project $DATAPLUG" "docker:stage"
       docker build -t hubofallthings/$DATAPLUG $DATAPLUG/target/docker/stage/
       docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
