@@ -26,7 +26,6 @@ class DiActorsModule extends AbstractModule with ScalaModule with AkkaGuiceSuppo
   def configure = {
     bindActor[DataPlugManagerActor]("dataPlugManager")
     bindActor[ForwardingActor]("syncDispatcher")
-    bind[org.hatdex.commonPlay.utils.Mailer].to[org.hatdex.dataplug.utils.Mailer]
   }
 
   @Provides @Named("syncThrottler")

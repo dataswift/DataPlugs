@@ -14,12 +14,11 @@ import com.nimbusds.jwt.SignedJWT
 import org.hatdex.dataplug.models.User
 import org.hatdex.dataplug.services.UserService
 import org.joda.time.DateTime
-import play.api.Logger
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import play.api.{ Configuration, Logger }
 import play.api.libs.json.Json
 import play.api.mvc._
 
-import scala.concurrent.Future
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Try
 
 class JwtPhataAuthenticatedRequest[A](val identity: User, val request: Request[A])
@@ -27,10 +26,14 @@ class JwtPhataAuthenticatedRequest[A](val identity: User, val request: Request[A
 
 class JwtPhataAuthenticatedAction @Inject() (
     identityVerification: JwtIdentityVerification,
-    configuration: play.api.Configuration,
-    userService: UserService) extends ActionBuilder[JwtPhataAuthenticatedRequest] {
+    configuration: Configuration,
+    userService: UserService,
+    bodyParsers: PlayBodyParsers)(
+    implicit
+    val executionContext: ExecutionContext) extends ActionBuilder[JwtPhataAuthenticatedRequest, AnyContent] {
 
   val logger = Logger(this.getClass)
+  val parser = bodyParsers.default
 
   def invokeBlock[A](request: Request[A], block: (JwtPhataAuthenticatedRequest[A]) => Future[Result]): Future[Result] = {
     request.headers.get("X-Auth-Token")
@@ -59,7 +62,7 @@ class JwtPhataAuthenticatedAction @Inject() (
   def validateJwtToken(token: String): Future[Option[User]] = {
     logger.debug(s"Starting JWT token validation, token --- $token")
 
-    val expectedResources = configuration.getStringSeq("auth.allowedResources").get
+    val expectedResources = configuration.get[Seq[String]]("auth.allowedResources")
     val expectedAccessCope = "validate"
     val maybeSignedJWT = Try(SignedJWT.parse(token))
 
@@ -96,9 +99,12 @@ class JwtPhataAwareAction @Inject() (
     identityVerification: JwtIdentityVerification,
     configuration: play.api.Configuration,
     userService: UserService,
-    jwtAuthenticatedAction: JwtPhataAuthenticatedAction) extends ActionBuilder[JwtPhataAwareRequest] {
+    jwtAuthenticatedAction: JwtPhataAuthenticatedAction)(
+    implicit
+    val executionContext: ExecutionContext) extends ActionBuilder[JwtPhataAwareRequest, AnyContent] {
 
   val logger = Logger(this.getClass)
+  val parser = jwtAuthenticatedAction.parser
 
   def invokeBlock[A](request: Request[A], block: (JwtPhataAwareRequest[A]) => Future[Result]): Future[Result] = {
     request.headers.get("X-Auth-Token")

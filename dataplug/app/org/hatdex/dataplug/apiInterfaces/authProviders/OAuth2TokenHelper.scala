@@ -17,7 +17,7 @@ import com.mohiva.play.silhouette.impl.providers.{ OAuth2Info, OAuth2Provider, S
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.hatdex.dataplug.actors.Errors.SourceAuthenticationException
-import play.api.cache.CacheApi
+import play.api.cache.{ AsyncCacheApi }
 import play.api.libs.ws.{ WSClient, WSResponse }
 import play.api.{ Configuration, Logger }
 
@@ -29,7 +29,7 @@ class OAuth2TokenHelper @Inject() (
     configuration: Configuration,
     wsClient: WSClient,
     authInfoRepository: AuthInfoRepository,
-    cache: CacheApi,
+    cache: AsyncCacheApi,
     socialProviderRegistry: SocialProviderRegistry) {
   protected val logger = Logger(this.getClass)
 
@@ -41,21 +41,20 @@ class OAuth2TokenHelper @Inject() (
    * @param refreshToken The refresh token, as on OAuth2Info
    */
   def refresh(loginInfo: LoginInfo, refreshToken: String)(implicit ec: ExecutionContext): Option[Future[OAuth2Info]] = {
-    val cachedToken = cache.get[OAuth2Info](s"oauth2:${loginInfo.providerKey}:${loginInfo.providerID}")
-    cachedToken map { token =>
-      Future.successful(token)
-    } orElse {
-      socialProviderRegistry.get[OAuth2Provider](loginInfo.providerID) match {
-        case Some(p: OAuth2Provider) =>
-          implicit val provider: OAuth2Provider = p
-          val settings = configuration.underlying.as[OAuth2SettingsExtended](s"silhouette.${loginInfo.providerID}")
-          settings.refreshURL.map({ url =>
+    socialProviderRegistry.get[OAuth2Provider](loginInfo.providerID) match {
+      case Some(p: OAuth2Provider) =>
+        implicit val provider: OAuth2Provider = p
+        val settings = configuration.underlying.as[OAuth2SettingsExtended](s"silhouette.${loginInfo.providerID}")
+        settings.refreshURL.map({ url =>
+          cache.getOrElseUpdate[OAuth2Info](s"oauth2:${loginInfo.providerKey}:${loginInfo.providerID}", 1.day) {
             val encodedAuth = Base64.encode(s"${settings.clientID}:${settings.clientSecret}")
             val params = Map(
               "client_id" -> Seq(p.settings.clientID),
               "client_secret" -> Seq(p.settings.clientSecret),
               "grant_type" -> Seq("refresh_token"),
-              "refresh_token" -> Seq(refreshToken)) ++ p.settings.scope.map({ "scope" -> Seq(_) })
+              "refresh_token" -> Seq(refreshToken)) ++ p.settings.scope.map({
+                "scope" -> Seq(_)
+              })
 
             val refreshQueryParams = if (settings.customProperties.getOrElse("parameters_location", "") == "query") {
               Map("grant_type" -> "refresh_token", "refresh_token" -> refreshToken)
@@ -70,26 +69,19 @@ class OAuth2TokenHelper @Inject() (
               .getOrElse("")
               .concat(encodedAuth)
 
-            val eventualToken = wsClient.url(url)
-              .withHeaders("Authorization" -> authHeader)
-              .withHeaders(settings.refreshHeaders.toSeq: _*)
-              .withQueryString(refreshQueryParams.toSeq: _*)
+            wsClient.url(url)
+              .withHttpHeaders("Authorization" -> authHeader)
+              .withHttpHeaders(settings.refreshHeaders.toSeq: _*)
+              .withQueryStringParameters(refreshQueryParams.toSeq: _*)
               .post(params)
               .flatMap(resp => Future.fromTry(buildInfo(resp)))
-
-            eventualToken.map { fetchedToken =>
-              cache.set(
-                s"oauth2:${loginInfo.providerKey}:${loginInfo.providerID}",
-                fetchedToken,
-                fetchedToken.expiresIn.map(t => t.seconds).getOrElse(0.seconds))
-              fetchedToken
-            }
-          })
-        case _ =>
-          logger.info(s"No OAuth2Provider for $loginInfo, $refreshToken")
-          None
-      }
+          }
+        })
+      case _ =>
+        logger.info(s"No OAuth2Provider for $loginInfo, $refreshToken")
+        None
     }
+
   }
 
   /**
@@ -115,7 +107,6 @@ class OAuth2TokenHelper @Inject() (
    *                            request's host.
    * @param apiURL              The URL to fetch the profile from the API. Can be used to override the default URL
    *                            hardcoded in every provider implementation.
-   * @param refreshURL          The token refresh URL to the OAuth provider to refresh token if refresh token is available
    * @param refreshURL          The token refresh URL to the OAuth provider to refresh token if refresh token is available
    * @param clientID            The client ID provided by the OAuth provider.
    * @param clientSecret        The client secret provided by the OAuth provider.

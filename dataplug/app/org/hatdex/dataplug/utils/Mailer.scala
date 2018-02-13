@@ -10,17 +10,18 @@ package org.hatdex.dataplug.utils
 
 import javax.inject.Inject
 
-import org.hatdex.commonPlay
-import org.hatdex.commonPlay.utils.MailService
 import org.hatdex.dataplug.views
 import play.api.UsefulException
 import play.api.i18n.Messages
 import play.api.mvc.RequestHeader
+import play.twirl.api.Html
 
 import scala.util.Try
 
-class Mailer @Inject() (configuration: play.api.Configuration, ms: MailService)
-  extends commonPlay.utils.Mailer(configuration, ms) {
+class Mailer @Inject() (configuration: play.api.Configuration, ms: MailService) {
+  import scala.language.implicitConversions
+
+  implicit def html2String(html: Html): String = html.toString
 
   private val plugName = configuration.getString("service.name").getOrElse("MISCONFIGURED")
   private val adminEmails = configuration.getStringSeq("administrators").getOrElse(Seq())

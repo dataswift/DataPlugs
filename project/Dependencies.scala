@@ -11,7 +11,7 @@ import sbt._
 object Dependencies {
 
   object Versions {
-    val crossScala = Seq("2.11.8")
+    val crossScala = Seq("2.12.4")
     val scalaVersion = crossScala.head
   }
 
@@ -20,17 +20,16 @@ object Dependencies {
     "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases",
     "Sonatype snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/",
     "HAT Library Artifacts Releases" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com",
-    "HAT Library Artifacts Snapshots" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-snapshots.hubofallthings.com"
+    "HAT Library Artifacts Snapshots" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-snapshots.hubofallthings.com",
+    Resolver.file("Local repo", file(System.getProperty("user.home") + "/.ivy2/local"))(Resolver.ivyStylePatterns)
   )
-
 
   object Library {
     object HATDeX {
-      private val version = "2.4.1-SNAPSHOT"
-      val hatClient = "org.hatdex" %% "hat-client-scala-play" % version
+      private val version = "2.5.2-SNAPSHOT"
+      val hatClient = "org.hatdex" %% "hat-client-scala-play" % "2.5.5-SNAPSHOT"
       val dexClient = "org.hatdex" %% "dex-client-scala-play" % version
-      val dexter = "org.hatdex" %% "dexter" % "1.2.0-SNAPSHOT"
-      val commonPlay = "org.hatdex" %% "common-play" % "1.0.0-SNAPSHOT"
+      val dexter = "org.hatdex" %% "dexter" % "1.4.1-SNAPSHOT"
     }
 
     object Play {
@@ -39,17 +38,19 @@ object Dependencies {
       val cache = "com.typesafe.play" %% "play-cache" % version
       val test = "com.typesafe.play" %% "play-test" % version
       val specs2 = "com.typesafe.play" %% "play-specs2" % version
+      val json = "com.typesafe.play" %% "play-json" % version
+      val jsonJoda = "com.typesafe.play" %% "play-json-joda" % version
+      val mailer = "com.typesafe.play" %% "play-mailer" % "6.0.1"
       val jsonDerivedCodecs = "org.julienrf" % "play-json-derived-codecs_2.11" % "3.3"
       val typesafeConfigExtras = "com.iheart" %% "ficus" % "1.3.4"
-      val mailer = "com.typesafe.play" %% "play-mailer" % "5.0.0"
 
       object Specs2 {
-        private val version = "3.6.6"
+        private val version = "3.8.9"
         val matcherExtra = "org.specs2" %% "specs2-matcher-extra" % version
         val mock = "org.specs2" %% "specs2-mock" % version
       }
       object Jwt {
-        private val bouncyCastleVersion = "1.55"
+        private val bouncyCastleVersion = "1.58"
         val bouncyCastle = "org.bouncycastle" % "bcprov-jdk15on" % bouncyCastleVersion
         val bouncyCastlePkix = "org.bouncycastle" % "bcpkix-jdk15on" % bouncyCastleVersion
         val nimbusDsJwt = "com.nimbusds" % "nimbus-jose-jwt" % "4.22"
@@ -57,21 +58,22 @@ object Dependencies {
       object Db {
         val jdbc = "com.typesafe.play" %% "play-jdbc" % version
         val postgres = "org.postgresql" % "postgresql" % "9.4-1206-jdbc4"
-        val anorm = "com.typesafe.play" %% "anorm" % "2.5.2"
+        val anorm = "com.typesafe.play" %% "anorm" % "2.5.3"
         val liquibase = "org.liquibase" % "liquibase-maven-plugin" % "3.5.1"
       }
 
       object Utils {
-        val playBootstrap = "com.adrianhurt" %% "play-bootstrap" % "1.1-P25-B3" exclude("org.webjars", "jquery")
+        val playBootstrap = "com.adrianhurt" %% "play-bootstrap" % "1.2-P26-B3" exclude("org.webjars", "jquery")
         val commonsValidator = "commons-validator" % "commons-validator" % "1.5.0"
         val htmlCompressor = "com.mohiva" %% "play-html-compressor" % "0.6.3"
       }
 
       object Silhouette {
-        val passwordBcrypt = "com.mohiva" %% "play-silhouette-password-bcrypt" % "4.0.0"
-        val persistence = "com.mohiva" %% "play-silhouette-persistence" % "4.0.0"
-        val cryptoJca = "com.mohiva" %% "play-silhouette-crypto-jca" % "4.0.0"
-        val silhouette = "com.mohiva" %% "play-silhouette" % "4.0.0"
+        val version = "5.0.3"
+        val passwordBcrypt = "com.mohiva" %% "play-silhouette-password-bcrypt" % version
+        val persistence = "com.mohiva" %% "play-silhouette-persistence" % version
+        val cryptoJca = "com.mohiva" %% "play-silhouette-crypto-jca" % version
+        val silhouette = "com.mohiva" %% "play-silhouette" % version
       }
     }
 
@@ -87,7 +89,7 @@ object Dependencies {
       val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.0.9"
     }
 
-    val scalaGuice = "net.codingwell" %% "scala-guice" % "4.0.1"
-    val akkaTestkit = "com.typesafe.akka" %% "akka-testkit" % "2.4.7"
+    val scalaGuice = "net.codingwell" %% "scala-guice" % "4.1.0"
+    val akkaTestkit = "com.typesafe.akka" %% "akka-testkit" % "2.5.4"
   }
 }

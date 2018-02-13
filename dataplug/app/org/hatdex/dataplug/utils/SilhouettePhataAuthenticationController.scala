@@ -11,21 +11,22 @@ package org.hatdex.dataplug.utils
 import com.mohiva.play.silhouette.api.Authenticator.Implicits._
 import com.mohiva.play.silhouette.api.actions._
 import com.mohiva.play.silhouette.api.util.Clock
-import com.mohiva.play.silhouette.api.{ Environment, Silhouette }
+import com.mohiva.play.silhouette.api.{ Env, Environment, Silhouette }
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import net.ceedubs.ficus.Ficus._
 import org.hatdex.dataplug.models.User
 import org.joda.time.DateTime
 import play.api.i18n.I18nSupport
-import play.api.mvc.Controller
+import play.api.mvc.{ AbstractController, ControllerComponents }
 import play.api.Configuration
 
 import scala.concurrent.duration.FiniteDuration
 
-abstract class SilhouettePhataAuthenticationController(
+abstract class SilhouettePhataAuthenticationController[T <: Env](
+    components: ControllerComponents,
     silhouette: Silhouette[PhataAuthenticationEnvironment],
     clock: Clock,
-    configuration: Configuration) extends Controller with I18nSupport {
+    configuration: Configuration) extends AbstractController(components) with I18nSupport {
 
   def env: Environment[PhataAuthenticationEnvironment] = silhouette.env
 
@@ -50,7 +51,7 @@ abstract class SilhouettePhataAuthenticationController(
   }
 
   private lazy val rememberMeParams: (FiniteDuration, Option[FiniteDuration], Option[FiniteDuration]) = {
-    val cfg = configuration.getConfig("silhouette.authenticator.rememberMe").get.underlying
+    val cfg = configuration.get[Configuration]("silhouette.authenticator.rememberMe").underlying
     (
       cfg.as[FiniteDuration]("authenticatorExpiry"),
       cfg.getAs[FiniteDuration]("authenticatorIdleTimeout"),

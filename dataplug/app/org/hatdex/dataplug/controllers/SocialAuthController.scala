@@ -15,34 +15,31 @@ import com.mohiva.play.silhouette.api.exceptions.ProviderException
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.util.Clock
 import com.mohiva.play.silhouette.impl.providers._
-import org.hatdex.commonPlay.utils.MailService
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.{ PhataAuthenticationEnvironment, SilhouettePhataAuthenticationController }
 import play.api.i18n.{ I18nSupport, Messages, MessagesApi }
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.Action
+import play.api.mvc.ControllerComponents
 
 import scala.concurrent.Future
 
 /**
  * The social auth controller.
  *
- * @param messagesApi The Play messages API.
  * @param silhouette The Silhouette stack.
  * @param userService The user service implementation.
  * @param authInfoRepository The auth info service implementation.
  * @param socialProviderRegistry The social provider registry.
- * @param webJarAssets The webjar assets implementation.
  */
 class SocialAuthController @Inject() (
-    val messagesApi: MessagesApi,
+    components: ControllerComponents,
     configuration: play.api.Configuration,
     silhouette: Silhouette[PhataAuthenticationEnvironment],
     userService: UserService,
     authInfoRepository: AuthInfoRepository,
     socialProviderRegistry: SocialProviderRegistry,
     dataPlugViewSet: DataPlugViewSet,
-    clock: Clock) extends SilhouettePhataAuthenticationController(silhouette, clock, configuration) with I18nSupport with Logger {
+    clock: Clock) extends SilhouettePhataAuthenticationController(components, silhouette, clock, configuration) with I18nSupport with Logger {
 
   /**
    * Authenticates a user against a social provider.

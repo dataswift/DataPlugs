@@ -15,22 +15,21 @@ import com.mohiva.play.silhouette.api.util.Clock
 import com.mohiva.play.silhouette.api.{ LoginEvent, Silhouette }
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
-import org.hatdex.commonPlay.models.auth.forms.AuthForms
-import org.hatdex.commonPlay.utils.MailService
+import play.api.data.Forms._
+import org.hatdex.dataplug.utils.MailService
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.{ JwtPhataAuthenticatedAction, JwtPhataAwareAction, PhataAuthenticationEnvironment, SilhouettePhataAuthenticationController }
-import org.hatdex.dataplug.views
 import play.api.Logger
-import play.api.i18n.{ Messages, MessagesApi }
-import play.api.libs.concurrent.Execution.Implicits._
+import play.api.data.Form
+import play.api.i18n.Messages
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 
-import scala.concurrent.Future
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.concurrent.duration._
 
 class HatLoginController @Inject() (
-    val messagesApi: MessagesApi,
+    components: ControllerComponents,
     mailService: MailService,
     silhouette: Silhouette[PhataAuthenticationEnvironment],
     wsClient: WSClient,
@@ -40,12 +39,12 @@ class HatLoginController @Inject() (
     socialProviderRegistry: SocialProviderRegistry,
     tokenUserAwareAction: JwtPhataAwareAction,
     dataPlugViewSet: DataPlugViewSet,
-    tokenUserAuthenticatedAction: JwtPhataAuthenticatedAction) extends SilhouettePhataAuthenticationController(silhouette, clock, configuration) {
+    tokenUserAuthenticatedAction: JwtPhataAuthenticatedAction)(implicit ec: ExecutionContext) extends SilhouettePhataAuthenticationController(components, silhouette, clock, configuration) {
 
   val hatProtocol = {
-    configuration.getBoolean("provisioning.hatSecure") match {
-      case Some(true) => "https://"
-      case _          => "http://"
+    configuration.get[Boolean]("provisioning.hatSecure") match {
+      case true => "https://"
+      case _    => "http://"
     }
   }
 
@@ -77,17 +76,19 @@ class HatLoginController @Inject() (
     }
   }
 
+  val signinHatForm = Form("hataddress" -> nonEmptyText)
+
   def signinHat: Action[AnyContent] = Action.async { implicit request =>
-    AuthForms.signinHatForm.bindFromRequest.fold(
-      formWithErrors => Future.successful(BadRequest(dataPlugViewSet.signIn(AuthForms.signinHatForm))),
+    signinHatForm.bindFromRequest.fold(
+      formWithErrors => Future.successful(BadRequest(dataPlugViewSet.signIn(signinHatForm))),
       address => {
         val hatHost = address.stripPrefix("http://").stripPrefix("https://").replaceAll("[^A-Za-z0-9.:]", "")
 
         val redirectUrl = routes.HatLoginController.authHat(None)
-          .absoluteURL(configuration.getBoolean("service.secure").getOrElse(false))
+          .absoluteURL(configuration.get[Option[Boolean]]("service.secure").getOrElse(false))
 
         val hatUri = wsClient.url(s"$hatProtocol$hatHost/hatlogin")
-          .withQueryString("name" -> configuration.getString("service.name").get, "redirect" -> redirectUrl)
+          .withQueryStringParameters("name" -> configuration.get[String]("service.name"), "redirect" -> redirectUrl)
 
         val hatNameCookieAge = 90.days
 

@@ -13,38 +13,40 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Clock
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
-import org.hatdex.commonPlay.models.auth.forms.AuthForms
 import org.hatdex.dataplug.actors.IoExecutionContext
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointStatus, ApiEndpointVariantChoice }
 import org.hatdex.dataplug.models.User
 import org.hatdex.dataplug.services.{ DataPlugEndpointService, DataplugSyncerActorManager }
 import org.hatdex.dataplug.utils.{ PhataAuthenticationEnvironment, SilhouettePhataAuthenticationController }
 import play.api.Logger
-import play.api.i18n.MessagesApi
+import play.api.data.Form
+import play.api.data.Forms._
 import play.api.mvc._
 
 import scala.concurrent.{ ExecutionContext, Future }
 
 class Application @Inject() (
-    val messagesApi: MessagesApi,
+    components: ControllerComponents,
     configuration: play.api.Configuration,
     socialProviderRegistry: SocialProviderRegistry,
     silhouette: Silhouette[PhataAuthenticationEnvironment],
     dataPlugViewSet: DataPlugViewSet,
     dataPlugEndpointService: DataPlugEndpointService,
     syncerActorManager: DataplugSyncerActorManager,
-    clock: Clock) extends SilhouettePhataAuthenticationController(silhouette, clock, configuration) {
+    clock: Clock) extends SilhouettePhataAuthenticationController(components, silhouette, clock, configuration) {
 
   protected val logger: Logger = Logger(this.getClass)
-  protected val provider: String = configuration.getString("service.provider").getOrElse("").toLowerCase
-  protected val chooseVariants: Boolean = configuration.getBoolean("service.chooseVariants").getOrElse(false)
+  protected val provider: String = configuration.get[Option[String]]("service.provider").getOrElse("").toLowerCase
+  protected val chooseVariants: Boolean = configuration.get[Option[Boolean]]("service.chooseVariants").getOrElse(false)
   protected implicit val ioEC: ExecutionContext = IoExecutionContext.ioThreadPool
 
   def signIn(): Action[AnyContent] = UserAwareAction { implicit request =>
+    val signinHatForm = Form("hataddress" -> nonEmptyText)
+
     request.identity map { _ =>
       Redirect(dataPlugViewSet.indexRedirect)
     } getOrElse {
-      Ok(dataPlugViewSet.signIn(AuthForms.signinHatForm))
+      Ok(dataPlugViewSet.signIn(signinHatForm))
     }
   }
 

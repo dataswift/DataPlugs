@@ -1,11 +1,15 @@
 @import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 @import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointVariantChoice
+
+@import org.hatdex.dataplug.models.User
+
 @(socialProviders: SocialProviderRegistry,
         endpointvariants: Option[Seq[ApiEndpointVariantChoice]],
         redirect: String,
-        signupForm: Form[List[String]])(implicit user: org.hatdex.dataplug.models.User, request: RequestHeader, messages: Messages)
+        signupForm: Form[List[String]])(implicit user: User, request: RequestHeader, messages: Messages)
 
-@import b3.vertical.fieldConstructor
+@import views.html.b3.vertical.fieldConstructor
+@import views.html.b3.submit
 
 @menubarContent = {
     <li class="text-lowercase">
@@ -35,7 +39,7 @@
                     }
 
                     @endpointvariants.map { variants =>
-                        @b3.form(org.hatdex.dataplug.controllers.routes.Application.connectVariants(), 'class -> "synchronisation-options") {
+                        @views.html.b3.form(org.hatdex.dataplug.controllers.routes.Application.connectVariants(), 'class -> "synchronisation-options") {
                             <legend><h3>@Messages("setup.monzo.info")</h3></legend>
                             <fieldset>
                                 @helper.CSRF.formField
@@ -52,7 +56,7 @@
                                     </div>
                                 }
                             </fieldset>
-                            @b3.submit('class -> "btn btn-dataplug") {
+                            @views.html.b3.submit('class -> "btn btn-dataplug") {
                                 @Messages("connect")
                             }
                         }

@@ -78,6 +78,9 @@ case class ApiEndpointStatus(
     message: Option[String])
 
 object JsonProtocol {
+  import play.api.libs.json.JodaWrites._
+  import play.api.libs.json.JodaReads._
+
   implicit val endpointMethodGetFormat = Json.format[ApiEndpointMethod.Get]
   implicit val endpointMethodDeleteFormat = Json.format[ApiEndpointMethod.Delete]
   implicit val endpointMethodPostFormat = Json.format[ApiEndpointMethod.Post]
