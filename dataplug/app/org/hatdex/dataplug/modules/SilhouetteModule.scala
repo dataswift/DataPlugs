@@ -104,7 +104,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
    */
   @Provides @Named("oauth1-token-secret-cookie-signer")
   def provideOAuth1TokenSecretCookieSigner(configuration: Configuration): Signer = {
-    val config = configuration.underlying.as[JcaSignerSettings]("silhouette.oauth1TokenSecretProvider.cookie.signer")
+    val config = configuration.underlying.as[JcaSignerSettings]("silhouette.oauth1TokenSecretProvider.signer")
 
     new JcaSigner(config)
   }

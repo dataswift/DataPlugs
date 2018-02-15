@@ -22,7 +22,7 @@ import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dex.api.services.DexClient
 import org.hatdex.dexter.actors.HatClientActor
 import org.hatdex.dexter.models.HatClientCredentials
-import play.api.cache.CacheApi
+import play.api.cache.SyncCacheApi
 import play.api.libs.ws.WSClient
 import play.api.{ Configuration, Logger }
 
@@ -76,7 +76,7 @@ class DataPlugManagerActor @Inject() (
     dataPlugRegistry: DataPlugRegistry,
     ws: WSClient,
     configuration: Configuration,
-    cacheApi: CacheApi,
+    cacheApi: SyncCacheApi,
     val dataplugEndpointService: DataPlugEndpointService,
     val mailer: Mailer,
     @Named("syncThrottler") throttledSyncActor: ActorRef)(implicit val ec: ExecutionContext) extends Actor
@@ -120,8 +120,8 @@ class DataPlugManagerActor @Inject() (
 
   private val dexClient = new DexClient(
     ws,
-    configuration.getString("service.dex.address").get,
-    configuration.getString("service.dex.scheme").get)
+    configuration.get[String]("service.dex.address"),
+    configuration.get[String]("service.dex.scheme"))
 
   private def createSyncingSchedule(
     phata: String,
@@ -149,8 +149,8 @@ class DataPlugManagerActor @Inject() (
 
   private def startSyncerActor(phata: String, variant: ApiEndpointVariant, endpointInterface: DataPlugEndpointInterface, actorKey: String): Future[ActorRef] = {
     val hatActorProps = HatClientActor.props(ws, phata, HatClientCredentials(
-      configuration.getString("service.hatCredentials.username").get,
-      configuration.getString("service.hatCredentials.password").get,
+      configuration.get[String]("service.hatCredentials.username"),
+      configuration.get[String]("service.hatCredentials.password"),
       secure = true))
 
     val hatActorSupervisorProps = BackoffSupervisor.props(
@@ -158,17 +158,17 @@ class DataPlugManagerActor @Inject() (
       Backoff.onStop(hatActorProps, childName = actorKey,
         minBackoff = 10.seconds, maxBackoff = 120.seconds, randomFactor = 0.2))
 
-    val cacheKey = s"dex:plug:${configuration.getString("service.dex.dataplugId").get}:$phata"
+    val cacheKey = s"dex:plug:${configuration.get[String]("service.dex.dataplugId")}:$phata"
     val dexConnected = cacheApi.get[Boolean](cacheKey)
       .map { setup =>
         Future.successful(setup)
       } getOrElse {
         dexClient.dataplugConnectHat(
-          configuration.getString("service.dex.accessToken").get,
-          UUID.fromString(configuration.getString("service.dex.dataplugId").get), phata)
+          configuration.get[String]("service.dex.accessToken"),
+          UUID.fromString(configuration.get[String]("service.dex.dataplugId")), phata)
           .map(_ => true)
           .andThen { case Success(s) => cacheApi.set(cacheKey, s) }
-          .andThen { case Success(_) => logger.warn(s"DEX connected dataplug ${configuration.getString("service.dex.dataplugId").get} to HAT $phata") }
+          .andThen { case Success(_) => logger.warn(s"DEX connected dataplug ${configuration.get[String]("service.dex.dataplugId")} to HAT $phata") }
       }
 
     def syncerActor(hatActor: ActorRef): Props = {

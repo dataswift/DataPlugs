@@ -22,7 +22,6 @@ import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugTwitter.models.TwitterStatusUpdate
 import play.api.Logger
-import play.api.cache.CacheApi
 import play.api.http.Status._
 import play.api.libs.json.Json
 import play.api.libs.ws.{ WSClient, WSResponse }
@@ -34,7 +33,6 @@ class TwitterStatusUpdateInterface @Inject() (
     val wsClient: WSClient,
     val userService: UserService,
     val authInfoRepository: AuthInfoRepository,
-    val cacheApi: CacheApi,
     val mailer: Mailer,
     val provider: TwitterProvider) extends DataPlugContentUploader with RequestAuthenticatorOAuth1 {
 
@@ -75,8 +73,7 @@ class TwitterStatusUpdateInterface @Inject() (
     // Step 2: Get user authentication details, sign request
     // Step 3: Upload the content, return media ID
 
-    val eventualFileBody: Future[Source[ByteString, _]] = wsClient.url(url).stream().map(_.body)
-
+    val eventualFileBody: Future[Source[ByteString, _]] = wsClient.url(url).stream().map(_.bodyAsSource)
     val eventualUser = userService.retrieve(LoginInfo("hatlogin", hatAddress)).map(_.get)
     val eventualAuthInfo = eventualUser flatMap { user =>
       val providerLoginInfo = user.linkedUsers.find(_.providerId == provider.id).get

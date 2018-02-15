@@ -14,7 +14,6 @@ import org.hatdex.dataplug.actors.Errors.SourceApiCommunicationException
 import org.hatdex.dataplug.apiInterfaces.models._
 import org.hatdex.dataplug.utils.Mailer
 import play.api.Logger
-import play.api.cache.CacheApi
 import play.api.libs.ws.{ WSClient, WSResponse }
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -25,7 +24,6 @@ trait DataPlugApiEndpointClient {
   protected val namespace: String
   protected val logger: Logger
   val defaultApiEndpoint: ApiEndpointCall
-  val cacheApi: CacheApi
   val mailer: Mailer
 
   /**
@@ -34,7 +32,7 @@ trait DataPlugApiEndpointClient {
    * @param params API endpoint parameters generic (stateless) for the endpoint
    * @return Potentially updated set of parameters, e.g. with new timestamps
    */
-  def buildFetchParameters(params: Option[ApiEndpointCall])(implicit ec: ExecutionContext): Future[ApiEndpointCall] = {
+  def buildFetchParameters(params: Option[ApiEndpointCall]): Future[ApiEndpointCall] = {
     Future.successful(params getOrElse defaultApiEndpoint)
   }
 
@@ -43,8 +41,8 @@ trait DataPlugApiEndpointClient {
       path.replace(s"[${parameter._1}]", URLEncoder.encode(parameter._2, "UTF-8"))
     }
     val wsRequest = wsClient.url(params.url + path)
-      .withQueryString(params.queryParameters.toList: _*)
-      .withHeaders(params.headers.toList: _*)
+      .withQueryStringParameters(params.queryParameters.toList: _*)
+      .withHttpHeaders(params.headers.toList: _*)
 
     logger.debug(s"Making request $params")
 
