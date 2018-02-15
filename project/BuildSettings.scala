@@ -21,7 +21,7 @@ object BasicSettings extends AutoPlugin {
   lazy val scalariformPrefs = Seq(
     ScalariformKeys.preferences := ScalariformKeys.preferences.value
       .setPreference(FormatXml, false)
-      .setPreference(DoubleIndentClassDeclaration, true)
+      .setPreference(DoubleIndentConstructorArguments, true)
       .setPreference(DoubleIndentConstructorArguments, true)
       .setPreference(AlignSingleLineCaseStatements, true)
       .setPreference(CompactControlReadability, true)

@@ -22,15 +22,14 @@ import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter
 import org.hatdex.dataplug.models.User
 import org.hatdex.hat.api.services.HatClient
 import play.api.Logger
-import play.api.cache.{ CacheApi, NamedCache }
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import play.api.cache.{ SyncCacheApi, NamedCache }
 import play.api.libs.ws.WSClient
 
-import scala.concurrent.Future
+import scala.concurrent.{ ExecutionContext, Future }
 
 class IdentityVerificationCachedImpl @Inject() (
     wsClient: WSClient,
-    @NamedCache("session-cache") cache: CacheApi) extends JwtIdentityVerification {
+    @NamedCache("session-cache") cache: SyncCacheApi)(implicit ec: ExecutionContext) extends JwtIdentityVerification {
 
   val logger = Logger("JwtPhataAuthentication")
 

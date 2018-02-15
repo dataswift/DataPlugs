@@ -2,12 +2,12 @@ import Dependencies._
 
 libraryDependencies ++= Seq(
   Library.Play.ws,
-//  Library.Play.cache,
+  Library.Play.cache,
+  ehcache,
   Library.Play.test,
   Library.Play.specs2,
   Library.Play.json,
   Library.Play.jsonJoda,
-  Library.Play.mailer,
   Library.Play.Specs2.matcherExtra,
   Library.Play.Specs2.mock,
   Library.Play.typesafeConfigExtras,
@@ -15,6 +15,8 @@ libraryDependencies ++= Seq(
   Library.Play.Jwt.bouncyCastle,
   Library.Play.Jwt.bouncyCastlePkix,
   Library.Play.Jwt.nimbusDsJwt,
+  Library.Play.mailer,
+  Library.Play.mailerGuice,
   Library.Play.Silhouette.passwordBcrypt,
   Library.Play.Silhouette.persistence,
   Library.Play.Silhouette.cryptoJca,

@@ -25,7 +25,6 @@ trait MailService {
 }
 
 class MailServiceImpl @Inject() (system: ActorSystem, mailerClient: MailerClient, val conf: Configuration) extends MailService {
-
   lazy val from = conf.get[String]("play.mailer.from")
 
   def sendEmailAsync(recipients: String*)(subject: String, bodyHtml: String, bodyText: String): Unit = {

@@ -8,6 +8,7 @@
 
 package org.hatdex.dataplug.apiInterfaces
 
+import akka.Done
 import akka.actor.{ ActorRef, Scheduler }
 import akka.pattern.ask
 import akka.util.Timeout
@@ -108,7 +109,7 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
     }
   }
 
-  protected def processResults(content: JsValue, hatAddress: String, hatClientActor: ActorRef, fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Unit] = {
+  protected def processResults(content: JsValue, hatAddress: String, hatClientActor: ActorRef, fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
     val retries: List[FiniteDuration] = FutureRetries.withJitter(List(20.seconds, 2.minutes, 5.minutes, 10.minutes), 0.2, 0.5)
     FutureRetries.retry(uploadHatData(namespace, endpoint, content, hatAddress, hatClientActor), retries)
   }
@@ -118,7 +119,7 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
     endpoint: String,
     data: JsValue,
     hatAddress: String,
-    hatClientActor: ActorRef)(implicit ec: ExecutionContext, timeout: Timeout): Future[Unit] = {
+    hatClientActor: ActorRef)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
     val batchdata: JsArray = data match {
       case v: JsArray => v
@@ -127,14 +128,14 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
 
     if (batchdata.value.nonEmpty) { // set the predicate to false to prevent posting to HAT
       hatClientActor.?(HatClientActor.PostData(namespace, endpoint, batchdata))
-        .map {
+        .flatMap {
           case FetchingFailed(message) => Future.failed(HATApiCommunicationException(message))
-          case DataSaved(_)            => Future.successful(())
+          case DataSaved(_)            => Future.successful(Done)
           case _                       => Future.failed(HATApiCommunicationException("Unrecognised message from the HAT Client Actor"))
         }
     }
     else {
-      Future.successful(())
+      Future.successful(Done)
     }
   }
 

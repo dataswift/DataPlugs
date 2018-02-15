@@ -12,11 +12,13 @@ import akka.actor.{ ActorSystem, Scheduler }
 import com.google.inject.{ AbstractModule, Provides }
 import com.mohiva.play.silhouette.impl.providers._
 import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.dataplug.actors.{ DataPlugManagerActor }
+import org.hatdex.dataplug.actors.DataPlugManagerActor
 import org.hatdex.dataplug.apiInterfaces.DataPlugRegistry
 import org.hatdex.dataplug.dao._
 import org.hatdex.dataplug.services._
+import org.hatdex.dataplug.utils.{ MailService, MailServiceImpl }
 import play.api.libs.concurrent.AkkaGuiceSupport
+import play.api.libs.mailer.MailerClient
 
 /**
  * The Guice module which wires all Silhouette dependencies.

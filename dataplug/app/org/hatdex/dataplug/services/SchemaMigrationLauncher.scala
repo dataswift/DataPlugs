@@ -13,9 +13,9 @@ import javax.inject.Inject
 import play.api.{ Configuration, Logger }
 
 class SchemaMigrationLauncher @Inject() (configuration: Configuration, schemaMigration: SchemaMigration) {
-  val logger = Logger("SchemaMigration")
+  val logger = Logger(this.getClass)
   logger.info("Starting database schema migrations")
-  configuration.getStringSeq("db.default.schemaMigrations").map { migrations =>
+  configuration.getOptional[Seq[String]]("db.default.schemaMigrations").map { migrations =>
     logger.info(s"Running database schema migrations on $migrations")
     schemaMigration.run(migrations)
   }

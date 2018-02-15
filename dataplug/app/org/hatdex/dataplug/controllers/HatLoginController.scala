@@ -15,6 +15,7 @@ import com.mohiva.play.silhouette.api.util.Clock
 import com.mohiva.play.silhouette.api.{ LoginEvent, Silhouette }
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+import play.api.Configuration
 import play.api.data.Forms._
 import org.hatdex.dataplug.utils.MailService
 import org.hatdex.dataplug.services.UserService
@@ -33,22 +34,25 @@ class HatLoginController @Inject() (
     mailService: MailService,
     silhouette: Silhouette[PhataAuthenticationEnvironment],
     wsClient: WSClient,
-    configuration: play.api.Configuration,
+    configuration: Configuration,
     clock: Clock,
     userService: UserService,
     socialProviderRegistry: SocialProviderRegistry,
     tokenUserAwareAction: JwtPhataAwareAction,
     dataPlugViewSet: DataPlugViewSet,
-    tokenUserAuthenticatedAction: JwtPhataAuthenticatedAction)(implicit ec: ExecutionContext) extends SilhouettePhataAuthenticationController(components, silhouette, clock, configuration) {
+    tokenUserAuthenticatedAction: JwtPhataAuthenticatedAction)(
+    implicit
+    ec: ExecutionContext) extends SilhouettePhataAuthenticationController(components, silhouette, clock, configuration) {
 
   val hatProtocol = {
-    configuration.get[Boolean]("provisioning.hatSecure") match {
-      case true => "https://"
-      case _    => "http://"
+    configuration.getOptional[Boolean]("provisioning.hatSecure") match {
+      case Some(true)  => "https://"
+      case Some(false) => "http://"
+      case _           => "https://"
     }
   }
 
-  val logger = Logger("HatLoginController")
+  val logger = Logger(this.getClass)
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // HAT Login
@@ -85,7 +89,7 @@ class HatLoginController @Inject() (
         val hatHost = address.stripPrefix("http://").stripPrefix("https://").replaceAll("[^A-Za-z0-9.:]", "")
 
         val redirectUrl = routes.HatLoginController.authHat(None)
-          .absoluteURL(configuration.get[Option[Boolean]]("service.secure").getOrElse(false))
+          .absoluteURL(configuration.getOptional[Boolean]("service.secure").getOrElse(false))
 
         val hatUri = wsClient.url(s"$hatProtocol$hatHost/hatlogin")
           .withQueryStringParameters("name" -> configuration.get[String]("service.name"), "redirect" -> redirectUrl)

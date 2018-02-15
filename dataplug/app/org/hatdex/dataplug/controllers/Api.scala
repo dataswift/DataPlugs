@@ -26,15 +26,16 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
 
 class Api @Inject() (
+    components: ControllerComponents,
     messagesApi: MessagesApi,
     configuration: Configuration,
     tokenUserAwareAction: JwtPhataAwareAction,
     tokenUserAuthenticatedAction: JwtPhataAuthenticatedAction,
     dataPlugEndpointService: DataPlugEndpointService,
-    syncerActorManager: DataplugSyncerActorManager) extends Controller {
+    syncerActorManager: DataplugSyncerActorManager) extends AbstractController(components) {
 
   protected val ioEC: ExecutionContext = IoExecutionContext.ioThreadPool
-  protected val provider: String = configuration.getString("service.provider").getOrElse("")
+  protected val provider: String = configuration.getOptional[String]("service.provider").getOrElse("")
 
   protected val logger: Logger = Logger(this.getClass)
 
@@ -71,7 +72,7 @@ class Api @Inject() (
   }
 
   def adminDisconnect(hat: Option[String]): Action[AnyContent] = Action.async { implicit request =>
-    val adminSecret = configuration.getString("service.admin.secret").getOrElse("")
+    val adminSecret = configuration.getOptional[String]("service.admin.secret").getOrElse("")
 
     (request.headers.get("x-auth-token"), hat) match {
       case (Some(authToken), Some(hatDomain)) =>

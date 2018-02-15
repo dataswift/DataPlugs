@@ -21,13 +21,12 @@ object Dependencies {
     "Sonatype snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/",
     "HAT Library Artifacts Releases" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com",
     "HAT Library Artifacts Snapshots" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-snapshots.hubofallthings.com",
-    Resolver.file("Local repo", file(System.getProperty("user.home") + "/.ivy2/local"))(Resolver.ivyStylePatterns)
   )
 
   object Library {
     object HATDeX {
       private val version = "2.5.2-SNAPSHOT"
-      val hatClient = "org.hatdex" %% "hat-client-scala-play" % "2.5.5-SNAPSHOT"
+      val hatClient = "org.hatdex" %% "hat-client-scala-play" % version
       val dexClient = "org.hatdex" %% "dex-client-scala-play" % version
       val dexter = "org.hatdex" %% "dexter" % "1.4.1-SNAPSHOT"
     }
@@ -41,6 +40,7 @@ object Dependencies {
       val json = "com.typesafe.play" %% "play-json" % version
       val jsonJoda = "com.typesafe.play" %% "play-json-joda" % version
       val mailer = "com.typesafe.play" %% "play-mailer" % "6.0.1"
+      val mailerGuice = "com.typesafe.play" %% "play-mailer-guice" % "6.0.1"
       val jsonDerivedCodecs = "org.julienrf" % "play-json-derived-codecs_2.11" % "3.3"
       val typesafeConfigExtras = "com.iheart" %% "ficus" % "1.3.4"
 
