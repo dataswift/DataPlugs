@@ -11,7 +11,6 @@ import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpoint, _ }
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import play.api.Logger
-import play.api.cache.CacheApi
 import play.api.http.Status._
 import play.api.libs.ws.WSClient
 
@@ -21,7 +20,6 @@ class FacebookProfileCheck @Inject() (
     val wsClient: WSClient,
     val userService: UserService,
     val authInfoRepository: AuthInfoRepository,
-    val cacheApi: CacheApi,
     val tokenHelper: OAuth2TokenHelper,
     val mailer: Mailer,
     val scheduler: Scheduler,

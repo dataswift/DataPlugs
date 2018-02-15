@@ -15,7 +15,6 @@ import org.hatdex.dataplug.services.{ DataPlugEndpointService, DataPlugNotablesS
 import org.hatdex.dataplug.utils.{ JwtPhataAuthenticatedAction, JwtPhataAwareAction }
 import org.hatdex.dataplugFacebook.apiInterfaces.FacebookFeedUploadInterface
 import org.joda.time.DateTime
-import play.api.i18n.MessagesApi
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
@@ -24,22 +23,22 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class Api @Inject() (
-    messagesApi: MessagesApi,
+    components: ControllerComponents,
     configuration: Configuration,
     tokenUserAwareAction: JwtPhataAwareAction,
     tokenUserAuthenticatedAction: JwtPhataAuthenticatedAction,
     dataPlugEndpointService: DataPlugEndpointService,
     dataPlugNotablesService: DataPlugNotablesService,
     facebookFeedUpdateInterface: FacebookFeedUploadInterface,
-    syncerActorManager: DataplugSyncerActorManager) extends Controller {
+    syncerActorManager: DataplugSyncerActorManager) extends AbstractController(components) {
 
   val logger: Logger = Logger(this.getClass)
 
   val ioEC = IoExecutionContext.ioThreadPool
 
-  def create: Action[DataPlugNotableShareRequest] = Action.async(BodyParsers.parse.json[DataPlugNotableShareRequest]) { implicit request =>
+  def create: Action[DataPlugNotableShareRequest] = Action.async(parse.json[DataPlugNotableShareRequest]) { implicit request =>
     request.headers.get("x-auth-token") map { secret =>
-      val configuredSecret = configuration.getString("service.notables.secret").getOrElse("")
+      val configuredSecret = configuration.getOptional[String]("service.notables.secret").getOrElse("")
 
       if (secret == configuredSecret) {
         val notableShareRequest = request.body
@@ -78,7 +77,7 @@ class Api @Inject() (
 
   def delete(id: String): Action[AnyContent] = Action.async { implicit request =>
     request.headers.get("X-Auth-Token") map { secret =>
-      val configuredSecret = configuration.getString("service.notables.secret").getOrElse("")
+      val configuredSecret = configuration.getOptional[String]("service.notables.secret").getOrElse("")
 
       if (secret == configuredSecret) {
         dataPlugNotablesService.find(id) flatMap {

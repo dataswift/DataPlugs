@@ -1,12 +1,13 @@
 package org.hatdex.dataplugFacebook.apiInterfaces
 
+import akka.Done
 import akka.actor.{ ActorRef, Scheduler }
 import akka.http.scaladsl.model.Uri
 import akka.util.Timeout
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth2.FacebookProvider
-import org.hatdex.commonPlay.utils.FutureTransformations
+import org.hatdex.dataplug.utils.FutureTransformations
 import org.hatdex.dataplug.actors.Errors.SourceDataProcessingException
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
 import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
@@ -15,7 +16,6 @@ import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugFacebook.models.FacebookEvent
 import play.api.Logger
-import play.api.cache.CacheApi
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 
@@ -28,7 +28,6 @@ class FacebookEventInterface @Inject() (
     val userService: UserService,
     val authInfoRepository: AuthInfoRepository,
     val tokenHelper: OAuth2TokenHelper,
-    val cacheApi: CacheApi,
     val mailer: Mailer,
     val scheduler: Scheduler,
     val provider: FacebookProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
@@ -110,13 +109,14 @@ class FacebookEventInterface @Inject() (
     content: JsValue,
     hatAddress: String,
     hatClientActor: ActorRef,
-    fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Unit] = {
+    fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
     for {
       validatedData <- FutureTransformations.transform(validateMinDataStructure(content))
       _ <- uploadHatData(namespace, endpoint, validatedData, hatAddress, hatClientActor) // Upload the data
     } yield {
       logger.debug(s"Successfully synced new records for HAT $hatAddress")
+      Done
     }
   }
 

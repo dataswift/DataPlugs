@@ -11,7 +11,6 @@ import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugFacebook.models.FacebookFeedUpdate
 import play.api.Logger
-import play.api.cache.CacheApi
 import play.api.http.Status._
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
@@ -23,7 +22,6 @@ class FacebookFeedUploadInterface @Inject() (
     val userService: UserService,
     val authInfoRepository: AuthInfoRepository,
     val tokenHelper: OAuth2TokenHelper,
-    val cacheApi: CacheApi,
     val mailer: Mailer,
     val provider: FacebookProvider) extends DataPlugContentUploader with RequestAuthenticatorOAuth2 {
 

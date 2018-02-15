@@ -1,4 +1,5 @@
 import Dependencies._
+import sbt._
 
 libraryDependencies ++= Seq(
   Library.Play.ws,
@@ -31,10 +32,14 @@ includeFilter in gzip := "*.js || *.css || *.svg || *.png"
 sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "dataplugFacebook" / "assets"
 
 import com.typesafe.sbt.packager.docker._
-packageName in Docker := "social-dataplug"
+enablePlugins(AshScriptPlugin)
+javaOptions in Universal ++= Seq("-Dhttp.port=9000")
+
+packageName in Docker := "facebook-dataplug"
 maintainer in Docker := "andrius.aucinas@hatdex.org"
 version in Docker := version.value
 dockerExposedPorts := Seq(9000)
-dockerBaseImage := "java:8"
+dockerBaseImage := "openjdk:8-jre-alpine"
+dockerEntrypoint := Seq(s"bin/${packageName.value}")
 
 javaOptions in Test += "-Dconfig.file=conf/application.test.conf"

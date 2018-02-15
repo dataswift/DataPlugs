@@ -21,6 +21,7 @@ import org.hatdex.dataplug.apiInterfaces.{ DataPlugOptionsCollector, DataPlugOpt
 import org.hatdex.dataplug.controllers.{ DataPlugViewSet, DataPlugViewSetDefault }
 import org.hatdex.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl, DataPlugSharedNotableDAO, DataPlugSharedNotableDAOImpl }
 import org.hatdex.dataplug.services._
+import org.hatdex.dataplug.utils.{ MailService, MailServiceImpl }
 import org.hatdex.dataplugFacebook.apiInterfaces._
 import play.api.Configuration
 import play.api.libs.concurrent.AkkaGuiceSupport
@@ -104,9 +105,9 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
    * @return The Facebook provider.
    */
   @Provides
-  def provideFitbitProvider(
+  def provideFacebookProvider(
     httpLayer: HTTPLayer,
-    stateProvider: OAuth2StateProvider,
+    stateProvider: SocialStateHandler,
     configuration: Configuration): FacebookProvider = {
     new FacebookProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.facebook"))
   }

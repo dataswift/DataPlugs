@@ -19,24 +19,22 @@
 
   <logger name="ch.qos.logback" level="WARN" />
   <logger name="play" level="INFO" />
+  <logger name="http" level="INFO" />
   <logger name="application" level="INFO" />
-  <logger name="DatabaseNotableStore" level="INFO" />
+
+  <logger name="org.hatdex.dataplugFacebook" level="INFO" />
+  <logger name="org.hatdex.dataplugFacebook.apiInterfaces.*" level="INFO" />
+  <logger name="org.hatdex.dataplugFacebook.controllers.Api" level="INFO" />
+
+  <logger name="org.hatdex.dataplug.*" level="DEBUG" />
+  <logger name="org.hatdex.dataplug.actors.PhataDataPlugVariantSyncer" level="DEBUG" />
+  <logger name="org.hatdex.dataplug.services.*" level="INFO" />
+  <logger name="org.hatdex.dataplug.controllers.*" level="DEBUG"/>
   <logger name="org.hatdex.dataplug.utils.JwtPhataAuthenticatedAction" level="WARN" />
   <logger name="org.hatdex.dataplug.utils.JwtPhataAwareAction" level="WARN" />
 
+  <logger name="org.hatdex.dexter.actors.HatClientActor" level="INFO" />
   <logger name="org.hatdex.hat.api.services.HatClient" level="INFO" />
-  <logger name="NetworkUpdateService" level="INFO"/>
-
-  <logger name="JwtPhataAuthentication" level="INFO"/>
-  <logger name="SchemaMigration" level="INFO" />
-
-  <logger name="org.hatdex.dataplugFacebook" level="INFO" />
-  <logger name="org.hatdex.dataplug.*" level="INFO" />
-  <logger name="org.hatdex.dataplug.actors.PhataDataPlugVariantSyncer" level="DEBUG" />
-  <logger name="org.hatdex.dataplugFacebook.controllers.Api" level="INFO" />
-
-  <logger name="http" level="INFO" />
-  <logger name="HatClientActor" level="WARN" />
 
   <root level="WARN">
     <appender-ref ref="ASYNCSTDOUT" />
