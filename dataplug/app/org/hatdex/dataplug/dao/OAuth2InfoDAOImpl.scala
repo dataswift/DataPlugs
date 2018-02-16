@@ -159,8 +159,16 @@ class OAuth2InfoDAOImpl @Inject() (@NamedDatabase("default") db: Database) exten
    */
   def save(loginInfo: LoginInfo, authInfo: OAuth2Info): Future[OAuth2Info] = {
     find(loginInfo).flatMap {
-      case Some(_) => update(loginInfo, authInfo)
-      case None    => add(loginInfo, authInfo)
+      case Some(existingAuthInfo) =>
+        val updatedAuthInfo = if (authInfo.refreshToken.isDefined) {
+          authInfo
+        }
+        else {
+          authInfo.copy(refreshToken = existingAuthInfo.refreshToken)
+        }
+
+        update(loginInfo, updatedAuthInfo)
+      case None => add(loginInfo, authInfo)
     }
   }
 

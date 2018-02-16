@@ -1,15 +1,13 @@
 @import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 @import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointVariantChoice
+@import views.html.b3.vertical.fieldConstructor
 
 @import org.hatdex.dataplug.models.User
 
 @(socialProviders: SocialProviderRegistry,
-        endpointvariants: Option[Seq[ApiEndpointVariantChoice]],
-        redirect: String,
-        signupForm: Form[List[String]])(implicit user: User, request: RequestHeader, messages: Messages)
-
-@import views.html.b3.vertical.fieldConstructor
-@import views.html.b3.submit
+    endpointvariants: Option[Seq[ApiEndpointVariantChoice]],
+    redirect: String,
+    signupForm: Form[List[String]])(implicit user: User, request: RequestHeader, messages: Messages)
 
 @menubarContent = {
     <li class="text-lowercase">
@@ -40,7 +38,7 @@
 
                     @endpointvariants.map { variants =>
                         @views.html.b3.form(org.hatdex.dataplug.controllers.routes.Application.connectVariants(), 'class -> "synchronisation-options") {
-                            <legend><h3>@Messages("setup.monzo.info")</h3></legend>
+                            <legend><h3>@Messages("setup.choices.info")</h3></legend>
                             <fieldset>
                                 @helper.CSRF.formField
 

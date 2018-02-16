@@ -1,30 +1,25 @@
 package org.hatdex.dataplugCalendar.apiInterfaces
 
 import akka.actor.ActorRef
-import akka.util.Timeout
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth2.GoogleProvider
-import org.hatdex.dataplug.apiInterfaces.{ DataPlugEndpointInterface, DataPlugOptionsCollector }
+import org.hatdex.dataplug.apiInterfaces.DataPlugOptionsCollector
 import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpoint, _ }
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
-import org.hatdex.hat.api.models.ApiDataTable
 import play.api.Logger
-import play.api.cache.CacheApi
 import play.api.http.Status._
 import play.api.libs.json.JsValue
 import play.api.libs.ws.WSClient
 
-import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 
 class GoogleCalendarList @Inject() (
     val wsClient: WSClient,
     val userService: UserService,
     val authInfoRepository: AuthInfoRepository,
-    val cacheApi: CacheApi,
     val tokenHelper: OAuth2TokenHelper,
     val mailer: Mailer,
     val provider: GoogleProvider) extends DataPlugOptionsCollector with RequestAuthenticatorOAuth2 {
@@ -39,7 +34,8 @@ class GoogleCalendarList @Inject() (
     ApiEndpointMethod.Get("Get"),
     Map(),
     Map("fields" -> "kind,nextSyncToken,items(id,summary)"),
-    Map())
+    Map(),
+    Some(Map()))
 
   def get(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext): Future[Seq[ApiEndpointVariantChoice]] = {
     val authenticatedFetchParameters = authenticateRequest(fetchParams, hatAddress)
@@ -71,5 +67,7 @@ class GoogleCalendarList @Inject() (
         Future.failed(e)
     }
   }
+
+  def staticEndpointChoices: Seq[ApiEndpointVariantChoice] = Seq()
 
 }

@@ -1,11 +1,12 @@
 package org.hatdex.dataplugCalendar.apiInterfaces
 
+import akka.Done
 import akka.actor.{ ActorRef, Scheduler }
 import akka.util.Timeout
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth2.GoogleProvider
-import org.hatdex.commonPlay.utils.FutureTransformations
+import org.hatdex.dataplug.utils.FutureTransformations
 import org.hatdex.dataplug.actors.Errors.SourceDataProcessingException
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
 import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
@@ -14,7 +15,6 @@ import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugCalendar.models._
 import play.api.Logger
-import play.api.cache.CacheApi
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 
@@ -27,7 +27,6 @@ class GoogleCalendarInterface @Inject() (
     val userService: UserService,
     val authInfoRepository: AuthInfoRepository,
     val tokenHelper: OAuth2TokenHelper,
-    val cacheApi: CacheApi,
     val mailer: Mailer,
     val scheduler: Scheduler,
     val provider: GoogleProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
@@ -64,7 +63,7 @@ class GoogleCalendarInterface @Inject() (
     content: JsValue,
     hatAddress: String,
     hatClientActor: ActorRef,
-    fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Unit] = {
+    fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
     val validatedData = transformData(content, fetchParameters.pathParameters("calendarId")).map(validateMinDataStructure)
       .getOrElse(Failure(SourceDataProcessingException("Source data malformed, could not insert calendar ID in the structure")))
@@ -75,6 +74,7 @@ class GoogleCalendarInterface @Inject() (
       _ <- uploadHatData(namespace, endpoint, validatedData, hatAddress, hatClientActor) // Upload the data
     } yield {
       logger.debug(s"Successfully synced new records for HAT $hatAddress")
+      Done
     }
 
     resultsPosted
@@ -123,5 +123,6 @@ object GoogleCalendarInterface {
     ApiEndpointMethod.Get("Get"),
     Map("calendarId" -> "primary"),
     Map("singleEvents" -> "true"),
-    Map())
+    Map(),
+    Some(Map()))
 }

@@ -36,7 +36,7 @@ class SchemaMigrationImpl @Inject() (configuration: Configuration, @NamedDatabas
 
   import IoExecutionContext.ioThreadPool
 
-  val logger = Logger("SchemaMigration")
+  val logger = Logger(this.getClass)
 
   /**
    * Invoke this method to apply all DB migrations.
