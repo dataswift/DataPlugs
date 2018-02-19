@@ -19,5 +19,4 @@ dockerExposedPorts := Seq(9000)
 dockerBaseImage := "openjdk:8-jre-alpine"
 dockerEntrypoint := Seq(s"bin/${packageName.value}")
 
-
 javaOptions in Test += "-Dconfig.file=conf/application.test.conf"

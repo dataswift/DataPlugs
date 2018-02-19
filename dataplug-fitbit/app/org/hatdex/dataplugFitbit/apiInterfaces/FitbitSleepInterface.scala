@@ -1,11 +1,12 @@
 package org.hatdex.dataplugFitbit.apiInterfaces
 
+import akka.Done
 import akka.actor.{ ActorRef, Scheduler }
 import akka.http.scaladsl.model.Uri
 import akka.util.Timeout
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import org.hatdex.commonPlay.utils.FutureTransformations
+import org.hatdex.dataplug.utils.FutureTransformations
 import org.hatdex.dataplug.actors.Errors.SourceDataProcessingException
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
 import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
@@ -14,10 +15,8 @@ import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugFitbit.apiInterfaces.authProviders.FitbitProvider
 import org.hatdex.dataplugFitbit.models.FitbitSleep
-import org.joda.time.DateTime
 import org.joda.time.format.{ DateTimeFormat, DateTimeFormatter, ISODateTimeFormat }
 import play.api.Logger
-import play.api.cache.CacheApi
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 
@@ -30,7 +29,6 @@ class FitbitSleepInterface @Inject() (
     val userService: UserService,
     val authInfoRepository: AuthInfoRepository,
     val tokenHelper: OAuth2TokenHelper,
-    val cacheApi: CacheApi,
     val mailer: Mailer,
     val scheduler: Scheduler,
     val provider: FitbitProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
@@ -96,13 +94,14 @@ class FitbitSleepInterface @Inject() (
     content: JsValue,
     hatAddress: String,
     hatClientActor: ActorRef,
-    fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Unit] = {
+    fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
     for {
       validatedData <- FutureTransformations.transform(validateMinDataStructure(content))
       _ <- uploadHatData(namespace, endpoint, validatedData, hatAddress, hatClientActor) // Upload the data
     } yield {
       logger.debug(s"Successfully synced new records for HAT $hatAddress")
+      Done
     }
   }
 

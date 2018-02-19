@@ -8,30 +8,22 @@
 
 package org.hatdex.dataplugFitbit.controllers
 
-import javax.crypto.Mac
-import javax.crypto.spec.SecretKeySpec
 import javax.inject.Inject
 
-import akka.actor.{ Actor, ActorSystem, Props }
-import com.google.common.io.BaseEncoding
-import com.mohiva.play.silhouette.api.LoginInfo
+import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.impl.providers.{ OAuth2Provider, SocialProviderRegistry }
 import org.hatdex.dataplug.actors.IoExecutionContext
-import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointVariantChoice
 import org.hatdex.dataplug.services.{ DataPlugEndpointService, DataplugSyncerActorManager, SubscriptionEventBus, UserService }
 import org.hatdex.dataplug.utils.{ JwtPhataAuthenticatedAction, JwtPhataAwareAction }
 import org.hatdex.dataplugFitbit.apiInterfaces.FitbitSubscription
-import play.api.i18n.MessagesApi
-import play.api.libs.json.{ Format, Json }
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class Api @Inject() (
-    messagesApi: MessagesApi,
+    components: ControllerComponents,
     configuration: Configuration,
     tokenUserAwareAction: JwtPhataAwareAction,
     tokenUserAuthenticatedAction: JwtPhataAuthenticatedAction,
@@ -42,14 +34,14 @@ class Api @Inject() (
     subscriptionEventBus: SubscriptionEventBus,
     actorSystem: ActorSystem,
     fitbitSubscription: FitbitSubscription,
-    syncerActorManager: DataplugSyncerActorManager) extends Controller {
+    syncerActorManager: DataplugSyncerActorManager) extends AbstractController(components) {
 
   private val logger = Logger(this.getClass)
 
   val ioEC: ExecutionContext = IoExecutionContext.ioThreadPool
 
   private val verificationCode = "07aea184292ab16cdd1f1912956e3dbe9087129635f6fdb7c977bc4d63d12652"
-  private val provider: String = configuration.getString("service.name").getOrElse("").toLowerCase
+  private val provider: String = configuration.getOptional[String]("service.name").getOrElse("").toLowerCase
   private val oauth2Provider = socialProviderRegistry.get[OAuth2Provider](provider).get
 
   //  def webhookVerify(verify: String): EssentialAction = Action {

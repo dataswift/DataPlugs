@@ -11,7 +11,6 @@ import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugFitbit.apiInterfaces.authProviders.FitbitProvider
 import play.api.Logger
-import play.api.cache.CacheApi
 import play.api.http.Status._
 import play.api.libs.ws.WSClient
 
@@ -21,7 +20,6 @@ class FitbitProfileCheck @Inject() (
     val wsClient: WSClient,
     val userService: UserService,
     val authInfoRepository: AuthInfoRepository,
-    val cacheApi: CacheApi,
     val tokenHelper: OAuth2TokenHelper,
     val mailer: Mailer,
     val scheduler: Scheduler,
@@ -82,10 +80,10 @@ class FitbitProfileCheck @Inject() (
       Some(""), Some(""),
       Some(FitbitWeightInterface.defaultApiEndpoint))
 
-    val lifetimeVariant = ApiEndpointVariant(
-      ApiEndpoint("lifetime/stats", "User's Fitbit lifetime statistics", None),
-      Some(""), Some(""),
-      Some(FitbitLifetimeStatsInterface.defaultApiEndpoint))
+    //    val lifetimeVariant = ApiEndpointVariant(
+    //      ApiEndpoint("lifetime/stats", "User's Fitbit lifetime statistics", None),
+    //      Some(""), Some(""),
+    //      Some(FitbitLifetimeStatsInterface.defaultApiEndpoint))
 
     val activitySummaryVariant = ApiEndpointVariant(
       ApiEndpoint("activity/day/summary", "Summary of user's activity throughout the day", None),
