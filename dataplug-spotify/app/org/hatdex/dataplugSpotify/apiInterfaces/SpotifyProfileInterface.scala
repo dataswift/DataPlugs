@@ -1,10 +1,11 @@
 package org.hatdex.dataplugSpotify.apiInterfaces
 
+import akka.Done
 import akka.actor.{ ActorRef, Scheduler }
 import akka.util.Timeout
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import org.hatdex.commonPlay.utils.FutureTransformations
+import org.hatdex.dataplug.utils.FutureTransformations
 import org.hatdex.dataplug.actors.Errors.SourceDataProcessingException
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
 import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
@@ -14,9 +15,7 @@ import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugSpotify.apiInterfaces.authProviders.SpotifyProvider
 import org.hatdex.dataplugSpotify.models.SpotifyProfile
 import org.joda.time.DateTime
-import org.joda.time.format.{ DateTimeFormat, DateTimeFormatter }
 import play.api.Logger
-import play.api.cache.CacheApi
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 
@@ -29,7 +28,6 @@ class SpotifyProfileInterface @Inject() (
     val userService: UserService,
     val authInfoRepository: AuthInfoRepository,
     val tokenHelper: OAuth2TokenHelper,
-    val cacheApi: CacheApi,
     val mailer: Mailer,
     val scheduler: Scheduler,
     val provider: SpotifyProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
@@ -54,7 +52,7 @@ class SpotifyProfileInterface @Inject() (
     content: JsValue,
     hatAddress: String,
     hatClientActor: ActorRef,
-    fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Unit] = {
+    fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
     val dataValidation =
       transformData(content)
@@ -66,6 +64,7 @@ class SpotifyProfileInterface @Inject() (
       _ <- uploadHatData(namespace, endpoint, validatedData, hatAddress, hatClientActor) // Upload the data
     } yield {
       logger.debug(s"Successfully synced new records for HAT $hatAddress")
+      Done
     }
   }
 

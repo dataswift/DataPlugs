@@ -89,16 +89,16 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
    * Provides the Fitbit provider.
    *
    * @param httpLayer The HTTP layer implementation.
-   * @param stateProvider The OAuth2 state provider implementation.
+   * @param stateHandler The OAuth2 state provider implementation.
    * @param configuration The Play configuration.
    * @return The Fitbit provider.
    */
   @Provides
   def provideSpotifyProvider(
     httpLayer: HTTPLayer,
-    stateProvider: OAuth2StateProvider,
+    stateHandler: SocialStateHandler,
     configuration: Configuration): SpotifyProvider = {
-    new SpotifyProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.spotify"))
+    new SpotifyProvider(httpLayer, stateHandler, configuration.underlying.as[OAuth2Settings]("silhouette.spotify"))
   }
 
   @Provides

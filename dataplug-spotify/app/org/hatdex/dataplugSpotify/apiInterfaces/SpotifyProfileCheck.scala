@@ -11,7 +11,6 @@ import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugSpotify.apiInterfaces.authProviders.SpotifyProvider
 import play.api.Logger
-import play.api.cache.CacheApi
 import play.api.http.Status._
 import play.api.libs.ws.WSClient
 
@@ -21,7 +20,6 @@ class SpotifyProfileCheck @Inject() (
     val wsClient: WSClient,
     val userService: UserService,
     val authInfoRepository: AuthInfoRepository,
-    val cacheApi: CacheApi,
     val tokenHelper: OAuth2TokenHelper,
     val mailer: Mailer,
     val scheduler: Scheduler,
@@ -46,22 +44,8 @@ class SpotifyProfileCheck @Inject() (
       buildRequest(requestParams).flatMap { response =>
         response.status match {
           case OK =>
-            val profileVariant = ApiEndpointVariant(
-              ApiEndpoint("profile", "User's Spotify profile information", None),
-              Some(""), Some(""),
-              Some(SpotifyProfileInterface.defaultApiEndpoint))
-
-            val recentlyPlayedVariant = ApiEndpointVariant(
-              ApiEndpoint("feed", "A feed of Spotify tracks played", None),
-              Some(""), Some(""),
-              Some(SpotifyRecentlyPlayedInterface.defaultApiEndpoint))
-
-            val choices = Seq(
-              ApiEndpointVariantChoice("profile", "User's Spotify profile information", active = true, profileVariant),
-              ApiEndpointVariantChoice("feed", "A feed of Spotify tracks played", active = true, recentlyPlayedVariant))
-
             logger.info(s"API endpoint SpotifyProfile validated for $hatAddress")
-            Future.successful(choices)
+            Future.successful(staticEndpointChoices)
 
           case _ =>
             logger.warn(s"Could not validate SpotifyProfile API endpoint $fetchParams - ${response.status}: ${response.body}")
@@ -73,6 +57,22 @@ class SpotifyProfileCheck @Inject() (
         logger.error(s"Failed to validate SpotifyProfile API endpoint. Reason: ${e.getMessage}", e)
         throw e
     }
+  }
+
+  def staticEndpointChoices: Seq[ApiEndpointVariantChoice] = {
+    val profileVariant = ApiEndpointVariant(
+      ApiEndpoint("profile", "User's Spotify profile information", None),
+      Some(""), Some(""),
+      Some(SpotifyProfileInterface.defaultApiEndpoint))
+
+    val recentlyPlayedVariant = ApiEndpointVariant(
+      ApiEndpoint("feed", "A feed of Spotify tracks played", None),
+      Some(""), Some(""),
+      Some(SpotifyRecentlyPlayedInterface.defaultApiEndpoint))
+
+    Seq(
+      ApiEndpointVariantChoice("profile", "User's Spotify profile information", active = true, profileVariant),
+      ApiEndpointVariantChoice("feed", "A feed of Spotify tracks played", active = true, recentlyPlayedVariant))
   }
 
 }

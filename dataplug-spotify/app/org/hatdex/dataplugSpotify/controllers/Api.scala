@@ -8,25 +8,21 @@
 
 package org.hatdex.dataplugSpotify.controllers
 
-import javax.crypto.Mac
-import javax.crypto.spec.SecretKeySpec
 import javax.inject.Inject
 
-import akka.actor.{ ActorSystem }
-import com.mohiva.play.silhouette.impl.providers.{ OAuth2Provider, SocialProviderRegistry }
+import akka.actor.ActorSystem
+import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import org.hatdex.dataplug.actors.IoExecutionContext
 import org.hatdex.dataplug.services.{ DataPlugEndpointService, DataplugSyncerActorManager, SubscriptionEventBus, UserService }
 import org.hatdex.dataplug.utils.{ JwtPhataAuthenticatedAction, JwtPhataAwareAction }
-import play.api.i18n.MessagesApi
 import play.api.libs.ws.WSClient
 import play.api.mvc._
-import play.api.{ Configuration, Logger }
+import play.api.Configuration
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class Api @Inject() (
-    messagesApi: MessagesApi,
+    components: ControllerComponents,
     configuration: Configuration,
     tokenUserAwareAction: JwtPhataAwareAction,
     tokenUserAuthenticatedAction: JwtPhataAuthenticatedAction,
@@ -36,9 +32,7 @@ class Api @Inject() (
     socialProviderRegistry: SocialProviderRegistry,
     subscriptionEventBus: SubscriptionEventBus,
     actorSystem: ActorSystem,
-    syncerActorManager: DataplugSyncerActorManager) extends Controller {
-
-  private val logger = Logger(this.getClass)
+    syncerActorManager: DataplugSyncerActorManager) extends AbstractController(components) {
 
   val ioEC: ExecutionContext = IoExecutionContext.ioThreadPool
 }
