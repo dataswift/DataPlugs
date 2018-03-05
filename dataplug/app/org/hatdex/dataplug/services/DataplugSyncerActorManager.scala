@@ -94,7 +94,7 @@ class DataplugSyncerActorManager @Inject() (
     val optionsLists = optionsCollectors.map { collector =>
       for {
         apiCall <- collector.buildFetchParameters(None)
-        choices <- collector.get(apiCall, user.userId, null)
+        choices <- collector.get(apiCall, user.userId, None.orNull, retrying = false) // Odd choice of using null here due to common parent interface, but Hat Actor not being necessary
         enabledVariants <- dataPlugEndpointService.enabledApiVariantChoices(user.userId)
       } yield {
         choices.map { choice =>
@@ -117,7 +117,7 @@ class DataplugSyncerActorManager @Inject() (
 
     val optionsLists = optionsCollectors.map { collector =>
       for {
-        choices <- Future.successful(collector.staticEndpointChoices)
+        choices <- Future.successful(collector.generateEndpointChoices(None))
         enabledVariants <- dataPlugEndpointService.enabledApiVariantChoices(userId)
       } yield {
         choices.map { choice =>

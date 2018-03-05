@@ -18,6 +18,7 @@ import org.hatdex.dataplug.apiInterfaces.models._
 import org.hatdex.dataplug.utils.FutureRetries
 import org.hatdex.dexter.actors.HatClientActor
 import org.hatdex.dexter.actors.HatClientActor.{ DataSaved, FetchingFailed }
+import org.hatdex.hat.api.services.Errors.DuplicateDataException
 import org.joda.time.DateTime
 import play.api.http.Status._
 import play.api.libs.json.{ JsArray, JsValue, Json }
@@ -129,9 +130,10 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
     if (batchdata.value.nonEmpty) { // set the predicate to false to prevent posting to HAT
       hatClientActor.?(HatClientActor.PostData(namespace, endpoint, batchdata))
         .flatMap {
-          case FetchingFailed(message) => Future.failed(HATApiCommunicationException(message))
-          case DataSaved(_)            => Future.successful(Done)
-          case _                       => Future.failed(HATApiCommunicationException("Unrecognised message from the HAT Client Actor"))
+          case FetchingFailed(_, _: DuplicateDataException) => Future.successful(Done)
+          case FetchingFailed(message, cause) => Future.failed(HATApiCommunicationException(message, cause))
+          case DataSaved(_) => Future.successful(Done)
+          case _ => Future.failed(HATApiCommunicationException("Unrecognised message from the HAT Client Actor"))
         }
     }
     else {

@@ -46,36 +46,34 @@ class OAuth2TokenHelper @Inject() (
         implicit val provider: OAuth2Provider = p
         val settings = configuration.underlying.as[OAuth2SettingsExtended](s"silhouette.${loginInfo.providerID}")
         settings.refreshURL.map({ url =>
-          cache.getOrElseUpdate[OAuth2Info](s"oauth2:${loginInfo.providerKey}:${loginInfo.providerID}", 1.day) {
-            val encodedAuth = Base64.encode(s"${settings.clientID}:${settings.clientSecret}")
-            val params = Map(
-              "client_id" -> Seq(p.settings.clientID),
-              "client_secret" -> Seq(p.settings.clientSecret),
-              "grant_type" -> Seq("refresh_token"),
-              "refresh_token" -> Seq(refreshToken)) ++ p.settings.scope.map({
-                "scope" -> Seq(_)
-              })
+          val encodedAuth = Base64.encode(s"${settings.clientID}:${settings.clientSecret}")
+          val params = Map(
+            "client_id" -> Seq(p.settings.clientID),
+            "client_secret" -> Seq(p.settings.clientSecret),
+            "grant_type" -> Seq("refresh_token"),
+            "refresh_token" -> Seq(refreshToken)) ++ p.settings.scope.map({
+              "scope" -> Seq(_)
+            })
 
-            val refreshQueryParams = if (settings.customProperties.getOrElse("parameters_location", "") == "query") {
-              Map("grant_type" -> "refresh_token", "refresh_token" -> refreshToken)
-            }
-            else {
-              Map()
-            }
-
-            val authHeader = p.settings.customProperties
-              .get("authorization_header_prefix")
-              .map(_ + " ")
-              .getOrElse("")
-              .concat(encodedAuth)
-
-            wsClient.url(url)
-              .withHttpHeaders("Authorization" -> authHeader)
-              .withHttpHeaders(settings.refreshHeaders.toSeq: _*)
-              .withQueryStringParameters(refreshQueryParams.toSeq: _*)
-              .post(params)
-              .flatMap(resp => Future.fromTry(buildInfo(resp)))
+          val refreshQueryParams = if (settings.customProperties.getOrElse("parameters_location", "") == "query") {
+            Map("grant_type" -> "refresh_token", "refresh_token" -> refreshToken)
           }
+          else {
+            Map()
+          }
+
+          val authHeader = p.settings.customProperties
+            .get("authorization_header_prefix")
+            .map(_ + " ")
+            .getOrElse("")
+            .concat(encodedAuth)
+
+          wsClient.url(url)
+            .withHttpHeaders("Authorization" -> authHeader)
+            .withHttpHeaders(settings.refreshHeaders.toSeq: _*)
+            .withQueryStringParameters(refreshQueryParams.toSeq: _*)
+            .post(params)
+            .flatMap(resp => Future.fromTry(buildInfo(resp)))
         })
       case _ =>
         logger.info(s"No OAuth2Provider for $loginInfo, $refreshToken")

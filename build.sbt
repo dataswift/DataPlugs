@@ -68,8 +68,7 @@ val dataplug = project
   .enablePlugins(AshScriptPlugin)
   .settings(packageSettings)
 
-lazy val dataplugFacebook = project
-  .in(file("dataplug-facebook-v2"))
+lazy val dataplugFacebook = Project(id = "dataplug-facebook-v2", base = file("dataplug-facebook-v2"))
   .enablePlugins(BasicSettings)
   .settings(
     name := "dataplug-facebook-v2",
@@ -81,8 +80,7 @@ lazy val dataplugFacebook = project
   .settings(packageSettings)
   .dependsOn(dataplug)
 
-lazy val dataplugTwitter = project
-  .in(file("dataplug-twitter-v2"))
+lazy val dataplugTwitter = Project(id = "dataplug-twitter-v2", base = file("dataplug-twitter-v2"))
   .enablePlugins(BasicSettings)
   .settings(
     name := "dataplug-twitter-v2",
@@ -94,8 +92,7 @@ lazy val dataplugTwitter = project
   .settings(packageSettings)
   .dependsOn(dataplug)
 
-lazy val dataplugGoogleCalendar = project
-  .in(file("dataplug-google-calendar"))
+lazy val dataplugGoogleCalendar = Project(id = "dataplug-google-calendar", base = file("dataplug-google-calendar"))
   .enablePlugins(BasicSettings)
   .settings(
     name := "dataplug-google-calendar",
@@ -107,8 +104,7 @@ lazy val dataplugGoogleCalendar = project
   .settings(packageSettings)
   .dependsOn(dataplug)
 
-lazy val dataplugMonzo = project
-  .in(file("dataplug-monzo"))
+lazy val dataplugMonzo = Project(id = "dataplug-monzo", base = file("dataplug-monzo"))
   .enablePlugins(BasicSettings)
   .settings(
     name := "dataplug-monzo",
@@ -120,8 +116,7 @@ lazy val dataplugMonzo = project
   .settings(packageSettings)
   .dependsOn(dataplug)
 
-lazy val dataplugFitbit = project
-  .in(file("dataplug-fitbit"))
+lazy val dataplugFitbit = Project(id = "dataplug-fitbit", base = file("dataplug-fitbit"))
   .enablePlugins(BasicSettings)
   .settings(
     name := "dataplug-fitbit",
@@ -133,8 +128,7 @@ lazy val dataplugFitbit = project
   .settings(packageSettings)
   .dependsOn(dataplug)
 
-lazy val dataplugSpotify = project
-  .in(file("dataplug-spotify"))
+lazy val dataplugSpotify = Project(id = "dataplug-spotify", base = file("dataplug-spotify"))
   .enablePlugins(BasicSettings)
   .settings(
     name := "dataplug-spotify",
@@ -152,7 +146,8 @@ lazy val root = project
       name := "dataplug-project",
       publishLocal := {},
       publishM2 := {},
-      publishArtifact := false
+      publishArtifact := false,
+      skip in publish := true
     )
     .aggregate(
       dataplugFacebook,

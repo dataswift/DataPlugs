@@ -13,7 +13,7 @@ contains a universal core component (`dataplug` subproject) for any DataPlug.
 It also relies on convenience API wrappers served as HAT Library Artifacts:
 
 - `hat-client-scala-play` as a Scala wrapper around the HAT HTTP API
-- `dex-client-scala-play` as a Scala wrapper around the HATDeX MarketSquare HTTP API
+- `dex-client-scala-play` as a Scala wrapper around the HATDeX DEX HTTP API
 
 ## DataPlug design
 
@@ -33,25 +33,30 @@ DataPlug Core implementation takes care of:
 5. Tie everything together using Dependency Injection
 6. Provide application configuration and social network (data source) API credentials
 
-You will also need to extend project build settings to include the new plug, please see `/project/Build.scala` for an example
+You will also need to extend project build settings to include the new plug, please see `build.sbt` for an example
 
 ## How to run a DataPlug
 
 The following configuration parameters need to be provided as environment variables:
 
 - `APPLICATION_SECRET` - application secret
-- `MAILER_USER` - mailer system username
-- `MAILER_PASSWORD` - mailer system password
+- `MAILER_HOST` - mailer system host<sup>*</sup>
+- `MAILER_PORT` - mailer system port<sup>*</sup>
+- `MAILER_USER` - mailer system username<sup>*</sup>
+- `MAILER_PASSWORD` - mailer system password<sup>*</sup>
+- `MAILER_FROM` - email `From` field value<sup>*</sup>
 - `HAT_USER` - username of the dedicated dataplug account on HATs
 - `HAT_PASSWORD` - password of the dedicated dataplug account on HATs
-- `MS_DATAPLUG_ID` - dataplug ID on MarketSquare registry
-- `MS_ACCESS_TOKEN` - access token for MarketSquare
+- `DEX_DATAPLUG_ID` - dataplug ID on DEX registry
+- `DEX_ACCESS_TOKEN` - access token for DEX API requests
 - `SERVICES_SECRET` - shared secret for HATDeX's HAT services
 - `DATABASE_URL` - database URL
 - `DATABASE_USER` - database username
 - `DATABASE_PASSWORD` - database password
 - `COOKIE_SIGNER_KEY` - cookie signer key
 - `CRYPTER_KEY` - crypter key
+
+* marked environment variables can be left unspecified in the development setup
 
 Server configuration can be customised by adjusting parameters in `conf/application.conf` file. To run the project
  locally in the development mode the following settings might need changing: 
@@ -60,12 +65,20 @@ Server configuration can be customised by adjusting parameters in `conf/applicat
 - `service.secure` - boolean value to indicate if the server content is being served over secure connection (HTTPS)
 
 #### Twitter-specific variables
+
 - `TWITTER_CONSUMER_KEY` - Twitter app's consumer key
 - `TWITTER_CONSUMER_SECRET` - Twitter app's consumer secret
 
-The databplug can be run locally by executing
 
-    sbt "project dataplug-{providerName}" -Dconfig.resource=application.dev.conf run
+#### Google-specific variables
+
+- `GOOGLE_CALLBACK_URL` - Google OAuth callback URL
+- `GOOGLE_CLIENT_ID` - Google app's client ID
+- `GOOGLE_CLIENT_SECRET` - Google app's secret token
+
+The dataplug can be run locally by executing
+
+    sbt "project dataplug-{providerName}" "run -Dconfig.resource=application.dev.conf"
 
 ## License
 

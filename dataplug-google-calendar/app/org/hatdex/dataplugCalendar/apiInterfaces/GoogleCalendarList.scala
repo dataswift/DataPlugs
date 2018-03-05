@@ -1,6 +1,5 @@
 package org.hatdex.dataplugCalendar.apiInterfaces
 
-import akka.actor.ActorRef
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth2.GoogleProvider
@@ -10,11 +9,8 @@ import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpoint, _ }
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import play.api.Logger
-import play.api.http.Status._
 import play.api.libs.json.JsValue
 import play.api.libs.ws.WSClient
-
-import scala.concurrent.{ ExecutionContext, Future }
 
 class GoogleCalendarList @Inject() (
     val wsClient: WSClient,
@@ -37,37 +33,22 @@ class GoogleCalendarList @Inject() (
     Map(),
     Some(Map()))
 
-  def get(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext): Future[Seq[ApiEndpointVariantChoice]] = {
-    val authenticatedFetchParameters = authenticateRequest(fetchParams, hatAddress)
+  def generateEndpointChoices(maybeResponseBody: Option[JsValue]): Seq[ApiEndpointVariantChoice] = {
+    maybeResponseBody.map { responseBody =>
+      (responseBody \ "items").as[Seq[JsValue]] map { calendar =>
+        val calendarId = (calendar \ "id").as[String]
+        val summary = (calendar \ "summary").as[String]
+        val pathParameters = GoogleCalendarInterface.defaultApiEndpoint.pathParameters + ("calendarId" -> calendarId)
+        val variant = ApiEndpointVariant(
+          ApiEndpoint("google/events", "Google Calendars", None),
+          Some(calendarId), Some(summary),
+          Some(GoogleCalendarInterface.defaultApiEndpoint.copy(
+            pathParameters = pathParameters,
+            storageParameters = Some(Map("calendarName" -> summary)))))
 
-    authenticatedFetchParameters flatMap { requestParameters =>
-      buildRequest(requestParameters)
-    } flatMap { result =>
-      result.status match {
-        case OK =>
-          val choices = (result.json \ "items").as[Seq[JsValue]] map { calendar =>
-            val calendarId = (calendar \ "id").as[String]
-            val summary = (calendar \ "summary").as[String]
-            val pathParameters = GoogleCalendarInterface.defaultApiEndpoint.pathParameters + ("calendarId" -> calendarId)
-            val variant = ApiEndpointVariant(
-              ApiEndpoint("google/events", "Google Calendars", None),
-              Some(calendarId), Some(summary),
-              Some(GoogleCalendarInterface.defaultApiEndpoint.copy(pathParameters = pathParameters)))
-
-            ApiEndpointVariantChoice(calendarId, summary, active = false, variant)
-          }
-          Future.successful(choices)
-        case _ =>
-          logger.warn(s"Unsuccessful response from api endpoint $fetchParams - ${result.status}: ${result.body}")
-          Future.failed(new RuntimeException(s"Unsuccessful response from api endpoint $fetchParams - ${result.status}: ${result.body}"))
+        ApiEndpointVariantChoice(calendarId, summary, active = false, variant)
       }
-    } recoverWith {
-      case e =>
-        logger.warn(s"Error when querying api endpoint $fetchParams - ${e.getMessage}")
-        Future.failed(e)
-    }
+    }.getOrElse(Seq())
   }
-
-  def staticEndpointChoices: Seq[ApiEndpointVariantChoice] = Seq()
 
 }

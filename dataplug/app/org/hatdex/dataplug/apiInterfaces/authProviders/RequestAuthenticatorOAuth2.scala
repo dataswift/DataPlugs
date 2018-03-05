@@ -47,7 +47,7 @@ trait RequestAuthenticatorOAuth2 extends RequestAuthenticator {
         // Refresh token if refreshToken is available, otherwise try using what we have
         authInfo.refreshToken flatMap { token =>
           if (refreshToken) {
-            logger.debug("Got refresh token, refreshing")
+            logger.debug(s"Got refresh token, refreshing (retrying? $refreshToken)")
             tokenHelper.refresh(providerUser.loginInfo, token)
               .map(
                 _.andThen { // Return the token and then
@@ -55,6 +55,8 @@ trait RequestAuthenticatorOAuth2 extends RequestAuthenticator {
                   case Success(refreshedToken) if refreshedToken.accessToken != authInfo.accessToken =>
                     val providerLoginInfo = user.linkedUsers.find(_.providerId == provider.id).get
                     authInfoRepository.save[AuthInfoType](providerLoginInfo.loginInfo, refreshedToken)
+
+                  case e => logger.warn(s"Token refresh was not successful. Reason: $e")
                 })
           }
           else {
