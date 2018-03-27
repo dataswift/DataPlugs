@@ -20,10 +20,10 @@ case class GoogleCalendarDate(
 
 case class GoogleCalendarGadget(
     display: Option[String], // The gadget's display mode. Optional. Possible values are: 'icon' - The gadget displays next to the event's title in the calendar view; 'chip' - The gadget displays when the event is clicked.
-    iconLink: String, // The gadget's icon URL. The URL scheme must be HTTPS.
-    link: String, // The gadget's URL. The URL scheme must be HTTPS.
-    title: String, // The gadget's title.
-    `type`: String, // The gadget's type.
+    iconLink: Option[String], // The gadget's icon URL. The URL scheme must be HTTPS.
+    link: Option[String], // The gadget's URL. The URL scheme must be HTTPS.
+    title: Option[String], // The gadget's title.
+    `type`: Option[String], // The gadget's type.
     height: Option[Int], // The gadget's height in pixels. The height must be an integer greater than 0. Optional.
     width: Option[Int] // The gadget's width in pixels. The width must be an integer greater than 0. Optional.
 )
@@ -76,7 +76,7 @@ object GoogleCalendarEvent extends ApiEndpointTableStructure {
     Some(GoogleCalendarEventCreator(Some("displayName"), Some("email"), Some("id"), Some(false))),
     Some("description"),
     Some(GoogleCalendarDate(Some("date"), Some("dateTime"), Some("timeZone"), Some(false))),
-    Some(GoogleCalendarGadget(Some("display"), "iconLink", "link", "title", "type", Some(0), Some(0))),
+    Some(GoogleCalendarGadget(Some("display"), Some("iconLink"), Some("link"), Some("title"), Some("type"), Some(0), Some(0))),
     Some("htmlLink"),
     Some("iCalUID"),
     "id",
