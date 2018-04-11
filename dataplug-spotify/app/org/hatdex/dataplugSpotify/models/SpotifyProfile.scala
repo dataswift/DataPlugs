@@ -6,7 +6,7 @@ case class SpotifyProfile(
     birthdate: String,
     country: String,
     dateCreated: String,
-    display_name: String,
+    display_name: Option[String],
     email: String,
     href: String,
     id: String,
