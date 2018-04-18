@@ -20,6 +20,15 @@ lazy val packageSettings = Seq(
   dockerEntrypoint := Seq(s"bin/${packageName.value}")
 )
 
+lazy val slickCodegenSettings = Seq(
+  codegenPackageName in gentables := "org.hatdex.dataplug.dal",
+  codegenOutputDir in gentables := (baseDirectory.value / "app").getPath,
+  codegenClassName in gentables := "Tables",
+  codegenExcludedTables in gentables := Seq("databasechangelog", "databasechangeloglock"),
+  codegenDatabase in gentables := "devdb",
+  codegenConfig in gentables := "reference.conf"
+)
+
 val dataplug = project
   .in(file("dataplug"))
   .enablePlugins(BasicSettings)
@@ -32,6 +41,7 @@ val dataplug = project
       ehcache,
       filters,
       Library.akkaTestkit,
+      Library.HATDeX.codegen,
       Library.HATDeX.dexClient,
       Library.HATDeX.dexter,
       Library.HATDeX.hatClient,
@@ -47,6 +57,7 @@ val dataplug = project
       Library.Play.Jwt.nimbusDsJwt,
       Library.Play.mailer,
       Library.Play.mailerGuice,
+      Library.Play.playSlick,
       Library.Play.Silhouette.passwordBcrypt,
       Library.Play.Silhouette.persistence,
       Library.Play.Silhouette.cryptoJca,
@@ -67,6 +78,8 @@ val dataplug = project
   .settings(buildSettings)
   .enablePlugins(AshScriptPlugin)
   .settings(packageSettings)
+  .enablePlugins(SlickCodeGeneratorPlugin)
+  .settings(slickCodegenSettings)
 
 lazy val dataplugFacebook = Project(id = "dataplug-facebook-v2", base = file("dataplug-facebook-v2"))
   .enablePlugins(BasicSettings)

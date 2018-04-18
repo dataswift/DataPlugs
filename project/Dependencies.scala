@@ -29,6 +29,7 @@ object Dependencies {
       val hatClient = "org.hatdex" %% "hat-client-scala-play" % version
       val dexClient = "org.hatdex" %% "dex-client-scala-play" % version
       val dexter = "org.hatdex" %% "dexter" % "1.4.2-SNAPSHOT"
+      val codegen = "org.hatdex" %% "slick-postgres-driver" % "0.0.7"
     }
 
     object Play {
@@ -37,12 +38,13 @@ object Dependencies {
       val cache = "com.typesafe.play" %% "play-cache" % version
       val test = "com.typesafe.play" %% "play-test" % version
       val specs2 = "com.typesafe.play" %% "play-specs2" % version
-      val json = "com.typesafe.play" %% "play-json" % version
-      val jsonJoda = "com.typesafe.play" %% "play-json-joda" % version
+      val json = "com.typesafe.play" %% "play-json" % "2.6.9"
+      val jsonJoda = "com.typesafe.play" %% "play-json-joda" % "2.6.9"
       val mailer = "com.typesafe.play" %% "play-mailer" % "6.0.1"
       val mailerGuice = "com.typesafe.play" %% "play-mailer-guice" % "6.0.1"
       val jsonDerivedCodecs = "org.julienrf" % "play-json-derived-codecs_2.11" % "3.3"
       val typesafeConfigExtras = "com.iheart" %% "ficus" % "1.3.4"
+      val playSlick = "com.typesafe.play" %% "play-slick" % "3.0.3"
 
       object Specs2 {
         private val version = "3.8.9"

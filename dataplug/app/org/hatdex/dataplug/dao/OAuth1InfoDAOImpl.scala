@@ -10,32 +10,30 @@ package org.hatdex.dataplug.dao
 
 import javax.inject.{ Inject, Singleton }
 
-import anorm._
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.OAuth1Info
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
 import org.hatdex.dataplug.actors.IoExecutionContext
+import org.hatdex.dataplug.dal.Tables
 import org.hatdex.dataplug.utils.Mailer
-import play.api.db.{ Database, _ }
+import org.hatdex.libs.dal.SlickPostgresDriver
+import org.hatdex.libs.dal.SlickPostgresDriver.api._
+import play.api.db.slick.{ DatabaseConfigProvider, HasDatabaseConfigProvider }
 
-import scala.concurrent.{ Future, blocking }
+import scala.concurrent.Future
 
 /**
  * The DAO to store the OAuth2 information.
  */
 @Singleton
-class OAuth1InfoDAOImpl @Inject() (@NamedDatabase("default") db: Database, mailer: Mailer) extends DelegableAuthInfoDAO[OAuth1Info] {
+class OAuth1InfoDAOImpl @Inject() (
+    protected val dbConfigProvider: DatabaseConfigProvider,
+    mailer: Mailer)
+  extends DelegableAuthInfoDAO[OAuth1Info] with HasDatabaseConfigProvider[SlickPostgresDriver] {
+
+  import org.hatdex.dataplug.dal.ModelTranslation._
+
   implicit val ec = IoExecutionContext.ioThreadPool
-
-  private def loginInfoParser(table: String): RowParser[LoginInfo] =
-    Macro.parser[LoginInfo](
-      s"$table.provider_id",
-      s"$table.user_id")
-
-  private def singleLoginInfoParser(table: String): ResultSetParser[LoginInfo] =
-    loginInfoParser(table).single
-
-  private def oauth1InfoParser: RowParser[OAuth1Info] = Macro.namedParser[OAuth1Info]
 
   /**
    * Saves the OAuth2 info.
@@ -45,26 +43,9 @@ class OAuth1InfoDAOImpl @Inject() (@NamedDatabase("default") db: Database, maile
    * @return The saved OAuth2 info or None if the OAuth2 info couldn't be saved.
    */
   def add(loginInfo: LoginInfo, authInfo: OAuth1Info): Future[OAuth1Info] = {
-    Future {
-      blocking {
-        db.withTransaction { implicit connection =>
-          SQL(
-            """
-              | INSERT INTO user_oauth1_info
-              |   (provider_id, user_id, token, secret)
-              | VALUES
-              |   ({providerId}, {userId}, {token}, {secret})
-            """.stripMargin)
-            .on(
-              'providerId -> loginInfo.providerID,
-              'userId -> loginInfo.providerKey,
-              'token -> authInfo.token,
-              'secret -> authInfo.secret)
-            .executeInsert(singleLoginInfoParser("user_oauth1_info"))
-          authInfo
-        }
-      }
-    }
+    val q = Tables.UserOauth1Info += toDbModel(loginInfo, authInfo)
+
+    db.run(q).map(_ => authInfo)
   }
 
   /**
@@ -75,29 +56,13 @@ class OAuth1InfoDAOImpl @Inject() (@NamedDatabase("default") db: Database, maile
    * @return The updated auth info.
    */
   def update(loginInfo: LoginInfo, authInfo: OAuth1Info): Future[OAuth1Info] = {
-    Future {
-      blocking {
-        db.withTransaction { implicit connection =>
-          SQL(
-            """
-              | UPDATE user_oauth1_info
-              |   SET
-              |     token = {token},
-              |     secret = {secret}
-              | WHERE
-              |   provider_id = {providerId}
-              |   AND user_id = {userId}
-            """.stripMargin)
-            .on(
-              'providerId -> loginInfo.providerID,
-              'userId -> loginInfo.providerKey,
-              'token -> authInfo.token,
-              'secret -> authInfo.secret)
-            .executeInsert(singleLoginInfoParser("user_oauth1_info"))
-          authInfo
-        }
-      }
-    }
+    val q = for {
+      auth <- Tables.UserOauth1Info if auth.providerId === loginInfo.providerID && auth.userId === loginInfo.providerKey
+    } yield (auth.token, auth.secret)
+
+    val action = q.update(authInfo.token, authInfo.secret)
+
+    db.run(action).map(_ => authInfo)
   }
 
   /**
@@ -107,23 +72,9 @@ class OAuth1InfoDAOImpl @Inject() (@NamedDatabase("default") db: Database, maile
    * @return The retrieved OAuth2 info or None if no OAuth2 info could be retrieved for the given login info.
    */
   def find(loginInfo: LoginInfo): Future[Option[OAuth1Info]] = {
-    Future {
-      blocking {
-        db.withTransaction { implicit connection =>
-          SQL(
-            """
-              | SELECT * FROM user_oauth1_info
-              | WHERE
-              |   provider_id = {providerId}
-              |   AND user_id = {userId}
-            """.stripMargin)
-            .on(
-              'providerId -> loginInfo.providerID,
-              'userId -> loginInfo.providerKey)
-            .as(oauth1InfoParser.singleOpt)
-        }
-      }
-    }
+    val q = Tables.UserOauth1Info.filter(auth => auth.providerId === loginInfo.providerID && auth.userId === loginInfo.providerKey)
+
+    db.run(q.result).map(_.headOption.map(fromDbModel))
   }
 
   /**
@@ -150,22 +101,8 @@ class OAuth1InfoDAOImpl @Inject() (@NamedDatabase("default") db: Database, maile
    * @return A future to wait for the process to be completed.
    */
   def remove(loginInfo: LoginInfo): Future[Unit] = {
-    Future {
-      blocking {
-        db.withTransaction { implicit connection =>
-          SQL(
-            """
-              | DELETE FROM user_oauth1_info
-              |   WHERE
-              |   provider_id = {providerId}
-              |   AND user_id = {userId}
-            """.stripMargin)
-            .on(
-              'providerId -> loginInfo.providerID,
-              'userId -> loginInfo.providerKey)
-            .executeUpdate()
-        }
-      }
-    }
+    val q = Tables.UserOauth1Info.filter(auth => auth.providerId === loginInfo.providerID && auth.userId === loginInfo.providerKey)
+
+    db.run(q.delete).map(_ => Unit)
   }
 }
