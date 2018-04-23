@@ -9,16 +9,14 @@
 package org.hatdex.dataplug.dao
 
 import javax.inject.{ Inject, Singleton }
-
-import anorm.SqlParser._
-import anorm.{ Macro, ResultSetParser, RowParser, _ }
 import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import org.hatdex.dataplug.actors.IoExecutionContext
+import org.hatdex.dataplug.dal.Tables
 import org.hatdex.dataplug.models.User
-import play.api.Logger
-import play.api.db.{ DBApi, Database, NamedDatabase }
-import play.api.libs.json.JsValue
+import org.hatdex.libs.dal.SlickPostgresDriver
+import org.hatdex.libs.dal.SlickPostgresDriver.api._
+import org.joda.time.DateTime
+import play.api.db.slick.{ DatabaseConfigProvider, HasDatabaseConfigProvider }
 
 import scala.concurrent._
 
@@ -26,30 +24,12 @@ import scala.concurrent._
  * Give access to the user object.
  */
 @Singleton
-class UserDAOImpl @Inject() (@NamedDatabase("default") db: Database) extends UserDAO {
+class UserDAOImpl @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)
+  extends UserDAO with HasDatabaseConfigProvider[SlickPostgresDriver] {
+
+  import org.hatdex.dataplug.dal.ModelTranslation._
+
   implicit val ec = IoExecutionContext.ioThreadPool
-
-  private def simpleUserInfoParser(table: String): RowParser[User] = {
-    get[String](s"$table.provider_id") ~
-      get[String](s"$table.user_id") map {
-        case providerId ~ userId =>
-          User(providerId, userId, List())
-      }
-  }
-
-  private val simpleUserParser = simpleUserInfoParser("user_user")
-  private val linkedUserParser = simpleUserInfoParser("user_linked_user")
-
-  private def linkedUsersParser: RowParser[User] = {
-    simpleUserParser ~
-      linkedUserParser.? map {
-        case mainUser ~ maybeLinkedUser =>
-          User(mainUser.providerId, mainUser.userId, maybeLinkedUser.map(List(_)).getOrElse(List()))
-      }
-  }
-
-  private def singleUserInfoParser: ResultSetParser[User] =
-    simpleUserParser.single
 
   /**
    * Finds a user by its login info.
@@ -57,36 +37,25 @@ class UserDAOImpl @Inject() (@NamedDatabase("default") db: Database) extends Use
    * @param loginInfo The login info of the user to find.
    * @return The found user or None if no user for the given login info could be found.
    */
-  def find(loginInfo: LoginInfo) =
-    Future {
-      blocking {
-        db.withTransaction { implicit connection =>
-          val foundUsers = SQL(
-            """
-              | SELECT * FROM user_user
-              | LEFT JOIN user_link
-              |   ON user_link.master_provider_id = user_user.provider_id
-              |   AND user_link.master_user_id = user_user.user_id
-              | LEFT JOIN user_linked_user
-              |   ON user_link.linked_provider_id = user_linked_user.provider_id
-              |   AND user_link.linked_user_id = user_linked_user.user_id
-              | WHERE
-              |   user_user.provider_id = {providerId}
-              |   AND user_user.user_id = {userId}
-            """.stripMargin)
-            .on(
-              'providerId -> loginInfo.providerID,
-              'userId -> loginInfo.providerKey)
-            .as(linkedUsersParser.*)
+  def find(loginInfo: LoginInfo): Future[Option[User]] = {
+    val q = for {
+      ((user, _), maybeUserLinkUser) <- Tables.UserUser
+        .filter(u => u.providerId === loginInfo.providerID && u.userId === loginInfo.providerKey)
+        .joinLeft(Tables.UserLink).on((u, l) => u.providerId === l.masterProviderId && u.userId === l.masterUserId)
+        .joinLeft(Tables.UserLinkedUser).on((q1, lu) =>
+          q1._2.map(_.linkedProviderId) === lu.providerId && q1._2.map(_.linkedUserId) === lu.userId)
+    } yield (user, maybeUserLinkUser)
 
-          foundUsers.groupBy(_.loginInfo).flatMap {
-            case (_, users) =>
-              val linkedAccounts = users.flatMap(_.linkedUsers)
-              users.headOption.map(user => user.copy(linkedUsers = linkedAccounts))
-          }.headOption
-        }
-      }
-    }
+    val foundUsers = db.run(q.result).map(_.map(r => fromDbModel(r._1, r._2)))
+
+    foundUsers.map(fu => {
+      fu.toList.groupBy(_.loginInfo).flatMap {
+        case (_, users) =>
+          val linkedAccounts = users.flatMap(_.linkedUsers)
+          users.headOption.map(user => user.copy(linkedUsers = linkedAccounts))
+      }.headOption
+    })
+  }
 
   /**
    * Saves a user.
@@ -94,24 +63,20 @@ class UserDAOImpl @Inject() (@NamedDatabase("default") db: Database) extends Use
    * @param user The user to save.
    * @return The saved user.
    */
-  def save(user: User) = {
-    Future {
-      blocking {
-        db.withTransaction { implicit connection =>
-          SQL(
-            """
-              | INSERT INTO user_user (provider_id, user_id)
-              | VALUES ({providerId}, {userId})
-              | ON CONFLICT (provider_id, user_id) DO UPDATE SET
-              |   user_id = {userId}
-            """.stripMargin)
-            .on(
-              'providerId -> user.providerId,
-              'userId -> user.userId)
-            .executeInsert(singleUserInfoParser)
-        }
+  def save(user: User): Future[User] = {
+    val q = for {
+      rowsAffected <- Tables.UserUser
+        .filter(u => u.providerId === user.providerId && u.userId === user.userId)
+        .map(_.userId)
+        .update(user.userId)
+      result <- rowsAffected match {
+        case 0 => Tables.UserUser += Tables.UserUserRow(user.providerId, user.userId, DateTime.now().toLocalDateTime)
+        case 1 => DBIO.successful(1)
+        case n => DBIO.failed(new RuntimeException(s"Expected 0 or 1 change, not $n for user ${user.userId}"))
       }
-    }
+    } yield result
+
+    db.run(q).map(_ => user)
   }
 
   /**
@@ -121,23 +86,14 @@ class UserDAOImpl @Inject() (@NamedDatabase("default") db: Database) extends Use
    * @param linkedLoginInfo The login info of the user to link.
    */
   def link(mainLoginInfo: LoginInfo, linkedLoginInfo: LoginInfo): Future[Unit] = {
-    Future {
-      blocking {
-        db.withTransaction { implicit connection =>
-          SQL(
-            """
-              | INSERT INTO user_link (master_provider_id, master_user_id, linked_provider_id, linked_user_id)
-              | VALUES ({providerId}, {userId}, {linkedProviderId}, {linkedUserId})
-              | ON CONFLICT DO NOTHING
-            """.stripMargin)
-            .on(
-              'providerId -> mainLoginInfo.providerID,
-              'userId -> mainLoginInfo.providerKey,
-              'linkedProviderId -> linkedLoginInfo.providerID,
-              'linkedUserId -> linkedLoginInfo.providerKey)
-            .executeInsert()
-        }
-      }
-    }
+    val a = Tables.UserLink += Tables.UserLinkRow(
+      0,
+      mainLoginInfo.providerID,
+      mainLoginInfo.providerKey,
+      linkedLoginInfo.providerID,
+      linkedLoginInfo.providerKey,
+      DateTime.now().toLocalDateTime)
+
+    db.run(a).map(_ => Unit)
   }
 }

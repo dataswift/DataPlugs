@@ -10,34 +10,26 @@ package org.hatdex.dataplug.dao
 
 import javax.inject.{ Inject, Singleton }
 
-import anorm.{ Macro, ResultSetParser, RowParser, SQL }
-import anorm.JodaParameterMetaData._
 import org.hatdex.dataplug.actors.IoExecutionContext
+import org.hatdex.dataplug.dal.Tables
+import org.hatdex.libs.dal.SlickPostgresDriver
+import org.hatdex.libs.dal.SlickPostgresDriver.api._
 import org.hatdex.dataplug.apiInterfaces.models.DataPlugSharedNotable
-import play.api.db.{ Database, NamedDatabase }
+import play.api.db.slick.{ DatabaseConfigProvider, HasDatabaseConfigProvider }
 
-import scala.concurrent.{ Future, blocking }
+import scala.concurrent.Future
 
 /**
  * Give access to the uploaded content object.
  */
 
 @Singleton
-class DataPlugSharedNotableDAOImpl @Inject() (@NamedDatabase("default") db: Database) extends DataPlugSharedNotableDAO {
+class DataPlugSharedNotableDAOImpl @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)
+  extends DataPlugSharedNotableDAO with HasDatabaseConfigProvider[SlickPostgresDriver] {
+
+  import org.hatdex.dataplug.dal.ModelTranslation._
+
   implicit val ec = IoExecutionContext.ioThreadPool
-
-  private def sharedNotablesParser: RowParser[DataPlugSharedNotable] =
-    Macro.parser[DataPlugSharedNotable](
-      "shared_notables.id",
-      "shared_notables.phata",
-      "shared_notables.posted",
-      "shared_notables.posted_time",
-      "shared_notables.provider_id",
-      "shared_notables.deleted",
-      "shared_notables.deleted_time")
-
-  private def singleSharedNotableInfoParser: ResultSetParser[DataPlugSharedNotable] =
-    sharedNotablesParser.single
 
   /**
    * Finds notable record by given ID.
@@ -45,23 +37,11 @@ class DataPlugSharedNotableDAOImpl @Inject() (@NamedDatabase("default") db: Data
    * @param notableId Notable ID to be searched for.
    * @return Shared notable metadata record if found.
    */
-  def find(notableId: String): Future[Option[DataPlugSharedNotable]] =
-    Future {
-      blocking {
-        db.withTransaction { implicit connection =>
-          val foundNotables = SQL(
-            """
-              | SELECT * FROM shared_notables
-              | WHERE
-              |   shared_notables.id = {notableId}
-            """.stripMargin)
-            .on('notableId -> notableId)
-            .as(sharedNotablesParser.*)
+  def find(notableId: String): Future[Option[DataPlugSharedNotable]] = {
+    val q = Tables.SharedNotables.filter(notable => notable.id === notableId)
 
-          foundNotables.headOption
-        }
-      }
-    }
+    db.run(q.result).map(_.headOption.map(fromDbModel))
+  }
 
   /**
    * Saves metadata about the shared notable.
@@ -69,33 +49,20 @@ class DataPlugSharedNotableDAOImpl @Inject() (@NamedDatabase("default") db: Data
    * @param notable Metadata about shared notable.
    * @return Saved version of the metadata about shared notable.
    */
-  def save(notable: DataPlugSharedNotable) = {
-    Future {
-      blocking {
-        db.withTransaction { implicit connection =>
-          SQL(
-            """
-              | INSERT INTO shared_notables (id, phata, posted, posted_time, provider_id, deleted, deleted_time)
-              | VALUES ({notableId}, {phata}, {posted}, {postedTime}, {providerId}, {deleted}, {deletedTime})
-              | ON CONFLICT (id) DO UPDATE SET
-              |   posted = {posted},
-              |   posted_time = {postedTime},
-              |   deleted = {deleted},
-              |   deleted_time = {deletedTime},
-              |   provider_id = {providerId}
-            """.stripMargin)
-            .on(
-              'notableId -> notable.id,
-              'phata -> notable.phata,
-              'posted -> notable.posted,
-              'postedTime -> notable.postedTime,
-              'deleted -> notable.deleted,
-              'deletedTime -> notable.deletedTime,
-              'providerId -> notable.providerId)
-            .executeInsert(singleSharedNotableInfoParser)
-        }
+  def save(notable: DataPlugSharedNotable): Future[DataPlugSharedNotable] = {
+    // Essentially emulating the INSERT INTO ... ON CONFLICT UPDATE ... query
+    val q = for {
+      rowsAffected <- Tables.SharedNotables.filter(_.id === notable.id)
+        .map(n => (n.posted, n.postedTime, n.deleted, n.deletedTime, n.providerId))
+        .update(notable.posted, notable.postedTime.map(_.toLocalDateTime), notable.deleted, notable.deletedTime.map(_.toLocalDateTime), notable.providerId)
+      result <- rowsAffected match {
+        case 0 => Tables.SharedNotables += toDbModel(notable)
+        case 1 => DBIO.successful(1)
+        case n => DBIO.failed(new RuntimeException(s"Expected 0 or 1 change, not $n for notable $notable"))
       }
-    }
+    } yield result
+
+    db.run(q).map(_ => notable)
   }
 
 }

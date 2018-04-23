@@ -57,16 +57,6 @@ trait DataPlugEndpointDAO {
   def saveEndpointStatus(phata: String, endpoint: ApiEndpointStatus): Future[Unit]
 
   /**
-   * Fetch endpoint status for a given phata and plug endpoint variant
-   *
-   * @param phata The user phata.
-   * @param plugName The plug endpoint name.
-   * @param variant Endpoint variant to fetch status for
-   * @return The available API endpoint configuration
-   */
-  def retrieveCurrentEndpointStatus(phata: String, plugName: String, variant: Option[String]): Future[Option[ApiEndpointStatus]]
-
-  /**
    * Fetches endpoint status for a given phata and plug endpoint
    *
    * @param phata The user phata.

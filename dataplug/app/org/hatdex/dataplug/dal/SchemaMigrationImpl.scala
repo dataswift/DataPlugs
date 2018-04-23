@@ -24,6 +24,10 @@ class SchemaMigrationImpl @Inject() (
     implicit val ec: ExecutionContext)
   extends BaseSchemaMigrationImpl with HasDatabaseConfigProvider[JdbcProfile] {
 
+  override protected val changeContexts = "structures,data"
+  override protected val defaultSchemaName = "public"
+  override protected val liquibaseSchemaName = "public"
+
   protected val configuration = config.underlying
   protected val logger = Logger(this.getClass).logger
 }

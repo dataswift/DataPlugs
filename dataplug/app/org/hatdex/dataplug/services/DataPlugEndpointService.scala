@@ -64,16 +64,6 @@ trait DataPlugEndpointService {
    * Fetches endpoint status for a given phata and plug endpoint
    *
    * @param phata The user phata.
-   * @param plugName The plug endpoint name.
-   * @param variant Endpoint variant to fetch status for
-   * @return The available API endpoint configuration
-   */
-  def retrieveCurrentEndpointStatus(phata: String, plugName: String, variant: Option[String]): Future[Option[ApiEndpointStatus]]
-
-  /**
-   * Fetches endpoint status for a given phata and plug endpoint
-   *
-   * @param phata The user phata.
    * @return The available API endpoint configurations
    */
   def listCurrentEndpointStatuses(phata: String): Future[Seq[ApiEndpointStatus]]
