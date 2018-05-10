@@ -58,7 +58,7 @@ class HatLoginController @Inject() (
   // HAT Login
 
   def authHat(redirect: Option[String]): Action[AnyContent] = tokenUserAwareAction.async { implicit request =>
-    logger.info(s"logged in user ${request.maybeUser}")
+    logger.info(s"logging in user ${request.maybeUser}")
     val authResult = request.maybeUser match {
       case Some(user) => for {
         authenticator <- env.authenticatorService.create(user.loginInfo)

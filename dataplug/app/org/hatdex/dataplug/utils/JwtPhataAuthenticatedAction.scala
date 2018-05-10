@@ -37,8 +37,6 @@ class JwtPhataAuthenticatedAction @Inject() (
 
   def invokeBlock[A](request: Request[A], block: (JwtPhataAuthenticatedRequest[A]) => Future[Result]): Future[Result] = {
     request.headers.get("X-Auth-Token")
-      .orElse(request.getQueryString("X-Auth-Token"))
-      .orElse(request.getQueryString("token"))
       .map(validateJwtToken)
       .map { eventualMaybeUser =>
         eventualMaybeUser.flatMap { maybeIdentity =>
@@ -62,27 +60,21 @@ class JwtPhataAuthenticatedAction @Inject() (
   def validateJwtToken(token: String): Future[Option[User]] = {
     logger.debug(s"Starting JWT token validation, token --- $token")
 
-    val expectedResources = configuration.get[Seq[String]]("auth.allowedResources")
-    val expectedAccessCope = "validate"
+    val expectedApplication = configuration.get[String]("service.name")
     val maybeSignedJWT = Try(SignedJWT.parse(token))
 
     maybeSignedJWT.map { signedJWT =>
       val claimSet = signedJWT.getJWTClaimsSet
       val fresh = claimSet.getExpirationTime.after(DateTime.now().toDate)
-      val resourceMatches = Option(claimSet.getClaim("resource").asInstanceOf[String]).map { resource =>
-        expectedResources.exists(er => resource.startsWith(er))
-      } getOrElse {
-        false
-      }
-      val accessScopeMatches = Option(claimSet.getClaim("accessScope")).contains(expectedAccessCope)
+      val applicationMatches = Option(claimSet.getClaim("application")).contains(expectedApplication)
 
-      if (fresh && resourceMatches && accessScopeMatches) {
+      if (fresh && applicationMatches) {
         logger.debug(s"JWT token validation succeeded: issuer --- ${claimSet.getIssuer}")
         val identity = User("hatlogin", claimSet.getIssuer, List())
         identityVerification.verifiedIdentity(identity, signedJWT)
       }
       else {
-        logger.warn(s"JWT token validation failed: fresh - $fresh, resource - $resourceMatches, scope - $accessScopeMatches")
+        logger.warn(s"JWT token validation failed: fresh - $fresh, application - $applicationMatches")
         Future(None)
       }
     } getOrElse {
@@ -108,7 +100,6 @@ class JwtPhataAwareAction @Inject() (
 
   def invokeBlock[A](request: Request[A], block: (JwtPhataAwareRequest[A]) => Future[Result]): Future[Result] = {
     request.headers.get("X-Auth-Token")
-      .orElse(request.getQueryString("X-Auth-Token"))
       .orElse(request.getQueryString("token"))
       .map(jwtAuthenticatedAction.validateJwtToken)
       .map { eventualMaybeUser =>

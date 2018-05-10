@@ -52,6 +52,7 @@ class Application @Inject() (
 
   def index(): Action[AnyContent] = SecuredAction.async { implicit request =>
     val result = if (request.identity.linkedUsers.exists(_.providerId == provider)) {
+      logger.info(s"Data provider already connected, proceeding with data synchronization")
       // If the required social profile is connected, proceed with syncing signup
       for {
         variantChoices <- syncerActorManager.currentProviderApiVariantChoices(request.identity, provider)(ioEC)
@@ -65,6 +66,7 @@ class Application @Inject() (
       } yield result
     }
     else {
+      logger.info(s"Data provider is not setup, redirecting to authentication process")
       // otherwise redirect to the provider to sign up
       Future.successful(Redirect(org.hatdex.dataplug.controllers.routes.SocialAuthController.authenticate(provider)))
     }

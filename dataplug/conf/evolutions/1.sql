@@ -113,3 +113,14 @@ CREATE TABLE shared_notables (
 --rollback DROP TABLE dataplug_endpoint;
 --rollback DROP SEQUENCE dataplug_endpoint_seq;
 --rollback DROP TABLE shared_notables;
+
+
+--changeset dataplug:hatTokens context:structures
+
+CREATE TABLE hat_token (
+  hat           VARCHAR   NOT NULL  PRIMARY KEY,
+  access_token  VARCHAR   NOT NULL,
+  date_created  TIMESTAMP NOT NULL DEFAULT (now())
+);
+
+--rollback DROP TABLE hat_token;

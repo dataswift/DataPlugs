@@ -10,7 +10,7 @@ lazy val buildSettings = Seq(
 )
 
 lazy val packageSettings = Seq(
-  javaOptions in Universal ++= Seq("-Dhttp.port=9000"),
+  javaOptions in Universal ++= Seq("-Dhttp.port=9000", "-Dlogger.resource=logback.xml"),
   javaOptions in Test += "-Dconfig.file=conf/application.test.conf",
   packageName in Docker := packageName.value,
   maintainer in Docker := maintainer.value,
@@ -93,10 +93,10 @@ lazy val dataplugFacebook = Project(id = "dataplug-facebook-v2", base = file("da
   .settings(packageSettings)
   .dependsOn(dataplug)
 
-lazy val dataplugTwitter = Project(id = "dataplug-twitter-v2", base = file("dataplug-twitter-v2"))
+lazy val dataplugTwitter = Project(id = "dataplug-twitter", base = file("dataplug-twitter"))
   .enablePlugins(BasicSettings)
   .settings(
-    name := "dataplug-twitter-v2",
+    name := "dataplug-twitter",
     sourceDirectory in Assets := file(s"${baseDirectory.value}/app/org/hatdex/dataplugTwitter/assets")
   )
   .enablePlugins(PlayScala, SbtWeb, SbtSassify)

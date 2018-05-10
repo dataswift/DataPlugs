@@ -8,27 +8,23 @@
 
 package org.hatdex.dataplug.actors
 
-import java.util.UUID
 import javax.inject.{ Inject, Named }
-
 import akka.actor.{ Actor, ActorRef, Cancellable, PoisonPill, Props, Scheduler }
 import akka.pattern.{ Backoff, BackoffSupervisor, pipe }
 import akka.stream.ActorMaterializer
 import org.hatdex.dataplug.actors.Errors.DataPlugError
 import org.hatdex.dataplug.apiInterfaces._
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointVariant }
-import org.hatdex.dataplug.services.DataPlugEndpointService
+import org.hatdex.dataplug.services.{ DataPlugEndpointService, HatTokenService }
 import org.hatdex.dataplug.utils.Mailer
-import org.hatdex.dex.api.services.DexClient
-import org.hatdex.dexter.actors.HatClientActor
-import org.hatdex.dexter.models.HatClientCredentials
-import play.api.cache.SyncCacheApi
+import org.hatdex.dataplug.actors.HatClientActor
+import play.api.cache.AsyncCacheApi
 import play.api.libs.ws.WSClient
 import play.api.{ Configuration, Logger }
 
 import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.{ Success, Try }
+import scala.util.Try
 
 object DataPlugManagerActor {
 
@@ -74,9 +70,10 @@ object DataPlugManagerActor {
 
 class DataPlugManagerActor @Inject() (
     dataPlugRegistry: DataPlugRegistry,
+    hatTokenService: HatTokenService,
     ws: WSClient,
     configuration: Configuration,
-    cacheApi: SyncCacheApi,
+    cacheApi: AsyncCacheApi,
     val dataplugEndpointService: DataPlugEndpointService,
     val mailer: Mailer,
     @Named("syncThrottler") throttledSyncActor: ActorRef)(implicit val ec: ExecutionContext) extends Actor
@@ -118,11 +115,6 @@ class DataPlugManagerActor @Inject() (
       context.actorSelection(actorKey) ! PoisonPill
   }
 
-  private val dexClient = new DexClient(
-    ws,
-    configuration.get[String]("service.dex.address"),
-    configuration.get[String]("service.dex.scheme"))
-
   private def createSyncingSchedule(
     phata: String,
     endpointInterface: DataPlugEndpointInterface,
@@ -148,28 +140,12 @@ class DataPlugManagerActor @Inject() (
   }
 
   private def startSyncerActor(phata: String, variant: ApiEndpointVariant, endpointInterface: DataPlugEndpointInterface, actorKey: String): Future[ActorRef] = {
-    val hatActorProps = HatClientActor.props(ws, phata, HatClientCredentials(
-      configuration.get[String]("service.hatCredentials.username"),
-      configuration.get[String]("service.hatCredentials.password"),
-      secure = true))
+    val protocol = if (configuration.get[Boolean]("hat.secure")) "https://" else "http://"
 
-    val hatActorSupervisorProps = BackoffSupervisor.props(
+    def hatActorSupervisorProps(hatActorProps: Props): Props = BackoffSupervisor.props(
       // Backing off supervisor with 20% "noise" to vary the intervals slightly
       Backoff.onStop(hatActorProps, childName = actorKey,
         minBackoff = 10.seconds, maxBackoff = 120.seconds, randomFactor = 0.2))
-
-    val cacheKey = s"dex:plug:${configuration.get[String]("service.dex.dataplugId")}:$phata"
-    val dexConnected = cacheApi.get[Boolean](cacheKey)
-      .map { setup =>
-        Future.successful(setup)
-      } getOrElse {
-        dexClient.dataplugConnectHat(
-          configuration.get[String]("service.dex.accessToken"),
-          UUID.fromString(configuration.get[String]("service.dex.dataplugId")), phata)
-          .map(_ => true)
-          .andThen { case Success(s) => cacheApi.set(cacheKey, s) }
-          .andThen { case Success(_) => logger.warn(s"DEX connected dataplug ${configuration.get[String]("service.dex.dataplugId")} to HAT $phata") }
-      }
 
     def syncerActor(hatActor: ActorRef): Props = {
       val syncerProps = PhataDataPlugVariantSyncer.props(phata, endpointInterface, variant,
@@ -181,10 +157,21 @@ class DataPlugManagerActor @Inject() (
           minBackoff = 10.seconds, maxBackoff = 120.seconds, randomFactor = 0.2))
     }
 
-    for {
-      _ <- dexConnected
-      hatActor <- launchActor(hatActorSupervisorProps, s"hat:$phata")
-      syncerActor <- launchActor(syncerActor(hatActor), s"$actorKey-supervisor")
-    } yield syncerActor
+    val cachedToken = cacheApi.getOrElseUpdate(s"token:$phata", 1.hour) {
+      hatTokenService.forUser(phata)
+    }
+
+    cachedToken.flatMap { maybeToken =>
+      maybeToken.map { token =>
+        val hatActorProps = HatClientActor.props(ws, protocol, token)
+
+        for {
+          hatActor <- launchActor(hatActorSupervisorProps(hatActorProps), s"hat:$phata")
+          syncerActor <- launchActor(syncerActor(hatActor), s"$actorKey-supervisor")
+        } yield syncerActor
+      }.getOrElse {
+        Future.failed(new RuntimeException("No access token provided for HAT client creation"))
+      }
+    }
   }
 }

@@ -13,7 +13,7 @@ trait Tables {
   import slick.jdbc.{ GetResult => GR }
 
   /** DDL for all tables. Call .create to execute. */
-  lazy val schema: profile.SchemaDescription = Array(DataplugEndpoint.schema, DataplugUser.schema, LogDataplugUser.schema, SharedNotables.schema, UserLink.schema, UserLinkedUser.schema, UserOauth1Info.schema, UserOauth2Info.schema, UserUser.schema).reduceLeft(_ ++ _)
+  lazy val schema: profile.SchemaDescription = Array(DataplugEndpoint.schema, DataplugUser.schema, HatToken.schema, LogDataplugUser.schema, SharedNotables.schema, UserLink.schema, UserLinkedUser.schema, UserOauth1Info.schema, UserOauth2Info.schema, UserUser.schema).reduceLeft(_ ++ _)
   @deprecated("Use .schema instead of .ddl", "3.0")
   def ddl = schema
 
@@ -95,6 +95,35 @@ trait Tables {
   }
   /** Collection-like TableQuery object for table DataplugUser */
   lazy val DataplugUser = new TableQuery(tag => new DataplugUser(tag))
+
+  /**
+   * Entity class storing rows of table HatToken
+   *  @param hat Database column hat SqlType(varchar), PrimaryKey
+   *  @param accessToken Database column access_token SqlType(varchar)
+   *  @param dateCreated Database column date_created SqlType(timestamp)
+   */
+  case class HatTokenRow(hat: String, accessToken: String, dateCreated: org.joda.time.LocalDateTime)
+  /** GetResult implicit for fetching HatTokenRow objects using plain SQL queries */
+  implicit def GetResultHatTokenRow(implicit e0: GR[String], e1: GR[org.joda.time.LocalDateTime]): GR[HatTokenRow] = GR {
+    prs =>
+      import prs._
+      HatTokenRow.tupled((<<[String], <<[String], <<[org.joda.time.LocalDateTime]))
+  }
+  /** Table description of table hat_token. Objects of this class serve as prototypes for rows in queries. */
+  class HatToken(_tableTag: Tag) extends profile.api.Table[HatTokenRow](_tableTag, "hat_token") {
+    def * = (hat, accessToken, dateCreated) <> (HatTokenRow.tupled, HatTokenRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(hat), Rep.Some(accessToken), Rep.Some(dateCreated)).shaped.<>({ r => import r._; _1.map(_ => HatTokenRow.tupled((_1.get, _2.get, _3.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column hat SqlType(varchar), PrimaryKey */
+    val hat: Rep[String] = column[String]("hat", O.PrimaryKey)
+    /** Database column access_token SqlType(varchar) */
+    val accessToken: Rep[String] = column[String]("access_token")
+    /** Database column date_created SqlType(timestamp) */
+    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
+  }
+  /** Collection-like TableQuery object for table HatToken */
+  lazy val HatToken = new TableQuery(tag => new HatToken(tag))
 
   /**
    * Entity class storing rows of table LogDataplugUser

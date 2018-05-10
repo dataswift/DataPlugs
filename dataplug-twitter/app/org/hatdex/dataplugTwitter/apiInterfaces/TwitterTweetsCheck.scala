@@ -12,14 +12,13 @@ import akka.actor.ActorRef
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider
-import org.hatdex.dataplug.actors.Errors.SourceApiCommunicationException
 import org.hatdex.dataplug.apiInterfaces.DataPlugOptionsCollector
 import org.hatdex.dataplug.apiInterfaces.authProviders.RequestAuthenticatorOAuth1
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpoint, _ }
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import play.api.Logger
-import play.api.http.Status._
+import play.api.libs.json.JsValue
 import play.api.libs.ws.{ WSClient, WSResponse }
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -44,23 +43,7 @@ class TwitterTweetsCheck @Inject() (
     Map(),
     Some(Map()))
 
-  def get(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext): Future[Seq[ApiEndpointVariantChoice]] = {
-    val authenticatedFetchParameters = authenticateRequest(fetchParams, hatAddress)
-
-    authenticatedFetchParameters flatMap { requestParams =>
-      buildRequest(requestParams) flatMap { result =>
-        result.status match {
-          case OK =>
-            logger.info(s"API endpoint TwitterTweets validated for $hatAddress")
-            Future.successful(staticEndpointChoices)
-          case _ =>
-            logger.warn(s"Unsuccessful response from api endpoint $fetchParams - ${result.status}: ${result.body}")
-            Future.failed(SourceApiCommunicationException(s"Unsuccessful response from api endpoint $fetchParams - ${result.status}: ${result.body}"))
-        }
-      }
-    }
-
-  }
+  def generateEndpointChoices(responseBody: Option[JsValue]): Seq[ApiEndpointVariantChoice] = staticEndpointChoices
 
   def staticEndpointChoices: Seq[ApiEndpointVariantChoice] = {
     val variant = ApiEndpointVariant(

@@ -8,12 +8,12 @@
 
 package org.hatdex.dataplug.controllers
 
+import com.nimbusds.jwt.SignedJWT
 import javax.inject.Inject
-
 import org.hatdex.dataplug.actors.IoExecutionContext
 import org.hatdex.dataplug.apiInterfaces.models.JsonProtocol.endpointStatusFormat
 import org.hatdex.dataplug.models.User
-import org.hatdex.dataplug.services.{ DataPlugEndpointService, DataplugSyncerActorManager }
+import org.hatdex.dataplug.services.{ DataPlugEndpointService, DataplugSyncerActorManager, HatTokenService }
 import org.hatdex.dataplug.utils.{ JwtPhataAuthenticatedAction, JwtPhataAwareAction }
 import org.hatdex.hat.api.models.ErrorMessage
 import play.api.i18n.MessagesApi
@@ -21,9 +21,11 @@ import play.api.libs.json.{ JsValue, Json }
 import play.api.{ Configuration, Logger }
 import play.api.mvc._
 import org.hatdex.hat.api.json.HatJsonFormats.errorMessage
+import org.joda.time.DateTime
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.Try
 
 class Api @Inject() (
     components: ControllerComponents,
@@ -32,6 +34,7 @@ class Api @Inject() (
     tokenUserAwareAction: JwtPhataAwareAction,
     tokenUserAuthenticatedAction: JwtPhataAuthenticatedAction,
     dataPlugEndpointService: DataPlugEndpointService,
+    hatTokenService: HatTokenService,
     syncerActorManager: DataplugSyncerActorManager) extends AbstractController(components) {
 
   protected val ioEC: ExecutionContext = IoExecutionContext.ioThreadPool
@@ -46,25 +49,35 @@ class Api @Inject() (
   }
 
   def status: Action[AnyContent] = tokenUserAuthenticatedAction.async { implicit request =>
-    // Check if the user has the required social profile linked
-    request.identity.linkedUsers.find(_.providerId == provider) map { _ =>
-      val result = for {
-        choices <- syncerActorManager.currentProviderApiVariantChoices(request.identity, provider)(ioEC) if choices.exists(_.active)
-        apiEndpointStatuses <- dataPlugEndpointService.listCurrentEndpointStatuses(request.identity.userId)
-      } yield {
-        Ok(Json.toJson(apiEndpointStatuses))
-      }
+    val token = request.headers.get("X-Auth-Token").get
 
-      // In case fetching current endpoint statuses failed, assume the issue came from refreshing data from the provider
-      result recover {
-        case _ => Forbidden(
-          Json.toJson(ErrorMessage(
-            "Forbidden",
-            "The user is not authorized to access remote data - has Access Token been revoked?")))
+    // Check if the user has the required social profile linked
+    Try(SignedJWT.parse(token)).map { parsedToken =>
+      request.identity.linkedUsers.find(_.providerId == provider) map { _ =>
+        val tokenIssueDate = new DateTime(parsedToken.getJWTClaimsSet.getIssueTime)
+        val eventualHatTokenUpdate = hatTokenService.save(request.identity.userId, token, tokenIssueDate)
+
+        val result = for {
+          choices <- syncerActorManager.currentProviderApiVariantChoices(request.identity, provider)(ioEC) if choices.exists(_.active)
+          apiEndpointStatuses <- dataPlugEndpointService.listCurrentEndpointStatuses(request.identity.userId)
+          _ <- eventualHatTokenUpdate
+          _ <- syncerActorManager.runPhataActiveVariantChoices(request.identity.userId)
+        } yield {
+          Ok(Json.toJson(apiEndpointStatuses))
+        }
+
+        // In case fetching current endpoint statuses failed, assume the issue came from refreshing data from the provider
+        result recover {
+          case _ => Forbidden(
+            Json.toJson(ErrorMessage(
+              "Forbidden",
+              "The user is not authorized to access remote data - has Access Token been revoked?")))
+        }
+      } getOrElse {
+        Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Required social profile ($provider) not connected"))))
       }
-    } getOrElse {
-      Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Required social profile ($provider) not connected"))))
-    }
+    }.get
+
   }
 
   def permissions: Action[AnyContent] = tokenUserAuthenticatedAction.async { implicit request =>
