@@ -8,18 +8,21 @@
 
 package org.hatdex.dataplug.controllers
 
-import javax.inject.Inject
+import java.util.Date
 
+import javax.inject.Inject
 import com.mohiva.play.silhouette.api.exceptions.ProviderException
 import com.mohiva.play.silhouette.api.util.Clock
 import com.mohiva.play.silhouette.api.{ LoginEvent, Silhouette }
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+import com.nimbusds.jwt.SignedJWT
 import play.api.Configuration
 import play.api.data.Forms._
 import org.hatdex.dataplug.utils.MailService
-import org.hatdex.dataplug.services.UserService
+import org.hatdex.dataplug.services.{ HatTokenService, UserService }
 import org.hatdex.dataplug.utils.{ JwtPhataAuthenticatedAction, JwtPhataAwareAction, PhataAuthenticationEnvironment, SilhouettePhataAuthenticationController }
+import org.joda.time.DateTime
 import play.api.Logger
 import play.api.data.Form
 import play.api.i18n.Messages
@@ -28,6 +31,7 @@ import play.api.mvc._
 
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.concurrent.duration._
+import scala.util.Try
 
 class HatLoginController @Inject() (
     components: ControllerComponents,
@@ -37,6 +41,7 @@ class HatLoginController @Inject() (
     configuration: Configuration,
     clock: Clock,
     userService: UserService,
+    hatTokenService: HatTokenService,
     socialProviderRegistry: SocialProviderRegistry,
     tokenUserAwareAction: JwtPhataAwareAction,
     dataPlugViewSet: DataPlugViewSet,
@@ -59,8 +64,13 @@ class HatLoginController @Inject() (
 
   def authHat(redirect: Option[String]): Action[AnyContent] = tokenUserAwareAction.async { implicit request =>
     logger.info(s"logging in user ${request.maybeUser}")
+    val token = request.getQueryString("token").get
+
+    def tokenIssueTime(token: String) = Try(SignedJWT.parse(token)).map(t => new DateTime(t.getJWTClaimsSet.getIssueTime)).get
+
     val authResult = request.maybeUser match {
       case Some(user) => for {
+        _ <- hatTokenService.save(user.userId, token, tokenIssueTime(token))
         authenticator <- env.authenticatorService.create(user.loginInfo)
         cookie <- env.authenticatorService.init(authenticator)
         result <- env.authenticatorService.embed(cookie, Redirect(dataPlugViewSet.indexRedirect))
