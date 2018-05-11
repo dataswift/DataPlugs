@@ -8,12 +8,13 @@
 
 package org.hatdex.dataplug.services
 
-import akka.NotUsed
+import akka.{ Done, NotUsed }
 import akka.stream.scaladsl.Source
 import javax.inject.Inject
 import org.hatdex.dataplug.actors.IoExecutionContext
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointStatus, ApiEndpointVariant, ApiEndpointVariantChoice }
 import org.hatdex.dataplug.dao.DataPlugEndpointDAO
+import org.hatdex.dataplug.models.HatAccessCredentials
 import org.joda.time.DateTime
 
 import scala.concurrent.Future
@@ -23,7 +24,9 @@ import scala.concurrent.Future
  *
  * @param userDAO The user DAO implementation.
  */
-class DataPlugEndpointServiceImpl @Inject() (dataPlugEndpointDao: DataPlugEndpointDAO) extends DataPlugEndpointService {
+class DataPlugEndpointServiceImpl @Inject() (
+    dataPlugEndpointDao: DataPlugEndpointDAO,
+    hatTokenService: HatTokenService) extends DataPlugEndpointService {
   implicit val ec = IoExecutionContext.ioThreadPool
 
   /**
@@ -54,7 +57,7 @@ class DataPlugEndpointServiceImpl @Inject() (dataPlugEndpointDao: DataPlugEndpoi
    * @param variant Endpoint variant to fetch status for
    * @param configuration Initial configuration of the endpoint variant
    */
-  def activateEndpoint(phata: String, endpoint: String, variant: Option[String], configuration: Option[ApiEndpointCall]): Future[Unit] =
+  def activateEndpoint(phata: String, endpoint: String, variant: Option[String], configuration: Option[ApiEndpointCall]): Future[Done] =
     dataPlugEndpointDao.activateEndpoint(phata, endpoint, variant, configuration)
 
   /**
@@ -64,7 +67,7 @@ class DataPlugEndpointServiceImpl @Inject() (dataPlugEndpointDao: DataPlugEndpoi
    * @param plugName The plug endpoint name.
    * @param variant Endpoint variant to fetch status for
    */
-  def deactivateEndpoint(phata: String, plugName: String, variant: Option[String]): Future[Unit] =
+  def deactivateEndpoint(phata: String, plugName: String, variant: Option[String]): Future[Done] =
     dataPlugEndpointDao.deactivateEndpoint(phata, plugName, variant)
 
   /**
@@ -124,7 +127,7 @@ class DataPlugEndpointServiceImpl @Inject() (dataPlugEndpointDao: DataPlugEndpoi
     }
   }
 
-  def updateApiVariantChoices(phata: String, variantChoices: Seq[ApiEndpointVariantChoice]): Future[Unit] = {
+  def updateApiVariantChoices(phata: String, variantChoices: Seq[ApiEndpointVariantChoice]): Future[Option[HatAccessCredentials]] = {
     val variantUpdates = variantChoices map { variantChoice =>
       if (variantChoice.active) {
         activateEndpoint(phata, variantChoice.variant.endpoint.name, variantChoice.variant.variant, variantChoice.variant.configuration)
@@ -133,6 +136,8 @@ class DataPlugEndpointServiceImpl @Inject() (dataPlugEndpointDao: DataPlugEndpoi
         deactivateEndpoint(phata, variantChoice.variant.endpoint.name, variantChoice.variant.variant)
       }
     }
-    Future.sequence(variantUpdates).map(_ => ())
+    Future.sequence(variantUpdates).flatMap { _ =>
+      hatTokenService.forUser(phata)
+    }
   }
 }

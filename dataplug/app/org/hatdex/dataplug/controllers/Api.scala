@@ -8,14 +8,16 @@
 
 package org.hatdex.dataplug.controllers
 
-import com.nimbusds.jwt.SignedJWT
 import javax.inject.Inject
+
+import com.nimbusds.jwt.SignedJWT
 import org.hatdex.dataplug.actors.IoExecutionContext
 import org.hatdex.dataplug.apiInterfaces.models.JsonProtocol.endpointStatusFormat
 import org.hatdex.dataplug.models.User
 import org.hatdex.dataplug.services.{ DataPlugEndpointService, DataplugSyncerActorManager, HatTokenService }
 import org.hatdex.dataplug.utils.{ JwtPhataAuthenticatedAction, JwtPhataAwareAction }
 import org.hatdex.hat.api.models.ErrorMessage
+import play.api.cache.AsyncCacheApi
 import play.api.i18n.MessagesApi
 import play.api.libs.json.{ JsValue, Json }
 import play.api.{ Configuration, Logger }
@@ -23,12 +25,14 @@ import play.api.mvc._
 import org.hatdex.hat.api.json.HatJsonFormats.errorMessage
 import org.joda.time.DateTime
 
+import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Try
 
 class Api @Inject() (
     components: ControllerComponents,
+    cache: AsyncCacheApi,
     messagesApi: MessagesApi,
     configuration: Configuration,
     tokenUserAwareAction: JwtPhataAwareAction,
@@ -43,8 +47,18 @@ class Api @Inject() (
   protected val logger: Logger = Logger(this.getClass)
 
   def tickle: Action[AnyContent] = tokenUserAuthenticatedAction.async { implicit request =>
-    syncerActorManager.runPhataActiveVariantChoices(request.identity.userId) map { _ =>
-      Ok(Json.toJson(Map("message" -> "Tickled")))
+    val cachedToken = cache.getOrElseUpdate(s"token:${request.identity.userId}", 1.hour) {
+      hatTokenService.forUser(request.identity.userId)
+    }
+
+    cachedToken.flatMap { maybeAccessCredentials =>
+      maybeAccessCredentials.map { accessCredentials =>
+        syncerActorManager.runPhataActiveVariantChoices(accessCredentials.hat, accessCredentials.accessToken) map { _ =>
+          Ok(Json.toJson(Map("message" -> "Tickled")))
+        }
+      }.getOrElse {
+        Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", "Account is inactive"))))
+      }
     }
   }
 
@@ -61,8 +75,9 @@ class Api @Inject() (
           choices <- syncerActorManager.currentProviderApiVariantChoices(request.identity, provider)(ioEC) if choices.exists(_.active)
           apiEndpointStatuses <- dataPlugEndpointService.listCurrentEndpointStatuses(request.identity.userId)
           _ <- eventualHatTokenUpdate
-          _ <- syncerActorManager.runPhataActiveVariantChoices(request.identity.userId)
+          _ <- syncerActorManager.runPhataActiveVariantChoices(request.identity.userId, token)
         } yield {
+          logger.info(s"HAT token for ${request.identity.userId} received.")
           Ok(Json.toJson(apiEndpointStatuses))
         }
 

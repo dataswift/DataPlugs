@@ -8,6 +8,7 @@
 
 package org.hatdex.dataplug.actors
 
+import akka.Done
 import akka.actor.{ ActorRef, Scheduler }
 import akka.pattern.after
 import akka.util.Timeout
@@ -98,7 +99,7 @@ trait DataPlugManagerOperations {
   def complete(
     endpointInterface: DataPlugEndpointInterface,
     variant: ApiEndpointVariant, phata: String,
-    nextSyncCall: ApiEndpointCall): Future[Unit] = {
+    nextSyncCall: ApiEndpointCall): Future[Done] = {
 
     logger.info(s"${variant.endpoint.name} Completed Fetching for $phata, next sync $nextSyncCall")
 

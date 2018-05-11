@@ -8,7 +8,7 @@
 
 package org.hatdex.dataplug.dao
 
-import akka.NotUsed
+import akka.{ Done, NotUsed }
 import akka.stream.scaladsl.Source
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointStatus, ApiEndpointVariant }
 
@@ -41,7 +41,7 @@ trait DataPlugEndpointDAO {
    * @param phata The user phata.
    * @param plugName The plug endpoint name.
    */
-  def activateEndpoint(phata: String, endpoint: String, variant: Option[String], configuration: Option[ApiEndpointCall]): Future[Unit]
+  def activateEndpoint(phata: String, endpoint: String, variant: Option[String], configuration: Option[ApiEndpointCall]): Future[Done]
 
   /**
    * Deactivates API endpoint for a user
@@ -49,7 +49,7 @@ trait DataPlugEndpointDAO {
    * @param phata The user phata.
    * @param plugName The plug endpoint name.
    */
-  def deactivateEndpoint(phata: String, plugName: String, variant: Option[String]): Future[Unit]
+  def deactivateEndpoint(phata: String, plugName: String, variant: Option[String]): Future[Done]
 
   /**
    * Saves endpoint status for a given phata and plug endpoint

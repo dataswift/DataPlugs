@@ -12,7 +12,6 @@ import javax.inject.{ Inject, Named }
 import akka.Done
 import akka.actor.{ ActorRef, ActorSystem }
 import akka.event.Logging
-import akka.stream.scaladsl.Source
 import akka.stream.{ Materializer, ThrottleMode }
 import com.mohiva.play.silhouette.impl.providers.{ SocialProvider, SocialProviderRegistry }
 import org.hatdex.dataplug.actors.DataPlugManagerActor.{ DataPlugManagerActorMessage, Start, Stop }
@@ -37,13 +36,11 @@ class DataplugSyncerActorManager @Inject() (
   private val streamLogger = Logging(actorSystem, this.getClass)
 
   def updateApiVariantChoices(user: User, variantChoices: Seq[ApiEndpointVariantChoice])(implicit ec: ExecutionContext): Future[Unit] = {
-    dataPlugEndpointService.updateApiVariantChoices(user.userId, variantChoices) map { _ =>
+    dataPlugEndpointService.updateApiVariantChoices(user.userId, variantChoices) map { maybeAccessCredentials =>
       variantChoices foreach { variantChoice =>
-        val message: DataPlugManagerActorMessage = if (variantChoice.active) {
+        val message: DataPlugManagerActorMessage = if (variantChoice.active && maybeAccessCredentials.isDefined) {
           subscriptionEventBus.publish(SubscriptionEventBus.UserSubscribedEvent(user, DateTime.now(), variantChoice))
-
-          // TODO: obtain HAT access token to pass into actor Start message
-          Start(variantChoice.variant, user.userId, "", variantChoice.variant.configuration)
+          Start(variantChoice.variant, user.userId, maybeAccessCredentials.get.accessToken, variantChoice.variant.configuration)
         }
         else {
           subscriptionEventBus.publish(SubscriptionEventBus.UserUnsubscribedEvent(user, DateTime.now(), variantChoice))
@@ -72,13 +69,12 @@ class DataplugSyncerActorManager @Inject() (
       }
   }
 
-  def runPhataActiveVariantChoices(phata: String)(implicit ec: ExecutionContext): Future[Unit] = {
+  def runPhataActiveVariantChoices(phata: String, accessToken: String)(implicit ec: ExecutionContext): Future[Unit] = {
     logger.info("Starting active API endpoint syncing")
     dataPlugEndpointService.retrievePhataEndpoints(phata) map { phataVariants =>
       logger.info(s"Retrieved endpoints to sync: ${phataVariants.mkString("\n")}")
       phataVariants foreach { variant =>
-        // TODO: obtain HAT access token to pass into actor Start message
-        dataPlugManagerActor ! Start(variant, phata, "", variant.configuration)
+        dataPlugManagerActor ! Start(variant, phata, accessToken, variant.configuration)
       }
     } recoverWith {
       case e =>

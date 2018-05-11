@@ -12,7 +12,7 @@
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <target>System.out</target>
     <encoder>
-      <pattern>%highlight([%level]) [%date{YYYY-MM-dd HH:mm:ss}] %logger{1} - %msg%n</pattern>
+      <pattern>[%level] [%date{YYYY-MM-dd HH:mm:ss}] %logger{1} - %msg%n</pattern>
     </encoder>
   </appender>
 
@@ -24,21 +24,22 @@
   <logger name="play" level="INFO" />
   <logger name="application" level="INFO" />
   <logger name="DatabaseNotableStore" level="INFO" />
-  <logger name="org.hatdex.dataplug.utils.JwtPhataAuthenticatedAction" level="DEBUG" />
-  <logger name="org.hatdex.dataplug.utils.JwtPhataAwareAction" level="DEBUG" />
+  <logger name="org.hatdex.dataplug.utils.JwtPhataAuthenticatedAction" level="INFO" />
+  <logger name="org.hatdex.dataplug.utils.JwtPhataAwareAction" level="INFO" />
 
   <logger name="org.hatdex.hat.api.services.HatClient" level="INFO" />
   <logger name="NetworkUpdateService" level="INFO"/>
 
   <logger name="org.hatdex.dataplugTwitter" level="INFO" />
   <logger name="org.hatdex.dataplug.*" level="DEBUG" />
+  <logger name="org.hatdex.dataplug.controllers.Api" level="INFO" />
   <logger name="org.hatdex.dataplug.actors.PhataDataPlugVariantSyncer" level="ERROR" />
   <logger name="org.hatdex.dataplugTwitter.controllers.Api" level="DEBUG" />
 
   <logger name="http" level="DEBUG" />
   <logger name="HatClientActor" level="DEBUG" />
 
-  <logger name="org.hatdex.dataplug.actors.DataPlugManagerActor" level="DEBUG" />
+  <logger name="org.hatdex.dataplug.actors.DataPlugManagerActor" level="INFO" />
 
   <root level="WARN">
     <appender-ref ref="ASYNCSTDOUT" />

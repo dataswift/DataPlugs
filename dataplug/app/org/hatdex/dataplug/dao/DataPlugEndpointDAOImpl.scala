@@ -8,12 +8,13 @@
 
 package org.hatdex.dataplug.dao
 
-import akka.NotUsed
+import akka.{ Done, NotUsed }
 import akka.stream.scaladsl.Source
 import javax.inject.{ Inject, Singleton }
 import org.hatdex.dataplug.actors.IoExecutionContext
 import org.hatdex.dataplug.dal.Tables
 import org.hatdex.dataplug.apiInterfaces.models._
+import org.hatdex.dataplug.models.HatAccessCredentials
 import org.hatdex.libs.dal.SlickPostgresDriver
 import org.hatdex.libs.dal.SlickPostgresDriver.api._
 import org.joda.time.DateTime
@@ -83,7 +84,7 @@ class DataPlugEndpointDAOImpl @Inject() (protected val dbConfigProvider: Databas
    * @param phata The user phata.
    * @param plugName The plug endpoint name.
    */
-  def activateEndpoint(phata: String, plugName: String, variant: Option[String], configuration: Option[ApiEndpointCall]): Future[Unit] = {
+  def activateEndpoint(phata: String, plugName: String, variant: Option[String], configuration: Option[ApiEndpointCall]): Future[Done] = {
     import JsonProtocol.endpointCallFormat
     val q = for {
       rowsAffected <- Tables.DataplugUser
@@ -97,7 +98,7 @@ class DataPlugEndpointDAOImpl @Inject() (protected val dbConfigProvider: Databas
       }
     } yield result
 
-    db.run(q).map(_ => Unit)
+    db.run(q).map(_ => Done)
   }
 
   /**
@@ -106,13 +107,13 @@ class DataPlugEndpointDAOImpl @Inject() (protected val dbConfigProvider: Databas
    * @param phata The user phata.
    * @param plugName The plug endpoint name.
    */
-  def deactivateEndpoint(phata: String, plugName: String, variant: Option[String]): Future[Unit] = {
+  def deactivateEndpoint(phata: String, plugName: String, variant: Option[String]): Future[Done] = {
     val q = Tables.DataplugUser
       .filter(user => user.phata === phata && user.dataplugEndpoint === plugName && user.endpointVariant === variant)
       .map(_.active)
       .update(false)
 
-    db.run(q).map(_ => Unit)
+    db.run(q).map(_ => Done)
   }
 
   /**

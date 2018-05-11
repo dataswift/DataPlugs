@@ -8,9 +8,10 @@
 
 package org.hatdex.dataplug.services
 
-import akka.NotUsed
+import akka.{ Done, NotUsed }
 import akka.stream.scaladsl.Source
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointStatus, ApiEndpointVariant, ApiEndpointVariantChoice }
+import org.hatdex.dataplug.models.HatAccessCredentials
 
 import scala.concurrent.Future
 
@@ -42,7 +43,7 @@ trait DataPlugEndpointService {
    * @param phata The user phata.
    * @param endpoint The plug endpoint name.
    */
-  def activateEndpoint(phata: String, endpoint: String, variant: Option[String], configuration: Option[ApiEndpointCall]): Future[Unit]
+  def activateEndpoint(phata: String, endpoint: String, variant: Option[String], configuration: Option[ApiEndpointCall]): Future[Done]
 
   /**
    * Deactives API endpoint for a user
@@ -50,7 +51,7 @@ trait DataPlugEndpointService {
    * @param phata The user phata.
    * @param endpoint The plug endpoint name.
    */
-  def deactivateEndpoint(phata: String, endpoint: String, variant: Option[String]): Future[Unit]
+  def deactivateEndpoint(phata: String, endpoint: String, variant: Option[String]): Future[Done]
 
   /**
    * Saves endpoint status for a given phata and plug endpoint
@@ -84,5 +85,5 @@ trait DataPlugEndpointService {
 
   def enabledApiVariantChoices(phata: String): Future[Seq[ApiEndpointVariantChoice]]
 
-  def updateApiVariantChoices(phata: String, variantChoices: Seq[ApiEndpointVariantChoice]): Future[Unit]
+  def updateApiVariantChoices(phata: String, variantChoices: Seq[ApiEndpointVariantChoice]): Future[Option[HatAccessCredentials]]
 }
