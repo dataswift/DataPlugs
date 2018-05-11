@@ -8,8 +8,9 @@
 
 package org.hatdex.dataplug.services
 
+import akka.NotUsed
+import akka.stream.scaladsl.Source
 import javax.inject.Inject
-
 import org.hatdex.dataplug.actors.IoExecutionContext
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointStatus, ApiEndpointVariant, ApiEndpointVariantChoice }
 import org.hatdex.dataplug.dao.DataPlugEndpointDAO
@@ -41,6 +42,9 @@ class DataPlugEndpointServiceImpl @Inject() (dataPlugEndpointDao: DataPlugEndpoi
    */
   def retrieveAllEndpoints: Future[Seq[(String, ApiEndpointVariant)]] =
     dataPlugEndpointDao.retrieveAllEndpoints
+
+  def retrieveAllActiveEndpointsStream: Source[(String, String, ApiEndpointVariant), NotUsed] =
+    dataPlugEndpointDao.retrieveAllActiveEndpointsStream
 
   /**
    * Activates an API endpoint for a user

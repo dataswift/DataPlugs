@@ -16,9 +16,10 @@ object HatClientActor {
   def props(ws: WSClient, protocol: String, credentials: HatAccessCredentials): Props =
     Props(new HatClientActor(ws, protocol, credentials))
 
-  case class PostData(namespace: String, endpoint: String, data: JsArray)
-  case class DataSaved(data: Seq[EndpointData])
-  case class ReqFailed(message: String, cause: ApiException)
+  sealed trait HatClientActorMessage
+  case class PostData(namespace: String, endpoint: String, data: JsArray) extends HatClientActorMessage
+  case class DataSaved(data: Seq[EndpointData]) extends HatClientActorMessage
+  case class ReqFailed(message: String, cause: ApiException) extends HatClientActorMessage
 }
 
 class HatClientActor(ws: WSClient, protocol: String, credentials: HatAccessCredentials) extends Actor {
@@ -34,13 +35,22 @@ class HatClientActor(ws: WSClient, protocol: String, credentials: HatAccessCrede
   def receive: Receive = {
     case PostData(namespace, endpoint, data) =>
       val savedData = hatClient.saveData(token, namespace, endpoint, data)
-        .map(d => DataSaved(d))
+        .map(d => {
+          logger.debug(s"Posted new records to ${credentials.hat}")
+          DataSaved(d)
+        })
         .recover {
           case e: ApiException =>
             val message = s"Could not post data values to ${credentials.hat}: ${e.getMessage}"
             logger.error(message)
             ReqFailed(message, e)
+
+          case e =>
+            val message = s"Unrecognised HAT response from ${credentials.hat}: $e"
+            logger.error(message)
         }
       savedData pipeTo sender
+
+    case m => logger.error(s"Unrecognized message $m")
   }
 }

@@ -17,10 +17,9 @@ class StartupServiceImpl @Inject() (
     implicit val ec: ExecutionContext) extends StartupService {
 
   protected val logger = Logger(this.getClass)
-  logger.info("Starting all active DataPlug variant choices")
-
   private val migrations: Seq[String] = configuration.get[Seq[String]]("slick.dbs.default.schemaMigrations")
-  logger.error(s"Running database schema migrations on $migrations")
+
+  logger.info(s"Running database schema migrations on $migrations")
   val eventualMigrations: Future[Unit] = schemaMigration.run(migrations)
 
   eventualMigrations.onComplete {
@@ -28,5 +27,6 @@ class StartupServiceImpl @Inject() (
     case Failure(e) => logger.error(s"Database migrations failed ${e.getMessage}")
   }
 
+  logger.info("Starting all active DataPlug variant choices")
   syncerActorManager.startAllActiveVariantChoices()
 }

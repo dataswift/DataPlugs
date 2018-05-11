@@ -9,14 +9,14 @@
 package org.hatdex.dataplug.services
 
 import javax.inject.{ Inject, Named }
-
 import akka.Done
-import akka.actor.ActorRef
+import akka.actor.{ ActorRef, ActorSystem }
+import akka.event.Logging
 import akka.stream.scaladsl.Source
 import akka.stream.{ Materializer, ThrottleMode }
 import com.mohiva.play.silhouette.impl.providers.{ SocialProvider, SocialProviderRegistry }
 import org.hatdex.dataplug.actors.DataPlugManagerActor.{ DataPlugManagerActorMessage, Start, Stop }
-import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointVariantChoice
+import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointVariant, ApiEndpointVariantChoice }
 import org.hatdex.dataplug.apiInterfaces.{ DataPlugOptionsCollector, DataPlugOptionsCollectorRegistry }
 import org.hatdex.dataplug.models.User
 import org.joda.time.DateTime
@@ -30,16 +30,20 @@ class DataplugSyncerActorManager @Inject() (
     dataPlugEndpointService: DataPlugEndpointService,
     optionsCollectionRegistry: DataPlugOptionsCollectorRegistry,
     subscriptionEventBus: SubscriptionEventBus,
+    actorSystem: ActorSystem,
     @Named("dataPlugManager") dataPlugManagerActor: ActorRef)(implicit val materializer: Materializer) {
 
   private val logger = Logger(this.getClass)
+  private val streamLogger = Logging(actorSystem, this.getClass)
 
   def updateApiVariantChoices(user: User, variantChoices: Seq[ApiEndpointVariantChoice])(implicit ec: ExecutionContext): Future[Unit] = {
     dataPlugEndpointService.updateApiVariantChoices(user.userId, variantChoices) map { _ =>
       variantChoices foreach { variantChoice =>
         val message: DataPlugManagerActorMessage = if (variantChoice.active) {
           subscriptionEventBus.publish(SubscriptionEventBus.UserSubscribedEvent(user, DateTime.now(), variantChoice))
-          Start(variantChoice.variant, user.userId, variantChoice.variant.configuration)
+
+          // TODO: obtain HAT access token to pass into actor Start message
+          Start(variantChoice.variant, user.userId, "", variantChoice.variant.configuration)
         }
         else {
           subscriptionEventBus.publish(SubscriptionEventBus.UserUnsubscribedEvent(user, DateTime.now(), variantChoice))
@@ -52,22 +56,20 @@ class DataplugSyncerActorManager @Inject() (
   }
 
   def startAllActiveVariantChoices()(implicit ec: ExecutionContext): Future[Done] = {
-    logger.info("Starting active API endpoint syncing")
-    dataPlugEndpointService.retrieveAllEndpoints flatMap { phataVariants =>
-      logger.debug(s"Retrieved endpoints to sync: ${phataVariants.mkString("\n")}")
-      Source.fromIterator(() => phataVariants.iterator)
-        .throttle(1, 1.seconds, 1, ThrottleMode.Shaping)
-        .map {
-          case (phata, variant) =>
-            dataPlugManagerActor ! Start(variant, phata, variant.configuration)
-            phata
-        }
-        .runForeach(r => logger.info(s"$r - initializing data sync"))
-    } recoverWith {
-      case e =>
-        logger.error(s"Could not retrieve endpoints to sync: ${e.getMessage}")
-        Future.failed(e)
-    }
+    dataPlugEndpointService.retrieveAllActiveEndpointsStream
+      .log("Initializing endpoint synchronisation")(streamLogger)
+      .throttle(1, 30.seconds, 1, ThrottleMode.Shaping)
+      .map {
+        case (phata: String, accessToken: String, variant: ApiEndpointVariant) =>
+          dataPlugManagerActor ! Start(variant, phata, accessToken, variant.configuration)
+          phata
+      }
+      .runForeach(r => logger.info(s"Synchronisation started for $r"))
+      .recoverWith {
+        case e =>
+          logger.error(s"Could not retrieve endpoints to sync: ${e.getMessage}")
+          Future.failed(e)
+      }
   }
 
   def runPhataActiveVariantChoices(phata: String)(implicit ec: ExecutionContext): Future[Unit] = {
@@ -75,7 +77,8 @@ class DataplugSyncerActorManager @Inject() (
     dataPlugEndpointService.retrievePhataEndpoints(phata) map { phataVariants =>
       logger.info(s"Retrieved endpoints to sync: ${phataVariants.mkString("\n")}")
       phataVariants foreach { variant =>
-        dataPlugManagerActor ! Start(variant, phata, variant.configuration)
+        // TODO: obtain HAT access token to pass into actor Start message
+        dataPlugManagerActor ! Start(variant, phata, "", variant.configuration)
       }
     } recoverWith {
       case e =>

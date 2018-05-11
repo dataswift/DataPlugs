@@ -17,7 +17,7 @@ import org.hatdex.dataplug.apiInterfaces._
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointVariant }
 import org.hatdex.dataplug.services.{ DataPlugEndpointService, HatTokenService }
 import org.hatdex.dataplug.utils.Mailer
-import org.hatdex.dataplug.actors.HatClientActor
+import org.hatdex.dataplug.models.HatAccessCredentials
 import play.api.cache.AsyncCacheApi
 import play.api.libs.ws.WSClient
 import play.api.{ Configuration, Logger }
@@ -36,6 +36,7 @@ object DataPlugManagerActor {
   case class Start(
       endpoint: ApiEndpointVariant,
       phata: String,
+      accessToken: String,
       call: Option[ApiEndpointCall]) extends DataPlugManagerActorMessage
 
   case class Stop(
@@ -90,13 +91,13 @@ class DataPlugManagerActor @Inject() (
   private def syncerActorKey(phata: String, variant: ApiEndpointVariant) = s"$phata-${variant.endpoint.sanitizedName}-${variant.sanitizedVariantName}"
 
   def receive: Receive = {
-    case Start(variant, phata, maybeEndpointCall) =>
+    case Start(variant, phata, accessToken, maybeEndpointCall) =>
       dataPlugRegistry.get[DataPlugEndpointInterface](variant.endpoint.name).map { endpointInterface =>
         val actorKey = syncerActorKey(phata, variant)
-        logger.info(s"Starting actor fetch $actorKey")
-        Try(createSyncingSchedule(phata, endpointInterface, variant, maybeEndpointCall))
+        logger.debug(s"Starting actor fetch $actorKey")
+        Try(createSyncingSchedule(phata, accessToken, endpointInterface, variant, maybeEndpointCall))
           .map { _ =>
-            logger.warn(s"Started syncing actor for $phata, $endpointInterface")
+            logger.info(s"Started syncing actor for $phata, $endpointInterface")
           }
           .recover {
             case e => logger.warn(s"Creating actor syncing schedule for $phata, $endpointInterface failed: ${e.getMessage}")
@@ -117,6 +118,7 @@ class DataPlugManagerActor @Inject() (
 
   private def createSyncingSchedule(
     phata: String,
+    accessToken: String,
     endpointInterface: DataPlugEndpointInterface,
     variant: ApiEndpointVariant,
     maybeEndpointCall: Option[ApiEndpointCall]): Cancellable = {
@@ -126,7 +128,7 @@ class DataPlugManagerActor @Inject() (
       val eventualSyncMessage = for {
         endpointCall <- dataplugEndpointService.retrieveLastSuccessfulEndpointVariant(phata, variant.endpoint.name, variant.variant)
           .map(maybeEndpointVariant => maybeEndpointVariant.flatMap(_.configuration).orElse(maybeEndpointCall))
-        syncerActor <- startSyncerActor(phata, variant, endpointInterface, actorKey)
+        syncerActor <- startSyncerActor(phata, accessToken, variant, endpointInterface, actorKey)
       } yield Forward(Fetch(endpointCall, 0), syncerActor)
 
       eventualSyncMessage.onFailure {
@@ -139,8 +141,10 @@ class DataPlugManagerActor @Inject() (
     }
   }
 
-  private def startSyncerActor(phata: String, variant: ApiEndpointVariant, endpointInterface: DataPlugEndpointInterface, actorKey: String): Future[ActorRef] = {
+  private def startSyncerActor(phata: String, accessToken: String, variant: ApiEndpointVariant, endpointInterface: DataPlugEndpointInterface, actorKey: String): Future[ActorRef] = {
     val protocol = if (configuration.get[Boolean]("hat.secure")) "https://" else "http://"
+    val hatActorProps = HatClientActor.props(ws, protocol, HatAccessCredentials(phata, accessToken))
+    logger.debug(s"Creating syncer actor for $phata, protocol - $protocol, access token - $accessToken")
 
     def hatActorSupervisorProps(hatActorProps: Props): Props = BackoffSupervisor.props(
       // Backing off supervisor with 20% "noise" to vary the intervals slightly
@@ -157,21 +161,9 @@ class DataPlugManagerActor @Inject() (
           minBackoff = 10.seconds, maxBackoff = 120.seconds, randomFactor = 0.2))
     }
 
-    val cachedToken = cacheApi.getOrElseUpdate(s"token:$phata", 1.hour) {
-      hatTokenService.forUser(phata)
-    }
-
-    cachedToken.flatMap { maybeToken =>
-      maybeToken.map { token =>
-        val hatActorProps = HatClientActor.props(ws, protocol, token)
-
-        for {
-          hatActor <- launchActor(hatActorSupervisorProps(hatActorProps), s"hat:$phata")
-          syncerActor <- launchActor(syncerActor(hatActor), s"$actorKey-supervisor")
-        } yield syncerActor
-      }.getOrElse {
-        Future.failed(new RuntimeException("No access token provided for HAT client creation"))
-      }
-    }
+    for {
+      hatActor <- launchActor(hatActorSupervisorProps(hatActorProps), s"hat:$phata")
+      syncerActor <- launchActor(syncerActor(hatActor), s"$actorKey-supervisor")
+    } yield syncerActor
   }
 }

@@ -32,7 +32,8 @@ class JwtPhataAuthenticatedAction @Inject() (
     implicit
     val executionContext: ExecutionContext) extends ActionBuilder[JwtPhataAuthenticatedRequest, AnyContent] {
 
-  val logger = Logger(this.getClass)
+  private val tokenExpirationInterval = 3 // days
+  private val logger = Logger(this.getClass)
   val parser = bodyParsers.default
 
   def invokeBlock[A](request: Request[A], block: (JwtPhataAuthenticatedRequest[A]) => Future[Result]): Future[Result] = {
@@ -65,7 +66,8 @@ class JwtPhataAuthenticatedAction @Inject() (
 
     maybeSignedJWT.map { signedJWT =>
       val claimSet = signedJWT.getJWTClaimsSet
-      val fresh = claimSet.getExpirationTime.after(DateTime.now().toDate)
+      val fresh = claimSet.getExpirationTime.after(DateTime.now().toDate) &&
+        claimSet.getIssueTime.after(DateTime.now().minusDays(tokenExpirationInterval).toDate)
       val applicationMatches = Option(claimSet.getClaim("application")).contains(expectedApplication)
 
       if (fresh && applicationMatches) {

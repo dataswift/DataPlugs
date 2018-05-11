@@ -9,7 +9,6 @@
 package org.hatdex.dataplug.dao
 
 import javax.inject.{ Inject, Singleton }
-
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.OAuth1Info
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO

@@ -8,12 +8,15 @@
 
 package org.hatdex.dataplug.dao
 
+import akka.NotUsed
+import akka.stream.scaladsl.Source
 import javax.inject.{ Inject, Singleton }
 import org.hatdex.dataplug.actors.IoExecutionContext
 import org.hatdex.dataplug.dal.Tables
 import org.hatdex.dataplug.apiInterfaces.models._
 import org.hatdex.libs.dal.SlickPostgresDriver
 import org.hatdex.libs.dal.SlickPostgresDriver.api._
+import org.joda.time.DateTime
 import play.api.db.slick.{ DatabaseConfigProvider, HasDatabaseConfigProvider }
 import play.api.libs.json.Json
 
@@ -58,6 +61,20 @@ class DataPlugEndpointDAOImpl @Inject() (protected val dbConfigProvider: Databas
       .filter(_._2.active === true)
 
     db.run(q.result).map(_.map(resultRow => (resultRow._2.phata, fromDbModel(resultRow._1, resultRow._2))))
+  }
+
+  def retrieveAllActiveEndpointsStream: Source[(String, String, ApiEndpointVariant), NotUsed] = {
+    val newerThan = DateTime.now().minusDays(3).toLocalDateTime
+    val q = Tables.HatToken
+      .filter(_.dateCreated > newerThan)
+      .join(Tables.DataplugUser)
+      .on(_.hat === _.phata)
+      .filter(_._2.active === true)
+      .join(Tables.DataplugEndpoint)
+      .on(_._2.dataplugEndpoint === _.name)
+
+    Source.fromPublisher(db.stream(q.result.transactionally.withStatementParameters(fetchSize = 1000)))
+      .map(resultRow => (resultRow._1._2.phata, resultRow._1._1.accessToken, fromDbModel(resultRow._2, resultRow._1._2)))
   }
 
   /**

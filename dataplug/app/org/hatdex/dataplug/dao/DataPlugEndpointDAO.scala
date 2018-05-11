@@ -8,6 +8,8 @@
 
 package org.hatdex.dataplug.dao
 
+import akka.NotUsed
+import akka.stream.scaladsl.Source
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointStatus, ApiEndpointVariant }
 
 import scala.concurrent.Future
@@ -30,6 +32,8 @@ trait DataPlugEndpointDAO {
    * @return The list of tuples of PHATAs and corresponding endpoints
    */
   def retrieveAllEndpoints: Future[Seq[(String, ApiEndpointVariant)]]
+
+  def retrieveAllActiveEndpointsStream: Source[(String, String, ApiEndpointVariant), NotUsed]
 
   /**
    * Activates an API endpoint for a user

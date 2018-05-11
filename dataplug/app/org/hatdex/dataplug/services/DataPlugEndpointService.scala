@@ -8,6 +8,8 @@
 
 package org.hatdex.dataplug.services
 
+import akka.NotUsed
+import akka.stream.scaladsl.Source
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointStatus, ApiEndpointVariant, ApiEndpointVariantChoice }
 
 import scala.concurrent.Future
@@ -23,6 +25,8 @@ trait DataPlugEndpointService {
    * @return The list of tuples of PHATAs and corresponding endpoints
    */
   def retrieveAllEndpoints: Future[Seq[(String, ApiEndpointVariant)]]
+
+  def retrieveAllActiveEndpointsStream: Source[(String, String, ApiEndpointVariant), NotUsed]
 
   /**
    * Retrieves a user that matches the specified ID.
