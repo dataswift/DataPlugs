@@ -12,6 +12,7 @@ import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugFitbit.apiInterfaces.authProviders.FitbitProvider
 import play.api.Logger
 import play.api.http.Status._
+import play.api.libs.json.JsValue
 import play.api.libs.ws.WSClient
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -38,26 +39,7 @@ class FitbitProfileCheck @Inject() (
     Map(),
     Some(Map()))
 
-  def get(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext): Future[Seq[ApiEndpointVariantChoice]] = {
-    authenticateRequest(fetchParams, hatAddress, refreshToken = false).flatMap { requestParams =>
-      logger.info("Fitbit profile check authenticated")
-      buildRequest(requestParams).flatMap { response =>
-        response.status match {
-          case OK =>
-            logger.info(s"API endpoint FitbitProfile validated for $hatAddress")
-            Future.successful(staticEndpointChoices)
-
-          case _ =>
-            logger.warn(s"Could not validate FitbitProfile API endpoint $fetchParams - ${response.status}: ${response.body}")
-            Future.failed(SourceDataProcessingException("Could not validate FitbitProfile API endpoint"))
-        }
-      }
-    }.recover {
-      case e =>
-        logger.error(s"Failed to validate FitbitProfile API endpoint. Reason: ${e.getMessage}", e)
-        throw e
-    }
-  }
+  def generateEndpointChoices(responseBody: Option[JsValue]): Seq[ApiEndpointVariantChoice] = staticEndpointChoices
 
   def staticEndpointChoices: Seq[ApiEndpointVariantChoice] = {
     val profileVariant = ApiEndpointVariant(

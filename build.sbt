@@ -81,10 +81,10 @@ val dataplug = project
   .enablePlugins(SlickCodeGeneratorPlugin)
   .settings(slickCodegenSettings)
 
-lazy val dataplugFacebook = Project(id = "dataplug-facebook-v2", base = file("dataplug-facebook-v2"))
+lazy val dataplugFacebook = Project(id = "dataplug-facebook", base = file("dataplug-facebook"))
   .enablePlugins(BasicSettings)
   .settings(
-    name := "dataplug-facebook-v2",
+    name := "dataplug-facebook",
     sourceDirectory in Assets := file(s"${baseDirectory.value}/app/org/hatdex/dataplugFacebook/assets")
   )
   .enablePlugins(PlayScala, SbtWeb, SbtSassify)

@@ -21,7 +21,8 @@ import org.hatdex.dataplug.apiInterfaces.{ DataPlugOptionsCollector, DataPlugOpt
 import org.hatdex.dataplug.controllers.{ DataPlugViewSet, DataPlugViewSetDefault }
 import org.hatdex.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl, DataPlugSharedNotableDAO, DataPlugSharedNotableDAOImpl }
 import org.hatdex.dataplug.services._
-import org.hatdex.dataplug.utils.{ MailService, MailServiceImpl }
+import org.hatdex.libs.dal.SchemaMigration
+import org.hatdex.dataplug.dal.SchemaMigrationImpl
 import org.hatdex.dataplugFacebook.apiInterfaces._
 import play.api.Configuration
 import play.api.libs.concurrent.AkkaGuiceSupport
@@ -37,7 +38,6 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   def configure() {
     // Automatic database schema migrations
     bind[SchemaMigration].to[SchemaMigrationImpl]
-    bind[SchemaMigrationLauncher].asEagerSingleton()
     bind[StartupService].to[StartupServiceImpl].asEagerSingleton()
 
     bind[DataPlugEndpointDAO].to[DataPlugEndpointDAOImpl]

@@ -6,10 +6,12 @@
   -->
 
 <configuration>
+  <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel" />
+
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <target>System.out</target>
     <encoder>
-      <pattern>[%-5level] [%date{MM/dd/YYYY HH:mm:ss}] %logger{1} - %msg%n</pattern>
+      <pattern>[%level] [%date{YYYY-MM-dd HH:mm:ss}] %logger{1} - %msg%n</pattern>
     </encoder>
   </appender>
 
@@ -17,26 +19,28 @@
     <appender-ref ref="STDOUT" />
   </appender>
 
+  <!-- GENERAL APP LOGGERS -->
   <logger name="ch.qos.logback" level="WARN" />
   <logger name="play" level="INFO" />
-  <logger name="application" level="INFO" />
-  <logger name="org.hatdex.dataplug.utils.JwtPhataAuthenticatedAction" level="WARN" />
-  <logger name="org.hatdex.dataplug.utils.JwtPhataAwareAction" level="WARN" />
-
-  <logger name="org.hatdex.hat.api.services.HatClient" level="INFO" />
-  <logger name="NetworkUpdateService" level="INFO"/>
-  <logger name="HatClientActor" level="INFO" />
-
-  <logger name="JwtPhataAuthentication" level="INFO"/>
-  <logger name="SchemaMigration" level="INFO" />
-
-  <logger name="org.hatdex.dataplugFitbit" level="INFO" />
-  <logger name="org.hatdex.dataplug.*" level="INFO" />
-  <logger name="org.hatdex.dataplug.actors.PhataDataPlugVariantSyncer" level="DEBUG" />
-  <logger name="org.hatdex.dataplugFitbit.controllers.Api" level="DEBUG" />
-
   <logger name="http" level="INFO" />
-  <logger name="HatClientActor" level="WARN" />
+  <logger name="application" level="INFO" />
+
+  <!-- PLUG-SPECIFIC LOGGERS -->
+  <logger name="org.hatdex.dataplugFitbit" level="INFO" />
+  <logger name="org.hatdex.dataplugFitbit.apiInterfaces.*" level="INFO" />
+  <logger name="org.hatdex.dataplugFitbit.controllers.Api" level="INFO" />
+
+  <!-- CORE PLUG LOGGERS -->
+  <logger name="org.hatdex.dataplug.*" level="INFO" />
+  <logger name="org.hatdex.dataplug.actors.PhataDataPlugVariantSyncer" level="ERROR" />
+  <logger name="org.hatdex.dataplug.services.*" level="INFO" />
+  <logger name="org.hatdex.dataplug.controllers.*" level="INFO"/>
+  <logger name="org.hatdex.dataplug.utils.JwtPhataAuthenticatedAction" level="INFO" />
+  <logger name="org.hatdex.dataplug.utils.JwtPhataAwareAction" level="INFO" />
+
+  <!-- LIBRARY LOGGERS -->
+  <logger name="org.hatdex.dexter.actors.HatClientActor" level="INFO" />
+  <logger name="org.hatdex.hat.api.services.HatClient" level="INFO" />
 
   <root level="WARN">
     <appender-ref ref="ASYNCSTDOUT" />

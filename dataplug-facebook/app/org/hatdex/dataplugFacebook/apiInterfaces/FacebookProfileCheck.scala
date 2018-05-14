@@ -1,20 +1,17 @@
 package org.hatdex.dataplugFacebook.apiInterfaces
 
-import akka.actor.{ ActorRef, Scheduler }
+import akka.actor.Scheduler
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth2.FacebookProvider
-import org.hatdex.dataplug.actors.Errors.SourceDataProcessingException
 import org.hatdex.dataplug.apiInterfaces.DataPlugOptionsCollector
 import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpoint, _ }
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import play.api.Logger
-import play.api.http.Status._
+import play.api.libs.json.JsValue
 import play.api.libs.ws.WSClient
-
-import scala.concurrent.{ ExecutionContext, Future }
 
 class FacebookProfileCheck @Inject() (
     val wsClient: WSClient,
@@ -38,26 +35,7 @@ class FacebookProfileCheck @Inject() (
     Map(),
     Some(Map()))
 
-  def get(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext): Future[Seq[ApiEndpointVariantChoice]] = {
-    authenticateRequest(fetchParams, hatAddress, refreshToken = false).flatMap { requestParams =>
-      logger.info("Facebook profile check authenticated")
-      buildRequest(requestParams).flatMap { response =>
-        response.status match {
-          case OK =>
-            logger.info(s"API endpoint FacebookProfile validated for $hatAddress")
-            Future.successful(staticEndpointChoices)
-
-          case _ =>
-            logger.warn(s"Could not validate FacebookProfile API endpoint $fetchParams - ${response.status}: ${response.body}")
-            Future.failed(SourceDataProcessingException("Could not validate FacebookProfile API endpoint"))
-        }
-      }
-    }.recover {
-      case e =>
-        logger.error(s"Failed to validate FacebookProfile API endpoint. Reason: ${e.getMessage}", e)
-        throw e
-    }
-  }
+  def generateEndpointChoices(responseBody: Option[JsValue]): Seq[ApiEndpointVariantChoice] = staticEndpointChoices
 
   def staticEndpointChoices: Seq[ApiEndpointVariantChoice] = {
     val profileVariant = ApiEndpointVariant(

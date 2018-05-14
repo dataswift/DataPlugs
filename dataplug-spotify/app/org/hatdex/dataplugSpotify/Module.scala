@@ -20,6 +20,8 @@ import org.hatdex.dataplug.apiInterfaces.{ DataPlugOptionsCollector, DataPlugOpt
 import org.hatdex.dataplug.controllers.{ DataPlugViewSet, DataPlugViewSetDefault }
 import org.hatdex.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl }
 import org.hatdex.dataplug.services._
+import org.hatdex.libs.dal.SchemaMigration
+import org.hatdex.dataplug.dal.SchemaMigrationImpl
 import org.hatdex.dataplugSpotify.apiInterfaces._
 import org.hatdex.dataplugSpotify.apiInterfaces.authProviders.SpotifyProvider
 import play.api.Configuration
@@ -36,7 +38,6 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   def configure() {
     // Automatic database schema migrations
     bind[SchemaMigration].to[SchemaMigrationImpl]
-    bind[SchemaMigrationLauncher].asEagerSingleton()
     bind[StartupService].to[StartupServiceImpl].asEagerSingleton()
 
     bind[DataPlugEndpointDAO].to[DataPlugEndpointDAOImpl]
