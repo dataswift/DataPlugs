@@ -22,11 +22,12 @@ lazy val packageSettings = Seq(
 
 lazy val slickCodegenSettings = Seq(
   codegenPackageName in gentables := "org.hatdex.dataplug.dal",
-  codegenOutputDir in gentables := (baseDirectory.value / "app").getPath,
+  codegenBaseDir in gentables := (baseDirectory.value / "app").getPath,
   codegenClassName in gentables := "Tables",
   codegenExcludedTables in gentables := Seq("databasechangelog", "databasechangeloglock"),
   codegenDatabase in gentables := "devdb",
-  codegenConfig in gentables := "reference.conf"
+  codegenConfig in gentables := "reference.conf",
+  codegenEvolutions in gentables := "slick.dbs.default.schemaMigrations"
 )
 
 val dataplug = project
