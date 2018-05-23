@@ -1,21 +1,18 @@
 package org.hatdex.dataplugMonzo.apiInterfaces
 
+import akka.Done
 import akka.actor.{ ActorRef, Scheduler }
 import akka.util.Timeout
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import org.hatdex.commonPlay.utils.FutureTransformations
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
 import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod, ApiEndpointTableStructure }
 import org.hatdex.dataplug.services.UserService
-import org.hatdex.dataplug.utils.Mailer
+import org.hatdex.dataplug.utils.{ FutureTransformations, Mailer }
 import org.hatdex.dataplugMonzo.apiInterfaces.authProviders.MonzoProvider
 import org.hatdex.dataplugMonzo.models.{ MonzoAttachment, MonzoTransaction }
-import org.hatdex.hat.api.models.{ ApiDataRecord, ApiDataTable }
-import org.joda.time.DateTime
 import play.api.Logger
-import play.api.cache.CacheApi
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 
@@ -28,7 +25,6 @@ class MonzoTransactionsInterface @Inject() (
     val userService: UserService,
     val authInfoRepository: AuthInfoRepository,
     val tokenHelper: OAuth2TokenHelper,
-    val cacheApi: CacheApi,
     val mailer: Mailer,
     val scheduler: Scheduler,
     val provider: MonzoProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
@@ -96,13 +92,14 @@ class MonzoTransactionsInterface @Inject() (
     content: JsValue,
     hatAddress: String,
     hatClientActor: ActorRef,
-    fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Unit] = {
+    fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
     for {
       transactions <- FutureTransformations.transform(validateMinDataStructure(content))
       _ <- uploadHatData(namespace, endpoint, transactions, hatAddress, hatClientActor) // Upload the data
     } yield {
       logger.debug(s"Successfully synced new records for HAT $hatAddress")
+      Done
     }
   }
 
@@ -133,5 +130,6 @@ object MonzoTransactionsInterface {
     ApiEndpointMethod.Get("Get"),
     Map(),
     Map("account_id" -> "account_id", "expand[]" -> "merchant", "limit" -> resultsPerPage.toString),
-    Map())
+    Map(),
+    Some(Map()))
 }

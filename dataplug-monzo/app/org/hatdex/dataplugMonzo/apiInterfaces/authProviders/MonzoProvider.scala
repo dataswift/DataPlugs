@@ -1,17 +1,12 @@
 package org.hatdex.dataplugMonzo.apiInterfaces.authProviders
 
-import java.net.URLEncoder.encode
-
 import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.api.util.{ ExtractableRequest, HTTPLayer }
-import com.mohiva.play.silhouette.impl.exceptions.{ AccessDeniedException, ProfileRetrievalException, UnexpectedResponseException }
+import com.mohiva.play.silhouette.api.util.HTTPLayer
+import com.mohiva.play.silhouette.impl.exceptions.ProfileRetrievalException
 import com.mohiva.play.silhouette.impl.providers._
-import MonzoProvider._
-import com.mohiva.play.silhouette.api.exceptions.ConfigurationException
-import com.mohiva.play.silhouette.impl.providers.OAuth2Provider.{ AuthorizationError, AuthorizationURLUndefined }
-import play.api.libs.json.{ JsObject, JsValue }
+import org.hatdex.dataplugMonzo.apiInterfaces.authProviders.MonzoProvider._
 import play.api.http.HeaderNames._
-import play.api.mvc.{ Result, Results }
+import play.api.libs.json.{ JsObject, JsValue }
 
 import scala.concurrent.Future
 
@@ -44,7 +39,7 @@ trait BaseMonzoProvider extends OAuth2Provider {
    * @return On success the build social profile, otherwise a failure.
    */
   override protected def buildProfile(authInfo: OAuth2Info): Future[Profile] = {
-    httpLayer.url(urls("api")).withHeaders(AUTHORIZATION -> s"Bearer ${authInfo.accessToken}").get().flatMap { response =>
+    httpLayer.url(urls("api")).withHttpHeaders(AUTHORIZATION -> s"Bearer ${authInfo.accessToken}").get().flatMap { response =>
       val json = response.json
       (json \ "error").asOpt[JsObject] match {
         case Some(error) =>
@@ -86,10 +81,10 @@ class MonzoProfileParser extends SocialProfileParser[JsValue, CommonSocialProfil
  * @param settings      The provider settings.
  */
 class MonzoProvider(
-  protected val httpLayer: HTTPLayer,
-  protected val stateProvider: OAuth2StateProvider,
-  val settings: OAuth2Settings)
-    extends BaseMonzoProvider with CommonSocialProfileBuilder {
+    protected val httpLayer: HTTPLayer,
+    protected val stateHandler: SocialStateHandler,
+    val settings: OAuth2Settings)
+  extends BaseMonzoProvider with CommonSocialProfileBuilder {
 
   /**
    * The type of this class.
@@ -107,46 +102,7 @@ class MonzoProvider(
    * @param f A function which gets the settings passed and returns different settings.
    * @return An instance of the provider initialized with new settings.
    */
-  def withSettings(f: (Settings) => Settings) = new MonzoProvider(httpLayer, stateProvider, f(settings))
-
-  override def authenticate[B]()(implicit request: ExtractableRequest[B]): Future[Either[Result, OAuth2Info]] = {
-    request.extractString(Error).map {
-      case e @ AccessDenied => new AccessDeniedException(AuthorizationError.format(id, e))
-      case e                => new UnexpectedResponseException(AuthorizationError.format(id, e))
-    } match {
-      case Some(throwable) => Future.failed(throwable)
-      case None => request.extractString(Code) match {
-        // We're being redirected back from the authorization server with the access code
-        case Some(code) => stateProvider.validate.flatMap { state =>
-          logger.debug(s"Authenticate token, validating $state, code $code")
-          getAccessToken(code)
-            .andThen {
-              case r => logger.debug(s"Get access token responded $r")
-            }
-            .map(oauth2Info => Right(oauth2Info))
-        }
-        // There's no code in the request, this is the first step in the OAuth flow
-        case None => stateProvider.build.map { state =>
-          val serializedState = stateProvider.serialize(state)
-          val stateParam = if (serializedState.isEmpty) List() else List(State -> serializedState)
-          val params = settings.scope.foldLeft(List(
-            (ClientID, settings.clientID),
-            (RedirectURI, resolveCallbackURL(settings.redirectURL)),
-            (ResponseType, Code)) ++ stateParam ++ settings.authorizationParams.toList) {
-            case (p, s) => (Scope, s) :: p
-          }
-          val encodedParams = params.map { p => encode(p._1, "UTF-8") + "=" + encode(p._2, "UTF-8") }
-          val url = settings.authorizationURL.getOrElse {
-            throw new ConfigurationException(AuthorizationURLUndefined.format(id))
-          } + encodedParams.mkString("?", "&", "")
-          val redirect = stateProvider.publish(Results.Redirect(url), state)
-          logger.debug("[Silhouette][%s] Use authorization URL: %s".format(id, settings.authorizationURL))
-          logger.debug("[Silhouette][%s] Redirecting to: %s".format(id, url))
-          Left(redirect)
-        }
-      }
-    }
-  }
+  def withSettings(f: (Settings) => Settings) = new MonzoProvider(httpLayer, stateHandler, f(settings))
 }
 
 /**
