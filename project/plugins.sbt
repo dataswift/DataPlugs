@@ -22,4 +22,4 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-uglify" % "2.0.0")
 
 resolvers += "HAT Library Artifacts Snapshots" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com"
 
-addSbtPlugin("org.hatdex" % "sbt-slick-postgres-generator" % "0.0.7")
+addSbtPlugin("org.hatdex" % "sbt-slick-postgres-generator" % "0.0.9")

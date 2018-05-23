@@ -77,7 +77,7 @@ class MonzoProfileParser extends SocialProfileParser[JsValue, CommonSocialProfil
  * The Monzo OAuth2 Provider.
  *
  * @param httpLayer     The HTTP layer implementation.
- * @param stateProvider The state provider implementation.
+ * @param stateHandler The state provider implementation.
  * @param settings      The provider settings.
  */
 class MonzoProvider(

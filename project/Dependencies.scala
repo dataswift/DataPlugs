@@ -25,11 +25,11 @@ object Dependencies {
 
   object Library {
     object HATDeX {
-      private val version = "2.5.3-SNAPSHOT"
+      private val version = "2.6.0-SNAPSHOT"
       val hatClient = "org.hatdex" %% "hat-client-scala-play" % version
       val dexClient = "org.hatdex" %% "dex-client-scala-play" % version
       val dexter = "org.hatdex" %% "dexter" % "1.4.3-SNAPSHOT"
-      val codegen = "org.hatdex" %% "slick-postgres-driver" % "0.0.7"
+      val codegen = "org.hatdex" %% "slick-postgres-driver" % "0.0.9"
     }
 
     object Play {
@@ -46,16 +46,11 @@ object Dependencies {
       val typesafeConfigExtras = "com.iheart" %% "ficus" % "1.3.4"
       val playSlick = "com.typesafe.play" %% "play-slick" % "3.0.3"
 
-      object Specs2 {
-        private val version = "3.8.9"
-        val matcherExtra = "org.specs2" %% "specs2-matcher-extra" % version
-        val mock = "org.specs2" %% "specs2-mock" % version
-      }
       object Jwt {
-        private val bouncyCastleVersion = "1.58"
+        private val bouncyCastleVersion = "1.59"
         val bouncyCastle = "org.bouncycastle" % "bcprov-jdk15on" % bouncyCastleVersion
         val bouncyCastlePkix = "org.bouncycastle" % "bcpkix-jdk15on" % bouncyCastleVersion
-        val nimbusDsJwt = "com.nimbusds" % "nimbus-jose-jwt" % "4.22"
+        val nimbusDsJwt = "com.nimbusds" % "nimbus-jose-jwt" % "4.41.2"
       }
       object Db {
         val jdbc = "com.typesafe.play" %% "play-jdbc" % version
@@ -80,7 +75,7 @@ object Dependencies {
     }
 
     object Specs2 {
-      private val version = "3.6.6"
+      private val version = "3.9.5"
       val core = "org.specs2" %% "specs2-core" % version
       val matcherExtra = "org.specs2" %% "specs2-matcher-extra" % version
       val mock = "org.specs2" %% "specs2-mock" % version

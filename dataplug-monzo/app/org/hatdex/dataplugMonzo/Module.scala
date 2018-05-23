@@ -89,7 +89,7 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
    * Provides the Monzo provider.
    *
    * @param httpLayer The HTTP layer implementation.
-   * @param stateProvider The OAuth2 state provider implementation.
+   * @param stateHandler The OAuth2 state provider implementation.
    * @param configuration The Play configuration.
    * @return The Monzo provider.
    */

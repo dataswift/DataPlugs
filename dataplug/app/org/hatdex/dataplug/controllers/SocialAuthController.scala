@@ -9,7 +9,6 @@
 package org.hatdex.dataplug.controllers
 
 import javax.inject.Inject
-
 import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.api.exceptions.ProviderException
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
@@ -19,7 +18,8 @@ import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.{ PhataAuthenticationEnvironment, SilhouettePhataAuthenticationController }
 import play.api.i18n.{ I18nSupport, Messages, MessagesApi }
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.ControllerComponents
+import play.api.mvc.{ AnyContent, ControllerComponents }
+import play.mvc.Action
 
 import scala.concurrent.Future
 

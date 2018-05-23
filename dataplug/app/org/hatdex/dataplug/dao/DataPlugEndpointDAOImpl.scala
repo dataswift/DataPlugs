@@ -14,10 +14,10 @@ import javax.inject.{ Inject, Singleton }
 import org.hatdex.dataplug.actors.IoExecutionContext
 import org.hatdex.dataplug.dal.Tables
 import org.hatdex.dataplug.apiInterfaces.models._
-import org.hatdex.dataplug.models.HatAccessCredentials
 import org.hatdex.libs.dal.SlickPostgresDriver
 import org.hatdex.libs.dal.SlickPostgresDriver.api._
 import org.joda.time.DateTime
+import play.api.Logger
 import play.api.db.slick.{ DatabaseConfigProvider, HasDatabaseConfigProvider }
 import play.api.libs.json.Json
 
@@ -34,6 +34,7 @@ class DataPlugEndpointDAOImpl @Inject() (protected val dbConfigProvider: Databas
   import org.hatdex.dataplug.apiInterfaces.models.JsonProtocol._
 
   implicit val ec: ExecutionContext = IoExecutionContext.ioThreadPool
+  private val logger = Logger(this.getClass)
 
   /**
    * Retrieves a user that matches the specified ID.
@@ -45,7 +46,7 @@ class DataPlugEndpointDAOImpl @Inject() (protected val dbConfigProvider: Databas
     val q = Tables.DataplugEndpoint
       .join(Tables.DataplugUser)
       .on(_.name === _.dataplugEndpoint)
-      .filter(_._2.active === true)
+      .filter(q1 => q1._2.phata === phata && q1._2.active === true)
 
     db.run(q.result).map(_.map(resultRow => fromDbModel(resultRow._1, resultRow._2)))
   }
@@ -86,6 +87,7 @@ class DataPlugEndpointDAOImpl @Inject() (protected val dbConfigProvider: Databas
    */
   def activateEndpoint(phata: String, plugName: String, variant: Option[String], configuration: Option[ApiEndpointCall]): Future[Done] = {
     import JsonProtocol.endpointCallFormat
+    logger.debug(s"activating endpoint for $phata/$plugName, variant: $variant, config: $configuration")
     val q = for {
       rowsAffected <- Tables.DataplugUser
         .filter(user => user.phata === phata && user.dataplugEndpoint === plugName && user.endpointVariant === variant)

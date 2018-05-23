@@ -41,7 +41,8 @@ class UserDAOImpl @Inject() (protected val dbConfigProvider: DatabaseConfigProvi
     val q = for {
       ((user, _), maybeUserLinkUser) <- Tables.UserUser
         .filter(u => u.providerId === loginInfo.providerID && u.userId === loginInfo.providerKey)
-        .joinLeft(Tables.UserLink).on((u, l) => u.providerId === l.masterProviderId && u.userId === l.masterUserId)
+        .joinLeft(Tables.UserLink.filter(ul => ul.masterProviderId === loginInfo.providerID && ul.masterUserId === loginInfo.providerKey).sortBy(_.created.desc).take(1))
+        .on((u, l) => u.providerId === l.masterProviderId && u.userId === l.masterUserId)
         .joinLeft(Tables.UserLinkedUser).on((q1, lu) =>
           q1._2.map(_.linkedProviderId) === lu.providerId && q1._2.map(_.linkedUserId) === lu.userId)
     } yield (user, maybeUserLinkUser)
@@ -86,14 +87,25 @@ class UserDAOImpl @Inject() (protected val dbConfigProvider: DatabaseConfigProvi
    * @param linkedLoginInfo The login info of the user to link.
    */
   def link(mainLoginInfo: LoginInfo, linkedLoginInfo: LoginInfo): Future[Unit] = {
-    val a = Tables.UserLink += Tables.UserLinkRow(
-      0,
-      mainLoginInfo.providerID,
-      mainLoginInfo.providerKey,
-      linkedLoginInfo.providerID,
-      linkedLoginInfo.providerKey,
-      DateTime.now().toLocalDateTime)
+    val q = for {
+      rowsAffected <- Tables.UserLink
+        .filter(u => u.masterProviderId === mainLoginInfo.providerID && u.masterUserId === mainLoginInfo.providerKey &&
+          u.linkedProviderId === linkedLoginInfo.providerID && u.linkedUserId === linkedLoginInfo.providerKey)
+        .map(_.created)
+        .update(DateTime.now().toLocalDateTime)
+      result <- rowsAffected match {
+        case 0 => Tables.UserLink += Tables.UserLinkRow(
+          0,
+          mainLoginInfo.providerID,
+          mainLoginInfo.providerKey,
+          linkedLoginInfo.providerID,
+          linkedLoginInfo.providerKey,
+          DateTime.now().toLocalDateTime)
+        case 1 => DBIO.successful(1)
+        case n => DBIO.failed(new RuntimeException(s"Expected 0 or 1 change, not $n linking user ${mainLoginInfo.providerID}:${mainLoginInfo.providerKey} to ${linkedLoginInfo.providerID}:${linkedLoginInfo.providerKey}"))
+      }
+    } yield result
 
-    db.run(a).map(_ => Unit)
+    db.run(q).map(_ => Unit)
   }
 }

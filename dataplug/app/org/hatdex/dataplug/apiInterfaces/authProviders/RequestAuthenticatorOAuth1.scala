@@ -48,8 +48,8 @@ trait RequestAuthenticatorOAuth1 extends RequestAuthenticator {
       path.replace(s"[${parameter._1}]", URLEncoder.encode(parameter._2, "UTF-8"))
     }
     val wsRequest = wsClient.url(params.url + path)
-      .withQueryString(params.queryParameters.toList: _*)
-      .withHeaders(params.headers.toList: _*)
+      .withQueryStringParameters(params.queryParameters.toList: _*)
+      .withHttpHeaders(params.headers.toList: _*)
 
     val response = eventualAuthInfo flatMap { authInfo =>
       val signedRequest = wsRequest.sign(oauth1service.sign(authInfo))
