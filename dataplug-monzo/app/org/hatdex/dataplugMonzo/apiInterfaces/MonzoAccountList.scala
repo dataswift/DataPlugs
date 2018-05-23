@@ -11,7 +11,6 @@ import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugMonzo.apiInterfaces.authProviders.MonzoProvider
 import play.api.Logger
-import play.api.cache.CacheApi
 import play.api.http.Status._
 import play.api.libs.json.JsValue
 import play.api.libs.ws.WSClient
@@ -22,7 +21,6 @@ class MonzoAccountList @Inject() (
     val wsClient: WSClient,
     val userService: UserService,
     val authInfoRepository: AuthInfoRepository,
-    val cacheApi: CacheApi,
     val tokenHelper: OAuth2TokenHelper,
     val mailer: Mailer,
     val provider: MonzoProvider) extends DataPlugOptionsCollector with RequestAuthenticatorOAuth2 {
@@ -37,7 +35,8 @@ class MonzoAccountList @Inject() (
     ApiEndpointMethod.Get("Get"),
     Map(),
     Map(),
-    Map())
+    Map(),
+    Some(Map()))
 
   def get(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext): Future[Seq[ApiEndpointVariantChoice]] = {
     val authenticatedFetchParameters = authenticateRequest(fetchParams, hatAddress)
@@ -70,5 +69,7 @@ class MonzoAccountList @Inject() (
         Future.failed(e)
     }
   }
+
+  def staticEndpointChoices: Seq[ApiEndpointVariantChoice] = Seq()
 
 }

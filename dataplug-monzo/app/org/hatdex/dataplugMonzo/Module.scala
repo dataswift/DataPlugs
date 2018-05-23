@@ -20,6 +20,8 @@ import org.hatdex.dataplug.apiInterfaces.{ DataPlugOptionsCollector, DataPlugOpt
 import org.hatdex.dataplug.controllers.{ DataPlugViewSet, DataPlugViewSetDefault }
 import org.hatdex.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl }
 import org.hatdex.dataplug.services._
+import org.hatdex.libs.dal.SchemaMigration
+import org.hatdex.dataplug.dal.SchemaMigrationImpl
 import org.hatdex.dataplugMonzo.apiInterfaces.authProviders.MonzoProvider
 import org.hatdex.dataplugMonzo.apiInterfaces.{ MonzoAccountList, MonzoTransactionsInterface }
 import play.api.Configuration
@@ -36,7 +38,6 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   def configure() {
     // Automatic database schema migrations
     bind[SchemaMigration].to[SchemaMigrationImpl]
-    bind[SchemaMigrationLauncher].asEagerSingleton()
     bind[StartupService].to[StartupServiceImpl].asEagerSingleton()
 
     bind[DataPlugEndpointDAO].to[DataPlugEndpointDAOImpl]
@@ -58,8 +59,7 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
     monzoTransactionsInterface: MonzoTransactionsInterface): DataPlugRegistry = {
 
     DataPlugRegistry(Seq(
-      monzoTransactionsInterface
-    ))
+      monzoTransactionsInterface))
   }
 
   @Provides
@@ -82,24 +82,23 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
     monzoProvider: MonzoProvider): SocialProviderRegistry = {
 
     SocialProviderRegistry(Seq(
-      monzoProvider
-    ))
+      monzoProvider))
   }
 
   /**
    * Provides the Monzo provider.
    *
    * @param httpLayer The HTTP layer implementation.
-   * @param stateProvider The OAuth2 state provider implementation.
+   * @param stateHandler The OAuth2 state provider implementation.
    * @param configuration The Play configuration.
    * @return The Monzo provider.
    */
   @Provides
   def provideMonzoProvider(
     httpLayer: HTTPLayer,
-    stateProvider: OAuth2StateProvider,
+    stateHandler: SocialStateHandler,
     configuration: Configuration): MonzoProvider = {
-    new MonzoProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.monzo"))
+    new MonzoProvider(httpLayer, stateHandler, configuration.underlying.as[OAuth2Settings]("silhouette.monzo"))
   }
 
   @Provides

@@ -44,7 +44,7 @@ trait BaseMonzoProvider extends OAuth2Provider {
    * @return On success the build social profile, otherwise a failure.
    */
   override protected def buildProfile(authInfo: OAuth2Info): Future[Profile] = {
-    httpLayer.url(urls("api")).withHeaders(AUTHORIZATION -> s"Bearer ${authInfo.accessToken}").get().flatMap { response =>
+    httpLayer.url(urls("api")).withHttpHeaders(AUTHORIZATION -> s"Bearer ${authInfo.accessToken}").get().flatMap { response =>
       val json = response.json
       (json \ "error").asOpt[JsObject] match {
         case Some(error) =>
@@ -82,14 +82,14 @@ class MonzoProfileParser extends SocialProfileParser[JsValue, CommonSocialProfil
  * The Monzo OAuth2 Provider.
  *
  * @param httpLayer     The HTTP layer implementation.
- * @param stateProvider The state provider implementation.
+ * @param stateHandler The state provider implementation.
  * @param settings      The provider settings.
  */
 class MonzoProvider(
-  protected val httpLayer: HTTPLayer,
-  protected val stateProvider: OAuth2StateProvider,
-  val settings: OAuth2Settings)
-    extends BaseMonzoProvider with CommonSocialProfileBuilder {
+    protected val httpLayer: HTTPLayer,
+    protected val stateHandler: SocialStateHandler,
+    val settings: OAuth2Settings)
+  extends BaseMonzoProvider with CommonSocialProfileBuilder {
 
   /**
    * The type of this class.

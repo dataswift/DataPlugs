@@ -6,20 +6,20 @@ import org.joda.time.DateTime
 import play.api.libs.json._
 
 case class MonzoMerchantMetadata(
-  created_for_merchant: Option[String],
-  created_for_transaction: Option[String],
-  enriched_from_settlement: Option[String],
-  foursquare_category: Option[String],
-  foursquare_category_icon: Option[String],
-  foursquare_id: Option[String],
-  foursquare_website: Option[String],
-  google_places_icon: Option[String],
-  google_places_id: Option[String],
-  google_places_name: Option[String],
-  suggested_name: Option[String],
-  suggested_tags: Option[String],
-  twitter_id: Option[String],
-  website: Option[String])
+    created_for_merchant: Option[String],
+    created_for_transaction: Option[String],
+    enriched_from_settlement: Option[String],
+    foursquare_category: Option[String],
+    foursquare_category_icon: Option[String],
+    foursquare_id: Option[String],
+    foursquare_website: Option[String],
+    google_places_icon: Option[String],
+    google_places_id: Option[String],
+    google_places_name: Option[String],
+    suggested_name: Option[String],
+    suggested_tags: Option[String],
+    twitter_id: Option[String],
+    website: Option[String])
 
 object MonzoMerchantMetadata {
   val dummyValue = MonzoMerchantMetadata(
@@ -40,17 +40,17 @@ object MonzoMerchantMetadata {
 }
 
 case class MonzoAddress(
-  short_formatted: Option[String],
-  formatted: Option[String],
-  address: Option[String],
-  city: Option[String],
-  region: Option[String],
-  country: Option[String],
-  postcode: Option[String],
-  latitude: Option[Double],
-  longitude: Option[Double],
-  zoom_level: Option[Int],
-  approximate: Option[Boolean])
+    short_formatted: Option[String],
+    formatted: Option[String],
+    address: Option[String],
+    city: Option[String],
+    region: Option[String],
+    country: Option[String],
+    postcode: Option[String],
+    latitude: Option[Double],
+    longitude: Option[Double],
+    zoom_level: Option[Int],
+    approximate: Option[Boolean])
 
 object MonzoAddress {
   val dummyEntity = MonzoAddress(
@@ -68,19 +68,19 @@ object MonzoAddress {
 }
 
 case class MonzoMerchant(
-  id: String,
-  group_id: Option[String],
-  created: DateTime,
-  name: String,
-  logo: Option[String],
-  emoji: Option[String],
-  category: String,
-  online: Boolean,
-  atm: Option[Boolean],
-  address: Option[MonzoAddress],
-  updated: Option[DateTime],
-  metadata: Option[MonzoMerchantMetadata],
-  disabled_feedback: Option[Boolean])
+    id: String,
+    group_id: Option[String],
+    created: DateTime,
+    name: String,
+    logo: Option[String],
+    emoji: Option[String],
+    category: String,
+    online: Boolean,
+    atm: Option[Boolean],
+    address: Option[MonzoAddress],
+    updated: Option[DateTime],
+    metadata: Option[MonzoMerchantMetadata],
+    disabled_feedback: Option[Boolean])
 
 object MonzoMerchant {
   val dummyEntity = MonzoMerchant(
