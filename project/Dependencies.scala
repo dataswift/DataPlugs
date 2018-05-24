@@ -42,8 +42,7 @@ object Dependencies {
       val jsonJoda = "com.typesafe.play" %% "play-json-joda" % "2.6.9"
       val mailer = "com.typesafe.play" %% "play-mailer" % "6.0.1"
       val mailerGuice = "com.typesafe.play" %% "play-mailer-guice" % "6.0.1"
-      val jsonDerivedCodecs = "org.julienrf" % "play-json-derived-codecs_2.11" % "3.3"
-      val typesafeConfigExtras = "com.iheart" %% "ficus" % "1.3.4"
+      val typesafeConfigExtras = "com.iheart" %% "ficus" % "1.4.3"
       val playSlick = "com.typesafe.play" %% "play-slick" % "3.0.3"
 
       object Jwt {
@@ -51,12 +50,6 @@ object Dependencies {
         val bouncyCastle = "org.bouncycastle" % "bcprov-jdk15on" % bouncyCastleVersion
         val bouncyCastlePkix = "org.bouncycastle" % "bcpkix-jdk15on" % bouncyCastleVersion
         val nimbusDsJwt = "com.nimbusds" % "nimbus-jose-jwt" % "4.41.2"
-      }
-      object Db {
-        val jdbc = "com.typesafe.play" %% "play-jdbc" % version
-        val postgres = "org.postgresql" % "postgresql" % "9.4-1206-jdbc4"
-        val anorm = "com.typesafe.play" %% "anorm" % "2.5.3"
-        val liquibase = "org.liquibase" % "liquibase-maven-plugin" % "3.5.1"
       }
 
       object Utils {
@@ -66,7 +59,7 @@ object Dependencies {
       }
 
       object Silhouette {
-        val version = "5.0.3"
+        val version = "5.0.4"
         val passwordBcrypt = "com.mohiva" %% "play-silhouette-password-bcrypt" % version
         val persistence = "com.mohiva" %% "play-silhouette-persistence" % version
         val cryptoJca = "com.mohiva" %% "play-silhouette-crypto-jca" % version
@@ -82,7 +75,6 @@ object Dependencies {
     }
 
     object Utils {
-      val pegdown = "org.pegdown" % "pegdown" % "1.6.0"
       val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.0.9"
     }
 
