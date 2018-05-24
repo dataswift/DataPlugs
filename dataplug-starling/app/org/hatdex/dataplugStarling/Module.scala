@@ -5,7 +5,7 @@
  * Written by Andrius Aucinas <andrius.aucinas@hatdex.org>, 10 2016
  */
 
-package org.hatdex.dataplugSpotify
+package org.hatdex.dataplugStarling
 
 import akka.actor.{ActorSystem, Scheduler}
 import com.google.inject.{AbstractModule, Provides}
@@ -22,8 +22,10 @@ import org.hatdex.dataplug.dao.{DataPlugEndpointDAO, DataPlugEndpointDAOImpl}
 import org.hatdex.dataplug.services._
 import org.hatdex.libs.dal.SchemaMigration
 import org.hatdex.dataplug.dal.SchemaMigrationImpl
-import org.hatdex.dataplugSpotify.apiInterfaces.authProviders.SpotifyProvider
-import org.hatdex.dataplugSpotify.apiInterfaces.{SpotifyProfileCheck, SpotifyProfileInterface, SpotifyRecentlyPlayedInterface}
+import org.hatdex.dataplugStarling.apiInterfaces._
+import org.hatdex.dataplugStarling.apiInterfaces.authProviders.StarlingProvider
+import org.hatdex.dataplugStarling.apiInterfaces.authProviders.SpotifyProvider
+import org.hatdex.dataplugStarling.apiInterfaces.{StarlingProfileCheck, StarlingProfileInterface, StarlingTransactionsInterface}
 import play.api.Configuration
 import play.api.libs.concurrent.AkkaGuiceSupport
 
@@ -57,8 +59,8 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
    */
   @Provides
   def provideDataPlugCollection(
-    spotifyProfileInterface: SpotifyProfileInterface,
-    spotifyRecentlyPlayedInterface: SpotifyRecentlyPlayedInterface): DataPlugRegistry = {
+                                 spotifyProfileInterface: StarlingProfileInterface,
+                                 spotifyRecentlyPlayedInterface: StarlingTransactionsInterface): DataPlugRegistry = {
 
     DataPlugRegistry(Seq(spotifyProfileInterface, spotifyRecentlyPlayedInterface))
   }
@@ -66,7 +68,7 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   @Provides
   def provideDataPlugEndpointChoiceCollection(
     spotifyProvider: SpotifyProvider,
-    spotifyProfileCheck: SpotifyProfileCheck): DataPlugOptionsCollectorRegistry = {
+    spotifyProfileCheck: StarlingProfileCheck): DataPlugOptionsCollectorRegistry = {
 
     val variants: Seq[(Provider, DataPlugOptionsCollector)] = Seq((spotifyProvider, spotifyProfileCheck))
     DataPlugOptionsCollectorRegistry(variants)
