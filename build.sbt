@@ -47,10 +47,6 @@ val dataplug = project
       Library.HATDeX.dexter,
       Library.HATDeX.hatClient,
       Library.Play.cache,
-      Library.Play.Db.anorm,
-      Library.Play.Db.jdbc,
-      Library.Play.Db.liquibase,
-      Library.Play.Db.postgres,
       Library.Play.json,
       Library.Play.jsonJoda,
       Library.Play.Jwt.bouncyCastle,
@@ -59,20 +55,18 @@ val dataplug = project
       Library.Play.mailer,
       Library.Play.mailerGuice,
       Library.Play.playSlick,
+      Library.Play.Silhouette.cryptoJca,
       Library.Play.Silhouette.passwordBcrypt,
       Library.Play.Silhouette.persistence,
-      Library.Play.Silhouette.cryptoJca,
       Library.Play.Silhouette.silhouette,
-      Library.Play.specs2,
-      Library.Play.Specs2.matcherExtra,
-      Library.Play.Specs2.mock,
       Library.Play.test,
       Library.Play.typesafeConfigExtras,
-      Library.Play.ws,
       Library.Play.Utils.playBootstrap,
-      Library.scalaGuice,
+      Library.Play.ws,
       Library.Specs2.core,
-      Library.Utils.pegdown
+      Library.Specs2.matcherExtra,
+      Library.Specs2.mock,
+      Library.scalaGuice
     )
   )
   .enablePlugins(PlayScala, SbtWeb, SbtSassify)

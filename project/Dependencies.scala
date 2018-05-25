@@ -25,7 +25,7 @@ object Dependencies {
 
   object Library {
     object HATDeX {
-      private val version = "2.5.3-SNAPSHOT"
+      private val version = "2.6.0-SNAPSHOT"
       val hatClient = "org.hatdex" %% "hat-client-scala-play" % version
       val dexClient = "org.hatdex" %% "dex-client-scala-play" % version
       val dexter = "org.hatdex" %% "dexter" % "1.4.3-SNAPSHOT"
@@ -42,26 +42,14 @@ object Dependencies {
       val jsonJoda = "com.typesafe.play" %% "play-json-joda" % "2.6.9"
       val mailer = "com.typesafe.play" %% "play-mailer" % "6.0.1"
       val mailerGuice = "com.typesafe.play" %% "play-mailer-guice" % "6.0.1"
-      val jsonDerivedCodecs = "org.julienrf" % "play-json-derived-codecs_2.11" % "3.3"
-      val typesafeConfigExtras = "com.iheart" %% "ficus" % "1.3.4"
+      val typesafeConfigExtras = "com.iheart" %% "ficus" % "1.4.3"
       val playSlick = "com.typesafe.play" %% "play-slick" % "3.0.3"
 
-      object Specs2 {
-        private val version = "3.8.9"
-        val matcherExtra = "org.specs2" %% "specs2-matcher-extra" % version
-        val mock = "org.specs2" %% "specs2-mock" % version
-      }
       object Jwt {
-        private val bouncyCastleVersion = "1.58"
+        private val bouncyCastleVersion = "1.59"
         val bouncyCastle = "org.bouncycastle" % "bcprov-jdk15on" % bouncyCastleVersion
         val bouncyCastlePkix = "org.bouncycastle" % "bcpkix-jdk15on" % bouncyCastleVersion
-        val nimbusDsJwt = "com.nimbusds" % "nimbus-jose-jwt" % "4.22"
-      }
-      object Db {
-        val jdbc = "com.typesafe.play" %% "play-jdbc" % version
-        val postgres = "org.postgresql" % "postgresql" % "9.4-1206-jdbc4"
-        val anorm = "com.typesafe.play" %% "anorm" % "2.5.3"
-        val liquibase = "org.liquibase" % "liquibase-maven-plugin" % "3.5.1"
+        val nimbusDsJwt = "com.nimbusds" % "nimbus-jose-jwt" % "4.41.2"
       }
 
       object Utils {
@@ -71,7 +59,7 @@ object Dependencies {
       }
 
       object Silhouette {
-        val version = "5.0.3"
+        val version = "5.0.4"
         val passwordBcrypt = "com.mohiva" %% "play-silhouette-password-bcrypt" % version
         val persistence = "com.mohiva" %% "play-silhouette-persistence" % version
         val cryptoJca = "com.mohiva" %% "play-silhouette-crypto-jca" % version
@@ -80,14 +68,13 @@ object Dependencies {
     }
 
     object Specs2 {
-      private val version = "3.6.6"
+      private val version = "3.9.5"
       val core = "org.specs2" %% "specs2-core" % version
       val matcherExtra = "org.specs2" %% "specs2-matcher-extra" % version
       val mock = "org.specs2" %% "specs2-mock" % version
     }
 
     object Utils {
-      val pegdown = "org.pegdown" % "pegdown" % "1.6.0"
       val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.0.9"
     }
 

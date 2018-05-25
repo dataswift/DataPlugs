@@ -5,12 +5,11 @@ import akka.actor.{ ActorRef, Scheduler }
 import akka.util.Timeout
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import org.hatdex.dataplug.utils.FutureTransformations
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
 import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod, ApiEndpointTableStructure }
 import org.hatdex.dataplug.services.UserService
-import org.hatdex.dataplug.utils.Mailer
+import org.hatdex.dataplug.utils.{ FutureTransformations, Mailer }
 import org.hatdex.dataplugMonzo.apiInterfaces.authProviders.MonzoProvider
 import org.hatdex.dataplugMonzo.models.{ MonzoAttachment, MonzoTransaction }
 import play.api.Logger

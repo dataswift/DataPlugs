@@ -115,6 +115,8 @@ case class MonzoAttachment(
 }
 
 object MonzoAttachment extends ApiEndpointTableStructure {
+  import play.api.libs.json.JodaWrites._
+  import play.api.libs.json.JodaReads._
   implicit val monzoAttachmentFormat = Json.format[MonzoAttachment]
 
   val dummyEntity = MonzoAttachment(

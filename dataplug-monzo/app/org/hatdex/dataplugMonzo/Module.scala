@@ -18,10 +18,10 @@ import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.dataplug.actors.DataPlugManagerActor
 import org.hatdex.dataplug.apiInterfaces.{ DataPlugOptionsCollector, DataPlugOptionsCollectorRegistry, DataPlugRegistry }
 import org.hatdex.dataplug.controllers.{ DataPlugViewSet, DataPlugViewSetDefault }
+import org.hatdex.dataplug.dal.SchemaMigrationImpl
 import org.hatdex.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl }
 import org.hatdex.dataplug.services._
 import org.hatdex.libs.dal.SchemaMigration
-import org.hatdex.dataplug.dal.SchemaMigrationImpl
 import org.hatdex.dataplugMonzo.apiInterfaces.authProviders.MonzoProvider
 import org.hatdex.dataplugMonzo.apiInterfaces.{ MonzoAccountList, MonzoTransactionsInterface }
 import play.api.Configuration

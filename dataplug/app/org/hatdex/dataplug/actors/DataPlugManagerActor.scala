@@ -146,24 +146,14 @@ class DataPlugManagerActor @Inject() (
     val hatActorProps = HatClientActor.props(ws, protocol, HatAccessCredentials(phata, accessToken))
     logger.debug(s"Creating syncer actor for $phata, protocol - $protocol, access token - $accessToken")
 
-    def hatActorSupervisorProps(hatActorProps: Props): Props = BackoffSupervisor.props(
-      // Backing off supervisor with 20% "noise" to vary the intervals slightly
-      Backoff.onStop(hatActorProps, childName = actorKey,
-        minBackoff = 10.seconds, maxBackoff = 120.seconds, randomFactor = 0.2))
-
-    def syncerActor(hatActor: ActorRef): Props = {
-      val syncerProps = PhataDataPlugVariantSyncer.props(phata, endpointInterface, variant,
-        ws, hatActor, throttledSyncActor, dataplugEndpointService, mailer)(ec)
-
-      BackoffSupervisor.props(
-        // Backing off supervisor with 20% "noise" to vary the intervals slightly
-        Backoff.onStop(syncerProps, childName = actorKey,
-          minBackoff = 10.seconds, maxBackoff = 120.seconds, randomFactor = 0.2))
+    def syncActor(hatActor: ActorRef): Props = {
+      PhataDataPlugVariantSyncer.props(phata, endpointInterface, variant, ws,
+        hatActor, throttledSyncActor, dataplugEndpointService, mailer)(ec)
     }
 
     for {
-      hatActor <- launchActor(hatActorSupervisorProps(hatActorProps), s"hat:$phata")
-      syncerActor <- launchActor(syncerActor(hatActor), s"$actorKey-supervisor")
-    } yield syncerActor
+      hatActor <- launchActor(hatActorProps, s"hat:$phata")
+      syncActor <- launchActor(syncActor(hatActor), s"$actorKey")
+    } yield syncActor
   }
 }
