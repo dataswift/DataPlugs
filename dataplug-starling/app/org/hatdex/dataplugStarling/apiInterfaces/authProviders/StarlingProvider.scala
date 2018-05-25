@@ -5,7 +5,7 @@ import com.mohiva.play.silhouette.api.crypto.Base64
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.exceptions.ProfileRetrievalException
 import com.mohiva.play.silhouette.impl.providers._
-import SpotifyProvider._
+import StarlingProvider._
 import play.api.http.HeaderNames._
 import play.api.libs.json.{ JsArray, JsValue }
 

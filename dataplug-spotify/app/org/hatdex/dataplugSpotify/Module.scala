@@ -7,8 +7,8 @@
 
 package org.hatdex.dataplugSpotify
 
-import akka.actor.{ActorSystem, Scheduler}
-import com.google.inject.{AbstractModule, Provides}
+import akka.actor.{ ActorSystem, Scheduler }
+import com.google.inject.{ AbstractModule, Provides }
 import com.mohiva.play.silhouette.api.Provider
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.providers._
@@ -16,14 +16,14 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.dataplug.actors.DataPlugManagerActor
-import org.hatdex.dataplug.apiInterfaces.{DataPlugOptionsCollector, DataPlugOptionsCollectorRegistry, DataPlugRegistry}
-import org.hatdex.dataplug.controllers.{DataPlugViewSet, DataPlugViewSetDefault}
-import org.hatdex.dataplug.dao.{DataPlugEndpointDAO, DataPlugEndpointDAOImpl}
+import org.hatdex.dataplug.apiInterfaces.{ DataPlugOptionsCollector, DataPlugOptionsCollectorRegistry, DataPlugRegistry }
+import org.hatdex.dataplug.controllers.{ DataPlugViewSet, DataPlugViewSetDefault }
+import org.hatdex.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl }
 import org.hatdex.dataplug.services._
 import org.hatdex.libs.dal.SchemaMigration
 import org.hatdex.dataplug.dal.SchemaMigrationImpl
 import org.hatdex.dataplugSpotify.apiInterfaces.authProviders.SpotifyProvider
-import org.hatdex.dataplugSpotify.apiInterfaces.{SpotifyProfileCheck, SpotifyProfileInterface, SpotifyRecentlyPlayedInterface}
+import org.hatdex.dataplugSpotify.apiInterfaces.{ SpotifyProfileCheck, SpotifyProfileInterface, SpotifyRecentlyPlayedInterface }
 import play.api.Configuration
 import play.api.libs.concurrent.AkkaGuiceSupport
 

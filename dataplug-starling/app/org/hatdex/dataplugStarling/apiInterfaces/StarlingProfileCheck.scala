@@ -4,8 +4,8 @@ import akka.actor.Scheduler
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import org.hatdex.dataplug.apiInterfaces.DataPlugOptionsCollector
-import org.hatdex.dataplug.apiInterfaces.authProviders.{OAuth2TokenHelper, RequestAuthenticatorOAuth2}
-import org.hatdex.dataplug.apiInterfaces.models.{ApiEndpoint, _}
+import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
+import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpoint, _ }
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugStarling.apiInterfaces.authProviders.StarlingProvider
@@ -13,7 +13,7 @@ import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.libs.ws.WSClient
 
-class StarlingProfileCheck @Inject()(
+class StarlingProfileCheck @Inject() (
     val wsClient: WSClient,
     val userService: UserService,
     val authInfoRepository: AuthInfoRepository,

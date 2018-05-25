@@ -7,8 +7,8 @@
 
 package org.hatdex.dataplugStarling
 
-import akka.actor.{ActorSystem, Scheduler}
-import com.google.inject.{AbstractModule, Provides}
+import akka.actor.{ ActorSystem, Scheduler }
+import com.google.inject.{ AbstractModule, Provides }
 import com.mohiva.play.silhouette.api.Provider
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.providers._
@@ -16,16 +16,14 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.dataplug.actors.DataPlugManagerActor
-import org.hatdex.dataplug.apiInterfaces.{DataPlugOptionsCollector, DataPlugOptionsCollectorRegistry, DataPlugRegistry}
-import org.hatdex.dataplug.controllers.{DataPlugViewSet, DataPlugViewSetDefault}
-import org.hatdex.dataplug.dao.{DataPlugEndpointDAO, DataPlugEndpointDAOImpl}
+import org.hatdex.dataplug.apiInterfaces.{ DataPlugOptionsCollector, DataPlugOptionsCollectorRegistry, DataPlugRegistry }
+import org.hatdex.dataplug.controllers.{ DataPlugViewSet, DataPlugViewSetDefault }
+import org.hatdex.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl }
 import org.hatdex.dataplug.services._
 import org.hatdex.libs.dal.SchemaMigration
 import org.hatdex.dataplug.dal.SchemaMigrationImpl
 import org.hatdex.dataplugStarling.apiInterfaces._
 import org.hatdex.dataplugStarling.apiInterfaces.authProviders.StarlingProvider
-import org.hatdex.dataplugStarling.apiInterfaces.authProviders.SpotifyProvider
-import org.hatdex.dataplugStarling.apiInterfaces.{StarlingProfileCheck, StarlingProfileInterface, StarlingTransactionsInterface}
 import play.api.Configuration
 import play.api.libs.concurrent.AkkaGuiceSupport
 
@@ -54,38 +52,37 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   /**
    * Provides the social provider registry.
    *
-   * @param googleCalendarEndpoint The google calendar api endpoint implementation, injected
+   * @param starlingProfileInterface The individual account holder api endpoint implementation, injected
    * @return The DataPlugRegistry.
    */
   @Provides
   def provideDataPlugCollection(
-                                 spotifyProfileInterface: StarlingProfileInterface,
-                                 spotifyRecentlyPlayedInterface: StarlingTransactionsInterface): DataPlugRegistry = {
+    starlingProfileInterface: StarlingProfileInterface): DataPlugRegistry = {
 
-    DataPlugRegistry(Seq(spotifyProfileInterface, spotifyRecentlyPlayedInterface))
+    DataPlugRegistry(Seq(starlingProfileInterface))
   }
 
   @Provides
   def provideDataPlugEndpointChoiceCollection(
-    spotifyProvider: SpotifyProvider,
-    spotifyProfileCheck: StarlingProfileCheck): DataPlugOptionsCollectorRegistry = {
+    starlingProvider: StarlingProvider,
+    starlingProfileCheck: StarlingProfileCheck): DataPlugOptionsCollectorRegistry = {
 
-    val variants: Seq[(Provider, DataPlugOptionsCollector)] = Seq((spotifyProvider, spotifyProfileCheck))
+    val variants: Seq[(Provider, DataPlugOptionsCollector)] = Seq((starlingProvider, starlingProfileCheck))
     DataPlugOptionsCollectorRegistry(variants)
   }
 
   /**
    * Provides the social provider registry.
    *
-   * @param spotifyProvider The Fitbit provider implementation.
+   * @param starlingProvider The Fitbit provider implementation.
    * @return The Silhouette environment.
    */
   @Provides
   def provideSocialProviderRegistry(
-    spotifyProvider: SpotifyProvider): SocialProviderRegistry = {
+    starlingProvider: StarlingProvider): SocialProviderRegistry = {
 
     SocialProviderRegistry(Seq(
-      spotifyProvider))
+      starlingProvider))
   }
 
   /**
@@ -100,8 +97,8 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   def provideSpotifyProvider(
     httpLayer: HTTPLayer,
     stateHandler: SocialStateHandler,
-    configuration: Configuration): SpotifyProvider = {
-    new SpotifyProvider(httpLayer, stateHandler, configuration.underlying.as[OAuth2Settings]("silhouette.spotify"))
+    configuration: Configuration): StarlingProvider = {
+    new StarlingProvider(httpLayer, stateHandler, configuration.underlying.as[OAuth2Settings]("silhouette.starling"))
   }
 
   @Provides

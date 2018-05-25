@@ -1,7 +1,7 @@
 package org.hatdex.dataplugStarling.apiInterfaces
 
 import akka.Done
-import akka.actor.{ActorRef, Scheduler}
+import akka.actor.{ ActorRef, Scheduler }
 import akka.http.scaladsl.model.Uri
 import akka.util.Timeout
 import com.google.inject.Inject
@@ -9,22 +9,22 @@ import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import org.hatdex.dataplug.utils.FutureTransformations
 import org.hatdex.dataplug.actors.Errors.SourceDataProcessingException
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
-import org.hatdex.dataplug.apiInterfaces.authProviders.{OAuth2TokenHelper, RequestAuthenticatorOAuth2}
-import org.hatdex.dataplug.apiInterfaces.models.{ApiEndpointCall, ApiEndpointMethod}
+import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
+import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugStarling.apiInterfaces.authProviders.StarlingProvider
-import org.hatdex.dataplugStarling.models.SpotifyPlayedTrack
+import org.hatdex.dataplugStarling.models.StarlingTransaction
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Success, Try }
 
-class StarlingTransactionsInterface @Inject()(
+class StarlingTransactionsInterface @Inject() (
     val wsClient: WSClient,
     val userService: UserService,
     val authInfoRepository: AuthInfoRepository,
@@ -33,7 +33,7 @@ class StarlingTransactionsInterface @Inject()(
     val scheduler: Scheduler,
     val provider: StarlingProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
 
-  val namespace: String = "spotify"
+  val namespace: String = "starling"
   val endpoint: String = "feed"
   protected val logger: Logger = Logger(this.getClass)
 
@@ -107,14 +107,14 @@ class StarlingTransactionsInterface @Inject()(
 
   def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     (rawData \ "items").toOption.map {
-      case data: JsArray if data.validate[List[SpotifyPlayedTrack]].isSuccess =>
+      case data: JsArray if data.validate[List[StarlingTransaction]].isSuccess =>
         logger.info(s"Validated JSON array of ${data.value.length} items.")
         Success(data)
       case data: JsObject =>
         logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")
         Failure(SourceDataProcessingException(s"Error validating data, some of the required fields missing."))
       case data =>
-        logger.error(s"THIS Error parsing JSON object: ${data.validate[List[SpotifyPlayedTrack]]}")
+        logger.error(s"THIS Error parsing JSON object: ${data.validate[List[StarlingTransaction]]}")
         Failure(SourceDataProcessingException(s"Error parsing JSON object."))
     }.getOrElse {
       logger.error(s"Error obtaining 'items' list: ${rawData.toString}")
