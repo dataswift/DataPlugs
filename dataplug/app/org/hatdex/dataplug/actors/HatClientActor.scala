@@ -28,7 +28,7 @@ class HatClientActor(ws: WSClient, protocol: String, credentials: HatAccessCrede
 
   // Use the actor's dispatcher as execution context for api calls
   protected implicit val ec: ExecutionContext = context.dispatcher
-  protected val apiVersion = "2.6"
+  protected val apiVersion = "v2.6"
 
   protected val hatClient: HatClient = new HatClient(ws, credentials.hat, protocol, apiVersion)
   protected val token: String = credentials.accessToken

@@ -42,10 +42,18 @@ class HatTokenService @Inject() (protected val dbConfigProvider: DatabaseConfigP
       .map(t => HatAccessCredentials(t.hat, t.accessToken))
   }
 
-  def save(hat: String, token: String, issued: DateTime): Future[Done] = {
+  def save(hat: String, token: String, issued: DateTime): Future[Either[Done, Done]] = {
     val row = Tables.HatTokenRow(hat, token, issued.toLocalDateTime)
-    val action = Tables.HatToken.insertOrUpdate(row)
+    val insert = Tables.HatToken += row
+    val update = Tables.HatToken
+      .filter(_.hat === hat)
+      .map(t => (t.accessToken, t.dateCreated))
+      .update((token, issued.toLocalDateTime))
 
-    db.run(action).map(_ => Done)
+    db.run(insert)
+      .map(_ => Left(Done))
+      .recoverWith({
+        case _ => db.run(update).map(_ => Right(Done))
+      })
   }
 }
