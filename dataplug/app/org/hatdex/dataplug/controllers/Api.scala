@@ -9,7 +9,6 @@
 package org.hatdex.dataplug.controllers
 
 import javax.inject.Inject
-
 import com.nimbusds.jwt.SignedJWT
 import org.hatdex.dataplug.actors.IoExecutionContext
 import org.hatdex.dataplug.apiInterfaces.models.JsonProtocol.endpointStatusFormat
@@ -19,7 +18,7 @@ import org.hatdex.dataplug.utils.{ JwtPhataAuthenticatedAction, JwtPhataAwareAct
 import org.hatdex.hat.api.models.ErrorMessage
 import play.api.cache.AsyncCacheApi
 import play.api.i18n.MessagesApi
-import play.api.libs.json.{ JsValue, Json }
+import play.api.libs.json.{ JsArray, JsValue, Json }
 import play.api.{ Configuration, Logger }
 import play.api.mvc._
 import org.hatdex.hat.api.json.HatJsonFormats.errorMessage
@@ -69,20 +68,24 @@ class Api @Inject() (
     Try(SignedJWT.parse(token)).map { parsedToken =>
       request.identity.linkedUsers.find(_.providerId == provider) map { _ =>
         val tokenIssueDate = new DateTime(parsedToken.getJWTClaimsSet.getIssueTime)
-        val eventualHatTokenUpdate = hatTokenService.save(request.identity.userId, token, tokenIssueDate)
+        val eventualTokenInsertOrUpdate = hatTokenService.save(request.identity.userId, token, tokenIssueDate)
 
-        val result = for {
-          choices <- syncerActorManager.currentProviderApiVariantChoices(request.identity, provider)(ioEC) if choices.exists(_.active)
-          apiEndpointStatuses <- dataPlugEndpointService.listCurrentEndpointStatuses(request.identity.userId)
-          _ <- eventualHatTokenUpdate
-          _ <- syncerActorManager.runPhataActiveVariantChoices(request.identity.userId, token)
-        } yield {
-          logger.info(s"HAT token for ${request.identity.userId} received.")
-          Ok(Json.toJson(apiEndpointStatuses))
-        }
-
-        // In case fetching current endpoint statuses failed, assume the issue came from refreshing data from the provider
-        result recover {
+        eventualTokenInsertOrUpdate.flatMap {
+          case Left(_) =>
+            logger.info(s"Registered new HAT token for ${request.identity.userId}")
+            Future.successful(Ok(Json.toJson(JsArray())))
+          case Right(_) =>
+            for {
+              choices <- syncerActorManager.currentProviderApiVariantChoices(request.identity, provider)(ioEC) if choices.exists(_.active)
+              apiEndpointStatuses <- dataPlugEndpointService.listCurrentEndpointStatuses(request.identity.userId)
+              _ <- syncerActorManager.runPhataActiveVariantChoices(request.identity.userId, token)
+            } yield {
+              logger.info(s"Refreshed HAT token for ${request.identity.userId}")
+              Ok(Json.toJson(apiEndpointStatuses))
+            }
+        }.recover {
+          // In case fetching current endpoint statuses failed, assume the issue came from refreshing data from the provider
+          // Also catches any failures related to HAT token saving
           case _ => Forbidden(
             Json.toJson(ErrorMessage(
               "Forbidden",
@@ -92,7 +95,6 @@ class Api @Inject() (
         Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Required social profile ($provider) not connected"))))
       }
     }.get
-
   }
 
   def permissions: Action[AnyContent] = tokenUserAuthenticatedAction.async { implicit request =>
