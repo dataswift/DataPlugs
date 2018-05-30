@@ -5,30 +5,15 @@ import java.util.UUID
 import play.api.libs.json.{ Json, Reads }
 
 case class StarlingTransaction(
-    feedItemUid: UUID,
-    categoryUid: UUID,
-    amount: StarlingCurrencyAndAmount,
-    sourceAmount: StarlingCurrencyAndAmount,
-    direction: String,
-    transactionTime: String,
-    source: String,
-    sourceSubType: String,
-    status: String,
-    counterPartyType: String,
-    counterPartyUid: UUID,
-    counterPartySubEntityUid: UUID,
-    reference: String,
-    country: String,
-    spendingCategory: String)
-
-case class StarlingCurrencyAndAmount(
+    id: UUID,
     currency: String,
-    minorUnits: Long)
+    amount: Double,
+    direction: String,
+    created: String,
+    narrative: String,
+    source: String,
+    balance: Double)
 
 object StarlingTransaction {
   implicit val starlingTransactionReads: Reads[StarlingTransaction] = Json.reads[StarlingTransaction]
-}
-
-object StarlingCurrencyAndAmount {
-  implicit val starlingCurrencyAndAmountReads: Reads[StarlingCurrencyAndAmount] = Json.reads[StarlingCurrencyAndAmount]
 }

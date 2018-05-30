@@ -2,7 +2,6 @@ package org.hatdex.dataplugStarling.apiInterfaces
 
 import akka.Done
 import akka.actor.{ ActorRef, Scheduler }
-import akka.http.scaladsl.model.Uri
 import akka.util.Timeout
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
@@ -15,7 +14,8 @@ import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugStarling.apiInterfaces.authProviders.StarlingProvider
 import org.hatdex.dataplugStarling.models.StarlingTransaction
-import org.joda.time.DateTime
+import org.joda.time.{ DateTime, DateTimeZone }
+import org.joda.time.format.{ DateTimeFormat, DateTimeFormatter }
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
@@ -34,34 +34,51 @@ class StarlingTransactionsInterface @Inject() (
     val provider: StarlingProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
 
   val namespace: String = "starling"
-  val endpoint: String = "feed"
+  val endpoint: String = "transactions"
   protected val logger: Logger = Logger(this.getClass)
 
-  val defaultApiEndpoint = StarlingTransactionsInterface.defaultApiEndpoint
+  val defaultApiEndpoint: ApiEndpointCall = StarlingTransactionsInterface.defaultApiEndpoint
+  val defaultApiDateFormat: DateTimeFormatter = StarlingTransactionsInterface.defaultApiDateFormat
 
-  val refreshInterval = 1.hour
+  val refreshInterval: FiniteDuration = 1.hour
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     logger.debug("Building continuation...")
 
-    val nextQueryParams = for {
-      nextLink <- Try((content \ "next").as[String]) if nextLink.nonEmpty
-      queryParams <- Try(Uri(nextLink).query().toMap) if queryParams.size == 2
-    } yield queryParams
+    (params.queryParameters.get("from"), params.storage.get("to")) match {
+      case (None, None) =>
+        val toDate = extractLastTimestamp(content).getOrElse(DateTime.now)
+        val fromDate = toDate.minusDays(90)
 
-    (nextQueryParams, params.storage.get("after")) match {
-      case (Success(qp), Some(_)) =>
-        logger.debug(s"Next continuation params: $qp")
-        Some(params.copy(queryParameters = params.queryParameters ++ qp))
+        logger.debug(s"Initial transactions fetch between $fromDate -- $toDate")
+        val updatedParams = params.copy(queryParameters = params.queryParameters +
+          ("from" -> fromDate.toString(defaultApiDateFormat), "to" -> toDate.toString(defaultApiDateFormat)))
 
-      case (Success(qp), None) =>
-        val afterTimestamp = extractAfterTimestamp(content).get
-        logger.debug(s"Next continuation params: $qp, setting AfterTimestamp to $afterTimestamp")
-        Some(params.copy(queryParameters = params.queryParameters ++ qp, storageParameters = Some(params.storage +
-          ("after" -> afterTimestamp))))
+        Some(updatedParams)
 
-      case (Failure(e), _) =>
-        logger.debug(s"Next link NOT found. Terminating continuation.")
+      case (Some(from), Some(to)) =>
+        val transactionList = Try((content \ "_embedded" \ "transactions").as[JsArray])
+
+        if (transactionList.isSuccess && transactionList.get.value.nonEmpty) {
+          val fromDate = DateTime.parse(from, defaultApiDateFormat).minusDays(90)
+          val toDate = DateTime.parse(to, defaultApiDateFormat).minusDays(90)
+
+          logger.debug(s"Continuing transactions fetching between $fromDate -- $toDate")
+          val updatedParams = params.copy(queryParameters = params.queryParameters +
+            ("from" -> fromDate.toString(defaultApiDateFormat), "to" -> toDate.toString(defaultApiDateFormat)))
+
+          Some(updatedParams)
+        }
+        else {
+          logger.debug(s"No more data available - stopping continuation")
+          None
+        }
+
+      case (Some(_), None) =>
+        logger.debug(s"Skipping continuation")
+        None
+      case _ =>
+        logger.error(s"Unidentified continuation state")
         None
     }
   }
@@ -69,25 +86,10 @@ class StarlingTransactionsInterface @Inject() (
   def buildNextSync(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
     logger.debug(s"Building next sync...")
 
-    params.storage.get("after").map { afterTimestamp => // After date set (there was at least one continuation step)
-      Try((content \ "items").as[JsArray].value) match {
-        case Success(_) => // Did continuation but there was no `nextPage` found, if track array present it's a successful completion
-          val nextStorage = params.storage - "after"
-          val nextQuery = params.queryParameters - "before" + ("after" -> afterTimestamp)
-          params.copy(queryParameters = nextQuery, storageParameters = Some(nextStorage))
+    val fromDate = DateTime.now(DateTimeZone.forID("Europe/London"))
 
-        case Failure(e) => // Cannot extract tracks array value, most likely an error was returned by the API, continue from where finished previously
-          logger.error(s"Provider API request error while performing continuation: $content")
-          params
-      }
-    }.getOrElse { // After date not set, no continuation steps took place
-      extractAfterTimestamp(content).map { afterTimestamp => // Extract new after timestamp if there is any content
-        val nextQuery = params.queryParameters - "before" + ("after" -> afterTimestamp)
-        params.copy(queryParameters = nextQuery)
-      }.getOrElse { // There is no content or failed to extract new date
-        params
-      }
-    }
+    params.copy(queryParameters = params.queryParameters +
+      ("from" -> fromDate.toString(defaultApiDateFormat)) - "to")
   }
 
   override protected def processResults(
@@ -106,7 +108,7 @@ class StarlingTransactionsInterface @Inject() (
   }
 
   def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
-    (rawData \ "items").toOption.map {
+    (rawData \ "_embedded" \ "transactions").toOption.map {
       case data: JsArray if data.validate[List[StarlingTransaction]].isSuccess =>
         logger.info(s"Validated JSON array of ${data.value.length} items.")
         Success(data)
@@ -114,7 +116,7 @@ class StarlingTransactionsInterface @Inject() (
         logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")
         Failure(SourceDataProcessingException(s"Error validating data, some of the required fields missing."))
       case data =>
-        logger.error(s"THIS Error parsing JSON object: ${data.validate[List[StarlingTransaction]]}")
+        logger.error(s"Error parsing JSON object: ${data.validate[List[StarlingTransaction]]}")
         Failure(SourceDataProcessingException(s"Error parsing JSON object."))
     }.getOrElse {
       logger.error(s"Error obtaining 'items' list: ${rawData.toString}")
@@ -122,22 +124,21 @@ class StarlingTransactionsInterface @Inject() (
     }
   }
 
-  private def extractAfterTimestamp(content: JsValue): Option[String] = {
-    Some(DateTime.now.getMillis.toString)
-    //    Try((content \ "cursors" \ "after").as[String]) match {
-    //      case Success(afterTimestamp) => Some(afterTimestamp)
-    //      case Failure(e) =>
-    //        logger.error(s"Failed to extract AFTER timestamp.\n Reason: $e")
-    //        None
-    //    }
+  private def extractLastTimestamp(content: JsValue): Option[DateTime] = {
+    (content \ "_embedded" \ "transactions").as[JsArray].value.lastOption.map { lastTransaction =>
+      logger.error(s"Last extracted transaction: $lastTransaction")
+      DateTime.parse(lastTransaction.as[StarlingTransaction].created)
+    }
   }
 
 }
 
 object StarlingTransactionsInterface {
+  val defaultApiDateFormat: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd")
+
   val defaultApiEndpoint = ApiEndpointCall(
     "https://api-sandbox.starlingbank.com",
-    "",
+    "/api/v1/transactions",
     ApiEndpointMethod.Get("Get"),
     Map(),
     Map(),

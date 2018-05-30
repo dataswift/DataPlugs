@@ -28,6 +28,7 @@
   <!-- PLUG-SPECIFIC LOGGERS -->
   <logger name="org.hatdex.dataplugStarling" level="INFO" />
   <logger name="org.hatdex.dataplugStarling.apiInterfaces.*" level="INFO" />
+  <logger name="org.hatdex.dataplugStarling.apiInterfaces.StarlingTransactionsInterface" level="DEBUG" />
   <logger name="org.hatdex.dataplugStarling.controllers.Api" level="INFO" />
 
   <!-- CORE PLUG LOGGERS -->

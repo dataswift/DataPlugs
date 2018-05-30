@@ -53,13 +53,15 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
    * Provides the social provider registry.
    *
    * @param starlingProfileInterface The individual account holder api endpoint implementation, injected
+   * @param starlingTransactionsInterface Starling transactions api endpoint implementation
    * @return The DataPlugRegistry.
    */
   @Provides
   def provideDataPlugCollection(
-    starlingProfileInterface: StarlingProfileInterface): DataPlugRegistry = {
+    starlingProfileInterface: StarlingProfileInterface,
+    starlingTransactionsInterface: StarlingTransactionsInterface): DataPlugRegistry = {
 
-    DataPlugRegistry(Seq(starlingProfileInterface))
+    DataPlugRegistry(Seq(starlingProfileInterface, starlingTransactionsInterface))
   }
 
   @Provides

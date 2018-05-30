@@ -78,7 +78,7 @@ class StarlingProfileInterface @Inject() (
   }
 
   def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
-    logger.error(s"Body: $rawData")
+    logger.debug(s"Body: $rawData")
     rawData match {
       case data: JsObject if data.validate[StarlingIndividualProfile].isSuccess =>
         logger.info(s"Validated JSON starling profile object.")

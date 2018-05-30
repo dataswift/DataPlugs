@@ -4,6 +4,6 @@
 
 INSERT INTO dataplug_endpoint (name, description, details)
 VALUES
-  ('profile', 'User''s Spotify profile information', 'snapshots'),
-  ('feed', 'A feed of Spotify tracks played', 'sequence')
+  ('profile', 'Individual user''s Starling profile information', 'snapshots'),
+  ('transactions', 'A list of transactions associated with the account holder', 'sequence')
   ON CONFLICT (name) DO NOTHING;
