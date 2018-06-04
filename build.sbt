@@ -160,6 +160,18 @@ lazy val dataplugStarling = Project(id = "dataplug-starling", base = file("datap
   .settings(packageSettings)
   .dependsOn(dataplug)
 
+lazy val dataplugInstagram = Project(id = "dataplug-instagram", base = file("dataplug-instagram"))
+  .enablePlugins(BasicSettings)
+  .settings(
+    name := "dataplug-instagram",
+    sourceDirectory in Assets := file(s"${baseDirectory.value}/app/org/hatdex/dataplugInstagram/assets")
+  )
+  .enablePlugins(PlayScala, SbtWeb, SbtSassify)
+  .settings(buildSettings)
+  .enablePlugins(AshScriptPlugin)
+  .settings(packageSettings)
+  .dependsOn(dataplug)
+
 lazy val root = project
     .in(file("."))
     .settings(
@@ -176,5 +188,6 @@ lazy val root = project
       dataplugMonzo,
       dataplugFitbit,
       dataplugSpotify,
-      dataplugStarling
+      dataplugStarling,
+      dataplugInstagram
     )

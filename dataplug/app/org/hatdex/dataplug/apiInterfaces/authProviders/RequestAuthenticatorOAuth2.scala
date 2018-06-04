@@ -70,8 +70,11 @@ trait RequestAuthenticatorOAuth2 extends RequestAuthenticator {
     }
 
     eventualAuthInfo map { authInfo =>
-      params.copy(headers = params.headers + ("Authorization" -> s"Bearer ${authInfo.accessToken}"))
+      attachAccessToken(params, authInfo)
     }
   }
+
+  def attachAccessToken(params: ApiEndpointCall, authInfo: OAuth2Info): ApiEndpointCall =
+    params.copy(headers = params.headers + ("Authorization" -> s"Bearer ${authInfo.accessToken}"))
 }
 
