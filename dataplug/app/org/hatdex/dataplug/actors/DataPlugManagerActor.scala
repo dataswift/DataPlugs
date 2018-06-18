@@ -86,6 +86,7 @@ class DataPlugManagerActor @Inject() (
   import DataPlugManagerActor._
 
   val scheduler: Scheduler = context.system.scheduler
+  var syncingSchedules: Map[(String, String, String), Cancellable] = Map()
 
   private def syncerActorKey(phata: String, variant: ApiEndpointVariant) = s"$phata-${variant.endpoint.sanitizedName}-${variant.sanitizedVariantName}"
 
@@ -95,8 +96,18 @@ class DataPlugManagerActor @Inject() (
         val actorKey = syncerActorKey(phata, variant)
         logger.debug(s"Starting actor fetch $actorKey")
         Try(createSyncingSchedule(phata, endpointInterface, variant, maybeEndpointCall))
-          .map { _ =>
+          .map { syncingSchedule =>
             logger.info(s"Started syncing actor for $phata, $endpointInterface")
+
+            val syncJobIdentifier = (phata, variant.endpoint.name, variant.variant.getOrElse(""))
+
+            syncingSchedules.get(syncJobIdentifier).map { priorSchedule =>
+              logger.debug(s"Cancelling previous schedule for $syncJobIdentifier variant")
+              priorSchedule.cancel()
+            }
+
+            logger.debug(s"Creating new schedule for $syncJobIdentifier variant")
+            syncingSchedules = syncingSchedules + (syncJobIdentifier -> syncingSchedule)
           }
           .recover {
             case e => logger.warn(s"Creating actor syncing schedule for $phata, $endpointInterface failed: ${e.getMessage}")

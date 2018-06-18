@@ -90,7 +90,7 @@ class DataPlugEndpointDAOImpl @Inject() (protected val dbConfigProvider: Databas
     logger.debug(s"activating endpoint for $phata/$plugName, variant: $variant, config: $configuration")
     val q = for {
       rowsAffected <- Tables.DataplugUser
-        .filter(user => user.phata === phata && user.dataplugEndpoint === plugName)
+        .filter(user => user.phata === phata && user.dataplugEndpoint === plugName && user.endpointVariant === variant)
         .map(user => (user.endpointConfiguration, user.active))
         .update(configuration.map(c => Json.toJson(c)), true)
       result <- rowsAffected match {
