@@ -33,6 +33,7 @@
   <!-- CORE PLUG LOGGERS -->
   <logger name="org.hatdex.dataplug.*" level="INFO" />
   <logger name="org.hatdex.dataplug.actors.PhataDataPlugVariantSyncer" level="ERROR" />
+  <logger name="org.hatdex.dataplug.actors.DataPlugManagerActor" level="DEBUG" />
   <logger name="org.hatdex.dataplug.services.*" level="INFO" />
   <logger name="org.hatdex.dataplug.controllers.*" level="INFO"/>
   <logger name="org.hatdex.dataplug.utils.JwtPhataAuthenticatedAction" level="INFO" />

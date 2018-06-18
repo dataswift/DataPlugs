@@ -17,14 +17,12 @@ signin.hat.signin=Login with HAT
 
 signin.hat.hint=You will be taken to your personal HAT page. For security reasons, your HAT password can only be entered at that page.
 
-complete.instructions=The plug has been successfully activated. Close the current window and refresh your Rumpel application to see the newly acquired data. Alternatively, click the button below to navigate back to Rumpel.
+complete.instructions=Success! Facebook data synchronisation has been activated. You can close this window yourself or click the button below to close it automatically.
 
 disconnect.instructions=Your Plug is currently set up and running successfully. Manage all your Data Plugs in Web Rumpel, or return to Rumpel Lite.
 
 disconnect.note=(Having problems? Try to disconnect the plug and reconnect to Facebook again.)
 
-button.rumpel=Back to Web Rumpel
+button.rumpel=Close this window
 
-button.rumpellite=Back to Rumpel Lite
-
-button.disconnect=Disconnect Data Plug
+button.disconnect=Disconnect Plug
