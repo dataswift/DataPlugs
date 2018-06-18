@@ -35,7 +35,7 @@ class HatClientActor(ws: WSClient, protocol: String, credentials: HatAccessCrede
 
   def receive: Receive = {
     case PostData(namespace, endpoint, data) =>
-      val savedData = hatClient.saveData(token, namespace, endpoint, data)
+      val savedData = hatClient.saveData(token, namespace, endpoint, data, skipErrors = true)
         .map(d => {
           logger.debug(s"Posted new records to ${credentials.hat}")
           DataSaved(d)

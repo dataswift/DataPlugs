@@ -36,7 +36,6 @@ object DataPlugManagerActor {
   case class Start(
       endpoint: ApiEndpointVariant,
       phata: String,
-      accessToken: String,
       call: Option[ApiEndpointCall]) extends DataPlugManagerActorMessage
 
   case class Stop(
@@ -91,11 +90,11 @@ class DataPlugManagerActor @Inject() (
   private def syncerActorKey(phata: String, variant: ApiEndpointVariant) = s"$phata-${variant.endpoint.sanitizedName}-${variant.sanitizedVariantName}"
 
   def receive: Receive = {
-    case Start(variant, phata, accessToken, maybeEndpointCall) =>
+    case Start(variant, phata, maybeEndpointCall) =>
       dataPlugRegistry.get[DataPlugEndpointInterface](variant.endpoint.name).map { endpointInterface =>
         val actorKey = syncerActorKey(phata, variant)
         logger.debug(s"Starting actor fetch $actorKey")
-        Try(createSyncingSchedule(phata, accessToken, endpointInterface, variant, maybeEndpointCall))
+        Try(createSyncingSchedule(phata, endpointInterface, variant, maybeEndpointCall))
           .map { _ =>
             logger.info(s"Started syncing actor for $phata, $endpointInterface")
           }
@@ -118,7 +117,6 @@ class DataPlugManagerActor @Inject() (
 
   private def createSyncingSchedule(
     phata: String,
-    accessToken: String,
     endpointInterface: DataPlugEndpointInterface,
     variant: ApiEndpointVariant,
     maybeEndpointCall: Option[ApiEndpointCall]): Cancellable = {
@@ -128,15 +126,14 @@ class DataPlugManagerActor @Inject() (
       val eventualSyncMessage = for {
         endpointCall <- dataplugEndpointService.retrieveLastSuccessfulEndpointVariant(phata, variant.endpoint.name, variant.variant)
           .map(maybeEndpointVariant => maybeEndpointVariant.flatMap(_.configuration).orElse(maybeEndpointCall))
-        syncerActor <- startSyncerActor(phata, accessToken, variant, endpointInterface, actorKey)
+        maybeAccessToken <- hatTokenService.forUser(phata) if maybeAccessToken.isDefined
+        syncerActor <- startSyncerActor(phata, maybeAccessToken.get.accessToken, variant, endpointInterface, actorKey)
       } yield Forward(Fetch(endpointCall, 0), syncerActor)
 
-      eventualSyncMessage.onFailure {
-        case e => logger.error(s"Error while trying to start sycning dat for $phata, variant $variant: ${e.getMessage}", e)
-      }
-
       eventualSyncMessage.recover {
-        case _ => DataPlugManagerActor.Nop()
+        case e =>
+          logger.error(s"Error while trying to start sycning dat for $phata, variant $variant: ${e.getMessage}", e)
+          DataPlugManagerActor.Nop()
       } pipeTo throttledSyncActor
     }
   }

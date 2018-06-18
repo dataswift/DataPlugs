@@ -44,15 +44,14 @@ class InstagramProfileCheck @Inject() (
       Some(""), Some(""),
       Some(InstagramProfileInterface.defaultApiEndpoint))
 
-    //    val feedVariant = ApiEndpointVariant(
-    //      ApiEndpoint("feed", "User's Facebook posts feed", None),
-    //      Some(""), Some(""),
-    //      Some(FacebookFeedInterface.defaultApiEndpoint))
+    val feedVariant = ApiEndpointVariant(
+      ApiEndpoint("feed", "User's Instagram posts feed", None),
+      Some(""), Some(""),
+      Some(InstagramFeedInterface.defaultApiEndpoint))
 
     val choices = Seq(
-      ApiEndpointVariantChoice("profile", "User's Instagram profile information", active = true, profileVariant)
-    //      ApiEndpointVariantChoice("feed", "User's Facebook posts feed", active = false, feedVariant)
-    )
+      ApiEndpointVariantChoice("profile", "User's Instagram profile information", active = true, profileVariant),
+      ApiEndpointVariantChoice("feed", "User's Instagram posts feed", active = true, feedVariant))
 
     choices
   }

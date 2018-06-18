@@ -66,7 +66,7 @@ class InstagramProfileInterface @Inject() (
   def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     (rawData \ "data").toOption.map {
       case data: JsObject if data.validate[InstagramProfile].isSuccess =>
-        logger.info(s"Validated JSON facebook profile object.")
+        logger.info(s"Validated JSON Instagram profile object.")
         Success(JsArray(Seq(data)))
       case data: JsObject =>
         logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")

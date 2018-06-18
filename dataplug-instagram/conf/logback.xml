@@ -29,6 +29,7 @@
   <logger name="org.hatdex.dataplugInstagram" level="INFO" />
   <logger name="org.hatdex.dataplugInstagram.apiInterfaces.*" level="INFO" />
   <logger name="org.hatdex.dataplugInstagram.controllers.Api" level="INFO" />
+  <logger name="org.hatdex.dataplugInstagram.apiInterfaces.InstagramFeedInterface" level="DEBUG" />
 
   <!-- CORE PLUG LOGGERS -->
   <logger name="org.hatdex.dataplug.*" level="INFO" />

@@ -61,7 +61,7 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   def provideDataPlugCollection(
     instagramProfileInterface: InstagramProfileInterface,
     instagramFeedInterface: InstagramFeedInterface): DataPlugRegistry = {
-    DataPlugRegistry(Seq(instagramProfileInterface))
+    DataPlugRegistry(Seq(instagramProfileInterface, instagramFeedInterface))
   }
 
   @Provides

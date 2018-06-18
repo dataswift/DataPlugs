@@ -40,7 +40,7 @@ class DataplugSyncerActorManager @Inject() (
       variantChoices foreach { variantChoice =>
         val message: DataPlugManagerActorMessage = if (variantChoice.active && maybeAccessCredentials.isDefined) {
           subscriptionEventBus.publish(SubscriptionEventBus.UserSubscribedEvent(user, DateTime.now(), variantChoice))
-          Start(variantChoice.variant, user.userId, maybeAccessCredentials.get.accessToken, variantChoice.variant.configuration)
+          Start(variantChoice.variant, user.userId, variantChoice.variant.configuration)
         }
         else {
           subscriptionEventBus.publish(SubscriptionEventBus.UserUnsubscribedEvent(user, DateTime.now(), variantChoice))
@@ -58,7 +58,7 @@ class DataplugSyncerActorManager @Inject() (
       .throttle(1, 30.seconds, 1, ThrottleMode.Shaping)
       .map {
         case (phata: String, accessToken: String, variant: ApiEndpointVariant) =>
-          dataPlugManagerActor ! Start(variant, phata, accessToken, variant.configuration)
+          dataPlugManagerActor ! Start(variant, phata, variant.configuration)
           phata
       }
       .runForeach(r => logger.info(s"Synchronisation started for $r"))
@@ -74,7 +74,7 @@ class DataplugSyncerActorManager @Inject() (
     dataPlugEndpointService.retrievePhataEndpoints(phata) map { phataVariants =>
       logger.info(s"Retrieved endpoints to sync: ${phataVariants.mkString("\n")}")
       phataVariants foreach { variant =>
-        dataPlugManagerActor ! Start(variant, phata, accessToken, variant.configuration)
+        dataPlugManagerActor ! Start(variant, phata, variant.configuration)
       }
     } recoverWith {
       case e =>

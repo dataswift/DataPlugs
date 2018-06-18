@@ -41,39 +41,45 @@ class InstagramFeedInterface @Inject() (
   val refreshInterval = 1.hour
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
-    logger.debug("Building continuation...")
-
-    val maybeMinIdParam = params.pathParameters.get("min_id")
-
-    if (maybeMinIdParam.isDefined) {
-      None
-    }
-    else {
-      val maybeNextMaxId = (content \ "pagination" \ "next_max_id").asOpt[String]
-      val maybeMinIdStorage = params.storage.get("min_id")
-
-      (maybeNextMaxId, maybeMinIdStorage) match {
-        case (Some(nextMaxId), Some(_)) =>
-          Some(params.copy(queryParameters = params.queryParameters + ("max_id" -> nextMaxId)))
-        case (Some(nextMaxId), None) =>
-          Some(params.copy(
-            queryParameters = params.queryParameters + ("max_id" -> nextMaxId),
-            storageParameters = Some(params.storage + ("min_id" -> extractHeadId(content)))))
-        case (None, _) => None
-      }
-    }
+    None
+    //    logger.debug("Building continuation...")
+    //
+    //    val maybeMinIdParam = params.pathParameters.get("min_id")
+    //
+    //    if (maybeMinIdParam.isDefined) {
+    //      None
+    //    }
+    //    else {
+    //      val maybeNextMaxId = (content \ "pagination" \ "next_max_id").asOpt[String]
+    //      val maybeMinIdStorage = params.storage.get("min_id")
+    //
+    //      (maybeNextMaxId, maybeMinIdStorage) match {
+    //        case (Some(nextMaxId), Some(_)) =>
+    //          Some(params.copy(queryParameters = params.queryParameters + ("max_id" -> nextMaxId)))
+    //        case (Some(nextMaxId), None) =>
+    //          Some(params.copy(
+    //            queryParameters = params.queryParameters + ("max_id" -> nextMaxId),
+    //            storageParameters = Some(params.storage + ("min_id" -> extractHeadId(content).get))))
+    //        case (None, _) => None
+    //      }
+    //    }
   }
 
   def buildNextSync(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
-    logger.debug(s"Building next sync...")
-
-    params.storage.get("min_id").map { savedMinId =>
-      params.copy(
-        queryParameters = params.queryParameters + ("min_id" -> savedMinId) - "max_id",
-        storageParameters = Some(params.storage - "min_id"))
-    }.getOrElse {
-      params.copy(queryParameters = params.queryParameters + ("min_id" -> extractHeadId(content)))
-    }
+    params
+    //    logger.debug(s"Building next sync...")
+    //
+    //    params.storage.get("min_id").map { savedMinId =>
+    //      params.copy(
+    //        queryParameters = params.queryParameters + ("min_id" -> savedMinId) - "max_id",
+    //        storageParameters = Some(params.storage - "min_id"))
+    //    }.getOrElse {
+    //      val maybeHeadId = extractHeadId(content)
+    //
+    //      maybeHeadId.map { headId =>
+    //        params.copy(queryParameters = params.queryParameters + ("min_id" -> headId))
+    //      }.getOrElse(params)
+    //    }
   }
 
   override protected def processResults(
@@ -84,10 +90,10 @@ class InstagramFeedInterface @Inject() (
 
     for {
       validatedData <- FutureTransformations.transform(validateMinDataStructure(content))
-      processedData <- FutureTransformations.transform(tranformData(validatedData, fetchParameters))
+      processedData <- transformData(validatedData, fetchParameters)
       _ <- uploadHatData(namespace, endpoint, processedData, hatAddress, hatClientActor) // Upload the data
     } yield {
-      logger.debug(s"Successfully synced new records for HAT $hatAddress")
+      logger.debug(s"Successfully uploaded ${processedData.value.length} new records to $hatAddress HAT")
       Done
     }
   }
@@ -109,15 +115,18 @@ class InstagramFeedInterface @Inject() (
     }
   }
 
-  private def tranformData(value: JsArray, params: ApiEndpointCall): Try[JsArray] =
-    if (params.queryParameters.get("min_id").isDefined) {
-      Try(Json.toJson(value.as[List[InstagramMedia]].dropRight(1)).as[JsArray]) // Removes the last element of the array
-    }
-    else {
-      Success(value)
+  private def transformData(value: JsArray, params: ApiEndpointCall): Future[JsArray] = {
+    val postsWithSortedArrays = value.value.map { post =>
+      Try {
+        val sortedTags = (post \ "tags").as[Seq[String]].sorted
+        post.as[JsObject] ++ Json.obj("tags" -> JsArray(sortedTags.map(JsString)))
+      }.getOrElse(post)
     }
 
-  private def extractHeadId(value: JsValue): String = (value \ "data" \ 0 \ "id").as[String]
+    Future.successful(JsArray(postsWithSortedArrays))
+  }
+
+  private def extractHeadId(value: JsValue): Try[String] = Try((value \ "data" \ 0 \ "id").as[String])
 
   override def attachAccessToken(params: ApiEndpointCall, authInfo: OAuth2Info): ApiEndpointCall =
     params.copy(queryParameters = params.queryParameters + ("access_token" -> authInfo.accessToken))
@@ -129,7 +138,7 @@ object InstagramFeedInterface {
     "/users/self/media/recent",
     ApiEndpointMethod.Get("Get"),
     Map(),
-    Map("count" -> "2"),
+    Map("count" -> "100"),
     Map(),
     Some(Map()))
 }

@@ -1,10 +1,10 @@
 package org.hatdex.dataplugInstagram.models
 
-import play.api.libs.json.{ Json, OFormat, Reads }
+import play.api.libs.json.{ Json, OFormat }
 
 case class InstagramMedia(
     comments: InstagramCount,
-    caption: InstagramCaption,
+    caption: Option[InstagramCaption],
     likes: InstagramCount,
     link: String,
     user: InstagramUser,
@@ -25,8 +25,8 @@ case class InstagramCaption(
 
 case class InstagramFrom(
     username: String,
-    full_name: String,
-    `type`: String,
+    full_name: Option[String],
+    `type`: Option[String],
     id: String)
 
 case class InstagramUser(
@@ -37,9 +37,9 @@ case class InstagramUser(
 case class InstagramLocation(
     latitude: Double,
     longitude: Double,
-    id: String,
-    street_address: String,
-    name: String)
+    id: Option[Long],
+    street_address: Option[String],
+    name: Option[String])
 
 object InstagramMedia {
   implicit val instagramCountReads: OFormat[InstagramCount] = Json.format[InstagramCount]
