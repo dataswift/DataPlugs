@@ -14,7 +14,7 @@ $check-icon: $fa-var-check !default;
       background-color: $color;
       border-color: $color;
     }
-    &::after{
+    &::after {
       color: #fff;
     }
   }
@@ -33,9 +33,7 @@ $check-icon: $fa-var-check !default;
   }
 }
 
-
-
-.checkbox{
+.checkbox {
   padding-left: 20px;
 
   label{
@@ -44,13 +42,14 @@ $check-icon: $fa-var-check !default;
     position: relative;
     padding-left: 5px;
 
-    &::before{
+    &::before {
       content: "";
       display: inline-block;
       position: absolute;
       width: 17px;
       height: 17px;
       left: 0;
+      top: 5px;
       margin-left: -20px;
       border: 1px solid $input-border;
       border-radius: 3px;
@@ -58,13 +57,13 @@ $check-icon: $fa-var-check !default;
       @include transition(border 0.15s ease-in-out, color 0.15s ease-in-out);
     }
 
-    &::after{
+    &::after {
       display: inline-block;
       position: absolute;
       width: 16px;
       height: 16px;
       left: 0;
-      top: 0;
+      top: 5px;
       margin-left: -20px;
       padding-left: 3px;
       padding-top: 1px;
@@ -78,16 +77,16 @@ $check-icon: $fa-var-check !default;
     opacity: 0;
     z-index: 1;
 
-    &:focus + label::before{
+    &:focus + label::before {
       @include tab-focus();
     }
 
-    &:checked + label::after{
+    &:checked + label::after {
       font-family: $font-family-icon;
       content: $check-icon;
     }
 
-    &:indeterminate + label::after{
+    &:indeterminate + label::after {
       display: block;
       content: "";
       width: 10px;
@@ -98,7 +97,7 @@ $check-icon: $fa-var-check !default;
       margin-top: 7px;
     }
 
-    &:disabled + label{
+    &:disabled + label {
       opacity: 0.65;
 
       &::before{
@@ -109,11 +108,11 @@ $check-icon: $fa-var-check !default;
 
   }
 
-  &.checkbox-circle label::before{
+  &.checkbox-circle label::before {
     border-radius: 50%;
   }
 
-  &.checkbox-inline{
+  &.checkbox-inline {
     margin-top: 0;
   }
 }
@@ -123,7 +122,7 @@ $check-icon: $fa-var-check !default;
 @include checkbox-variant('.checkbox-info', $brand-info);
 @include checkbox-variant('.checkbox-warning', $brand-warning);
 @include checkbox-variant('.checkbox-success', $brand-success);
-@include checkbox-variant('.checkbox-rump', #009688);
+@include checkbox-variant('.checkbox-rump', #6297b1);
 
 
 @include checkbox-variant-indeterminate('.checkbox-primary', $brand-primary);
@@ -131,7 +130,7 @@ $check-icon: $fa-var-check !default;
 @include checkbox-variant-indeterminate('.checkbox-info', $brand-info);
 @include checkbox-variant-indeterminate('.checkbox-warning', $brand-warning);
 @include checkbox-variant-indeterminate('.checkbox-success', $brand-success);
-@include checkbox-variant-indeterminate('.checkbox-rump', #009688);
+@include checkbox-variant-indeterminate('.checkbox-rump', #6297b1);
 
 //
 // Radios

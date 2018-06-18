@@ -16,12 +16,11 @@
                     @helper.CSRF.formField
 
                     @b3.text(signInForm("hataddress"),
-                        '_label -> Messages("field.hataddress"),
                         'placeholder -> "yourhat.hubofallthings.net",
                         'autofocus -> true,
                         '_help -> Messages("signin.hat.hint"))
 
-                    @b3.submit('class -> "btn btn-block btn-dataplug") {
+                    @b3.submit('class -> "btn btn-dataplug") {
                         @Messages("signin.hat.signin")
                     }
                 }
