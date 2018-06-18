@@ -9,6 +9,7 @@
 package org.hatdex.dataplugFacebook.controllers
 
 import com.google.inject.Inject
+import org.hatdex.dataplug.actors.Errors.SourceAuthenticationException
 import org.hatdex.dataplug.actors.IoExecutionContext
 import org.hatdex.dataplug.apiInterfaces.models.DataPlugNotableShareRequest
 import org.hatdex.dataplug.services.{ DataPlugEndpointService, DataPlugNotablesService, DataplugSyncerActorManager }
@@ -57,6 +58,9 @@ class Api @Inject() (
             }
 
             eventualNotablePost.recover {
+              case e: SourceAuthenticationException =>
+                logger.warn(s"HAT ${notableShareRequest.hatDomain} is not authorized with Facebook service. Failed to post ${notableShareRequest.notableId}. Details: ${e.getMessage}")
+                Forbidden(generateResponseJson("Forbidden", s"${notableShareRequest.hatDomain} is not allowed to post to Facebook."))
               case e =>
                 logger.error(s"Failed to post notable for ${notableShareRequest.hatDomain}. Notable ID: ${notableShareRequest.notableId}\nReason: ${e.getMessage}")
                 InternalServerError(generateResponseJson("Internal Server Error", "The request cannot be completed at this time."))

@@ -3,7 +3,7 @@ package org.hatdex.dataplugFacebook.apiInterfaces
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth2.FacebookProvider
-import org.hatdex.dataplug.actors.Errors.SourceApiCommunicationException
+import org.hatdex.dataplug.actors.Errors.{ SourceApiCommunicationException, SourceAuthenticationException }
 import org.hatdex.dataplug.apiInterfaces.DataPlugContentUploader
 import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod, DataPlugNotableShareRequest }
@@ -33,17 +33,17 @@ class FacebookFeedUploadInterface @Inject() (
   val endpoint: String = "feed"
 
   def post(hatAddress: String, content: DataPlugNotableShareRequest)(implicit ec: ExecutionContext): Future[FacebookFeedUpdate] = {
-    logger.info(s"Posting to Facebook for $hatAddress")
-
     val apiEndpoint = if (content.photo.isDefined) {
       logger.debug(s"Found photo. Uploading to Facebook, caption:\n${content.message}\n photo:\n${content.photo.get}")
+      logger.info(s"Posting to Facebook with media attached for $hatAddress")
       photoUploadApiEndpoint.copy(
         method = ApiEndpointMethod.Post("Post", Json.stringify(Json.obj(
           "caption" -> content.message,
           "url" -> content.photo.get))))
     }
     else {
-      logger.debug(s"Found message. Posting to Facebook:\n${content.message}")
+      logger.debug(s"Found message. Posting to Facebook:\n$content")
+      logger.info(s"Posting to Facebook w/o media for $hatAddress")
       defaultApiEndpoint.copy(
         method = ApiEndpointMethod.Post("Post", Json.stringify(Json.obj("message" -> content.message))))
     }
@@ -55,6 +55,9 @@ class FacebookFeedUploadInterface @Inject() (
         result.status match {
           case OK =>
             Future.successful(Json.parse(result.body).as[FacebookFeedUpdate])
+          case BAD_REQUEST =>
+            Future.failed(SourceAuthenticationException(
+              s"Authentication with Facebook failed. Response details: ${result.body}"))
           case status =>
             Future.failed(SourceApiCommunicationException(
               s"Unexpected response from facebook (status code $status): ${result.body}"))
