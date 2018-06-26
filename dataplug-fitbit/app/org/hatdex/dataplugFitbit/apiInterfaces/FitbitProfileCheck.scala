@@ -1,9 +1,8 @@
 package org.hatdex.dataplugFitbit.apiInterfaces
 
-import akka.actor.{ ActorRef, Scheduler }
+import akka.actor.Scheduler
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import org.hatdex.dataplug.actors.Errors.SourceDataProcessingException
 import org.hatdex.dataplug.apiInterfaces.DataPlugOptionsCollector
 import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpoint, _ }
@@ -11,11 +10,8 @@ import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugFitbit.apiInterfaces.authProviders.FitbitProvider
 import play.api.Logger
-import play.api.http.Status._
 import play.api.libs.json.JsValue
 import play.api.libs.ws.WSClient
-
-import scala.concurrent.{ ExecutionContext, Future }
 
 class FitbitProfileCheck @Inject() (
     val wsClient: WSClient,

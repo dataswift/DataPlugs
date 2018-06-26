@@ -8,7 +8,6 @@
 
 package org.hatdex.dataplugTwitter.apiInterfaces
 
-import akka.actor.ActorRef
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider

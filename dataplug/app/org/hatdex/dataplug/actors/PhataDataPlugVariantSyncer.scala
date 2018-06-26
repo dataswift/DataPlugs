@@ -14,7 +14,7 @@ import org.hatdex.dataplug.actors.DataPlugManagerActor._
 import org.hatdex.dataplug.apiInterfaces._
 import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointVariant
 import org.hatdex.dataplug.services.DataPlugEndpointService
-import org.hatdex.dataplug.utils.Mailer
+import org.hatdex.dataplug.utils.{ AuthenticatedHatClient, Mailer }
 import play.api.Logger
 import play.api.libs.ws.WSClient
 
@@ -25,7 +25,7 @@ class PhataDataPlugVariantSyncer(
     endpointInterface: DataPlugEndpointInterface,
     apiEndpointVariant: ApiEndpointVariant,
     wsClient: WSClient,
-    hatClient: ActorRef,
+    hatClient: AuthenticatedHatClient,
     throttledSyncActor: ActorRef,
     val dataplugEndpointService: DataPlugEndpointService,
     val mailer: Mailer)(implicit val ec: ExecutionContext) extends Actor with DataPlugManagerOperations {
@@ -43,6 +43,7 @@ class PhataDataPlugVariantSyncer(
           case msg: DataPlugManagerActor.Forward => msg
         }
         .pipeTo(throttledSyncActor)
+
     case message =>
       logger.debug(s"UNKNOWN Received by $phata-${apiEndpointVariant.endpoint.name}-${apiEndpointVariant.variant}: $message")
   }
@@ -56,15 +57,16 @@ class PhataDataPlugVariantSyncer(
           case msg: DataPlugManagerActor.Forward => msg
         }
         .pipeTo(throttledSyncActor)
+
     case Complete(fetchEndpoint) =>
       logger.debug(s"COMPLETE Received by $phata-${apiEndpointVariant.endpoint.name}-${apiEndpointVariant.variant} in FETCH")
       context.become(receive)
       complete(endpointInterface, apiEndpointVariant, phata, fetchEndpoint)
       context.parent ! Completed(apiEndpointVariant, phata)
       self ! PoisonPill
+
     case SyncingFailed(error, exception) =>
       logger.warn(s"FAILED Received by $phata-${apiEndpointVariant.endpoint.name}-${apiEndpointVariant.variant}: $error")
-
       mailer.serverExceptionNotifyInternal(
         s"FAILED Received by $phata-${apiEndpointVariant.endpoint.name}-${apiEndpointVariant.variant}: $error", exception)
 
@@ -82,7 +84,7 @@ object PhataDataPlugVariantSyncer {
     endpointInterface: DataPlugEndpointInterface,
     apiEndpointVariant: ApiEndpointVariant,
     wsClient: WSClient,
-    hatClient: ActorRef,
+    hatClient: AuthenticatedHatClient,
     throttledSyncActor: ActorRef,
     dataplugEndpointService: DataPlugEndpointService,
     mailer: Mailer)(implicit executionContext: ExecutionContext): Props =

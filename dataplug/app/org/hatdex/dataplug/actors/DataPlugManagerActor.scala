@@ -10,14 +10,13 @@ package org.hatdex.dataplug.actors
 
 import javax.inject.{ Inject, Named }
 import akka.actor.{ Actor, ActorRef, Cancellable, PoisonPill, Props, Scheduler }
-import akka.pattern.{ Backoff, BackoffSupervisor, pipe }
+import akka.pattern.pipe
 import akka.stream.ActorMaterializer
 import org.hatdex.dataplug.actors.Errors.DataPlugError
 import org.hatdex.dataplug.apiInterfaces._
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointVariant }
 import org.hatdex.dataplug.services.{ DataPlugEndpointService, HatTokenService }
-import org.hatdex.dataplug.utils.Mailer
-import org.hatdex.dataplug.models.HatAccessCredentials
+import org.hatdex.dataplug.utils.{ AuthenticatedHatClient, Mailer }
 import play.api.cache.AsyncCacheApi
 import play.api.libs.ws.WSClient
 import play.api.{ Configuration, Logger }
@@ -82,6 +81,7 @@ class DataPlugManagerActor @Inject() (
 
   protected val logger: Logger = Logger(this.getClass)
   protected implicit val materializer: ActorMaterializer = ActorMaterializer()
+  protected val apiVersion = "v2.6"
 
   import DataPlugManagerActor._
 
@@ -151,17 +151,14 @@ class DataPlugManagerActor @Inject() (
 
   private def startSyncerActor(phata: String, accessToken: String, variant: ApiEndpointVariant, endpointInterface: DataPlugEndpointInterface, actorKey: String): Future[ActorRef] = {
     val protocol = if (configuration.get[Boolean]("hat.secure")) "https://" else "http://"
-    val hatActorProps = HatClientActor.props(ws, protocol, HatAccessCredentials(phata, accessToken))
+    val hatClient: AuthenticatedHatClient = new AuthenticatedHatClient(ws, phata, protocol, accessToken)
+
     logger.debug(s"Creating syncer actor for $phata, protocol - $protocol, access token - $accessToken")
 
-    def syncActor(hatActor: ActorRef): Props = {
+    val syncActorProps: Props =
       PhataDataPlugVariantSyncer.props(phata, endpointInterface, variant, ws,
-        hatActor, throttledSyncActor, dataplugEndpointService, mailer)(ec)
-    }
+        hatClient, throttledSyncActor, dataplugEndpointService, mailer)(ec)
 
-    for {
-      hatActor <- launchActor(hatActorProps, s"hat:$phata")
-      syncActor <- launchActor(syncActor(hatActor), s"$actorKey")
-    } yield syncActor
+    launchActor(syncActorProps, s"$actorKey")
   }
 }

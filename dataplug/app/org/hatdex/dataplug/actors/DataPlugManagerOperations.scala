@@ -9,13 +9,14 @@
 package org.hatdex.dataplug.actors
 
 import akka.Done
-import akka.actor.{ ActorRef, Scheduler }
+import akka.actor.Scheduler
 import akka.pattern.after
 import akka.util.Timeout
 import org.hatdex.dataplug.actors.Errors.DataPlugError
 import org.hatdex.dataplug.apiInterfaces._
 import org.hatdex.dataplug.apiInterfaces.models._
 import org.hatdex.dataplug.services.DataPlugEndpointService
+import org.hatdex.dataplug.utils.AuthenticatedHatClient
 import play.api.Logger
 
 import scala.concurrent.duration._
@@ -33,7 +34,8 @@ trait DataPlugManagerOperations {
   def fetchData(
     endpointInterface: DataPlugEndpointInterface,
     variant: ApiEndpointVariant, phata: String,
-    fetchEndpoint: ApiEndpointCall, retries: Int, hatClient: ActorRef): Future[PhataDataPlugVariantSyncerMessage] = {
+    fetchEndpoint: ApiEndpointCall, retries: Int,
+    hatClient: AuthenticatedHatClient): Future[PhataDataPlugVariantSyncerMessage] = {
     implicit val fetchTimeout: Timeout = 30.seconds
     endpointInterface.fetch(fetchEndpoint, phata, hatClient) map {
       case DataPlugFetchContinuation(continuation) =>
@@ -48,7 +50,8 @@ trait DataPlugManagerOperations {
   def fetch(
     endpointInterface: DataPlugEndpointInterface,
     variant: ApiEndpointVariant, phata: String,
-    endpointCall: Option[ApiEndpointCall], retries: Int, hatClient: ActorRef): Future[PhataDataPlugVariantSyncerMessage] = {
+    endpointCall: Option[ApiEndpointCall],
+    retries: Int, hatClient: AuthenticatedHatClient): Future[PhataDataPlugVariantSyncerMessage] = {
 
     endpointInterface.buildFetchParameters(endpointCall.orElse(variant.configuration)) flatMap { fetchEndpoint =>
       fetchData(endpointInterface, variant, phata, fetchEndpoint, retries, hatClient) recoverWith {
@@ -66,7 +69,8 @@ trait DataPlugManagerOperations {
   def fetchContinuation(
     endpointInterface: DataPlugEndpointInterface,
     variant: ApiEndpointVariant, phata: String,
-    fetchEndpoint: ApiEndpointCall, retries: Int, hatClient: ActorRef): Future[PhataDataPlugVariantSyncerMessage] = {
+    fetchEndpoint: ApiEndpointCall, retries: Int,
+    hatClient: AuthenticatedHatClient): Future[PhataDataPlugVariantSyncerMessage] = {
 
     fetchData(endpointInterface, variant, phata, fetchEndpoint, retries, hatClient) recoverWith {
       case e: DataPlugError =>
@@ -76,7 +80,8 @@ trait DataPlugManagerOperations {
 
   protected def fetchError(
     e: DataPlugError, variant: ApiEndpointVariant, phata: String,
-    fetchEndpoint: ApiEndpointCall, retries: Int, hatClient: ActorRef): Future[PhataDataPlugVariantSyncerMessage] = {
+    fetchEndpoint: ApiEndpointCall, retries: Int,
+    hatClient: AuthenticatedHatClient): Future[PhataDataPlugVariantSyncerMessage] = {
 
     logger.warn(s"${e.getClass.getSimpleName} Error fetching ${variant.endpoint.name} for $phata: ${e.getMessage}")
     if (retries < maxFetchRetries) {

@@ -1,28 +1,27 @@
 package org.hatdex.dataplugFitbit.apiInterfaces
 
 import akka.Done
-import akka.actor.{ ActorRef, Scheduler }
+import akka.actor.Scheduler
 import akka.http.scaladsl.model.Uri
 import akka.util.Timeout
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import org.hatdex.dataplug.utils.FutureTransformations
+import org.hatdex.dataplug.utils.{AuthenticatedHatClient, FutureTransformations, Mailer}
 import org.hatdex.dataplug.actors.Errors.SourceDataProcessingException
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
-import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
-import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
+import org.hatdex.dataplug.apiInterfaces.authProviders.{OAuth2TokenHelper, RequestAuthenticatorOAuth2}
+import org.hatdex.dataplug.apiInterfaces.models.{ApiEndpointCall, ApiEndpointMethod}
 import org.hatdex.dataplug.services.UserService
-import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugFitbit.apiInterfaces.authProviders.FitbitProvider
 import org.hatdex.dataplugFitbit.models.FitbitActivity
-import org.joda.time.format.{ DateTimeFormat, DateTimeFormatter, ISODateTimeFormat }
+import org.joda.time.format.{DateTimeFormat, DateTimeFormatter, ISODateTimeFormat}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 
 import scala.concurrent.duration._
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.{ Failure, Success, Try }
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 class FitbitActivityInterface @Inject() (
     val wsClient: WSClient,
@@ -93,12 +92,12 @@ class FitbitActivityInterface @Inject() (
   override protected def processResults(
     content: JsValue,
     hatAddress: String,
-    hatClientActor: ActorRef,
+    hatClient: AuthenticatedHatClient,
     fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
     for {
       validatedData <- FutureTransformations.transform(validateMinDataStructure(content))
-      _ <- uploadHatData(namespace, endpoint, validatedData, hatAddress, hatClientActor) // Upload the data
+      _ <- uploadHatData(namespace, endpoint, validatedData, hatAddress, hatClient) // Upload the data
     } yield {
       logger.debug(s"Successfully synced new records for HAT $hatAddress")
       Done

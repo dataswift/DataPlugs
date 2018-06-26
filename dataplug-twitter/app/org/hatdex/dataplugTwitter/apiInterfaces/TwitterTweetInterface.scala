@@ -11,27 +11,26 @@ package org.hatdex.dataplugTwitter.apiInterfaces
 import java.util.Locale
 
 import akka.Done
-import akka.actor.{ ActorRef, Scheduler }
+import akka.actor.Scheduler
 import akka.util.Timeout
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider
-import org.hatdex.dataplug.utils.FutureTransformations
+import org.hatdex.dataplug.utils.{AuthenticatedHatClient, FutureTransformations, Mailer}
 import org.hatdex.dataplug.actors.Errors.SourceDataProcessingException
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
 import org.hatdex.dataplug.apiInterfaces.authProviders.RequestAuthenticatorOAuth1
-import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
+import org.hatdex.dataplug.apiInterfaces.models.{ApiEndpointCall, ApiEndpointMethod}
 import org.hatdex.dataplug.services.UserService
-import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugTwitter.models._
 import org.joda.time.format.DateTimeFormat
 import play.api.Logger
 import play.api.libs.json._
-import play.api.libs.ws.{ WSClient, WSResponse }
+import play.api.libs.ws.{WSClient, WSResponse}
 
 import scala.concurrent.duration._
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.{ Failure, Success, Try }
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 class TwitterTweetInterface @Inject() (
     val wsClient: WSClient,
@@ -103,10 +102,10 @@ class TwitterTweetInterface @Inject() (
     super[RequestAuthenticatorOAuth1].buildRequest(params)
 
   override protected def processResults(
-    content: JsValue,
-    hatAddress: String,
-    hatClientActor: ActorRef,
-    fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
+                                         content: JsValue,
+                                         hatAddress: String,
+                                         hatClient: AuthenticatedHatClient,
+                                         fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
     val dataValidation = transformData(content)
       .map(validateMinDataStructure)
@@ -114,7 +113,7 @@ class TwitterTweetInterface @Inject() (
 
     for {
       tweets <- FutureTransformations.transform(dataValidation)
-      _ <- uploadHatData(namespace, endpoint, tweets, hatAddress, hatClientActor)
+      _ <- uploadHatData(namespace, endpoint, tweets, hatAddress, hatClient)
     } yield {
       logger.debug(s"Successfully synced new records for HAT $hatAddress")
       Done

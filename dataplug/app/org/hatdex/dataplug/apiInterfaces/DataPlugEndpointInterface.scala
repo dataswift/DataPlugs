@@ -9,16 +9,13 @@
 package org.hatdex.dataplug.apiInterfaces
 
 import akka.Done
-import akka.actor.{ ActorRef, Scheduler }
-import akka.pattern.ask
+import akka.actor.Scheduler
 import akka.util.Timeout
 import org.hatdex.dataplug.actors.Errors.{ DataPlugError, _ }
 import org.hatdex.dataplug.apiInterfaces.authProviders.RequestAuthenticator
 import org.hatdex.dataplug.apiInterfaces.models._
-import org.hatdex.dataplug.utils.FutureRetries
-import org.hatdex.dataplug.actors.HatClientActor
-import org.hatdex.dataplug.actors.HatClientActor.{ DataSaved, ReqFailed }
-import org.hatdex.hat.api.services.Errors.DuplicateDataException
+import org.hatdex.dataplug.utils.{ AuthenticatedHatClient, FutureRetries }
+import org.hatdex.hat.api.services.Errors.{ ApiException, DuplicateDataException }
 import org.joda.time.DateTime
 import play.api.http.Status._
 import play.api.libs.json.{ JsArray, JsValue, Json }
@@ -36,17 +33,17 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
    *
    * @param fetchParams API endpoint parameters generic (stateless) for the endpoint
    * @param hatAddress HAT Address (domain)
-   * @param hatClientActor HAT client actor for specific HAT
+   * @param hatClient HAT client for the specific HAT
    * @return Potentially updated set of parameters, e.g. with new timestamps
    */
-  def fetch(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef)(implicit ec: ExecutionContext, timeout: Timeout): Future[DataPlugFetchStep] = {
-    processDataFetch(fetchParams, hatAddress, hatClientActor, retrying = false)
+  def fetch(fetchParams: ApiEndpointCall, hatAddress: String, hatClient: AuthenticatedHatClient)(implicit ec: ExecutionContext, timeout: Timeout): Future[DataPlugFetchStep] = {
+    processDataFetch(fetchParams, hatAddress, hatClient, retrying = false)
   }
 
   protected def processDataFetch(
     fetchParams: ApiEndpointCall,
     hatAddress: String,
-    hatClientActor: ActorRef,
+    hatClient: AuthenticatedHatClient,
     retrying: Boolean)(implicit ec: ExecutionContext, timeout: Timeout): Future[DataPlugFetchStep] = {
     val authenticatedFetchParameters = authenticateRequest(fetchParams, hatAddress, refreshToken = retrying)
 
@@ -55,7 +52,7 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
     } flatMap { result =>
       result.status match {
         case OK =>
-          processResults(result.json, hatAddress, hatClientActor, fetchParams) map { _ =>
+          processResults(result.json, hatAddress, hatClient, fetchParams) map { _ =>
             logger.debug(s"Successfully processed request for $hatAddress to save data from ${fetchParams.url}${fetchParams.path}")
             buildContinuation(result.json, fetchParams)
               .map(DataPlugFetchContinuation)
@@ -85,7 +82,7 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
         case UNAUTHORIZED =>
           if (!retrying) {
             logger.debug(s"Unauthorized request $fetchParams for $hatAddress - ${result.status}: ${result.body}")
-            processDataFetch(fetchParams, hatAddress, hatClientActor, retrying = true)
+            processDataFetch(fetchParams, hatAddress, hatClient, retrying = true)
           }
           else {
             logger.warn(s"Unauthorized retried request $fetchParams for $hatAddress - ${result.status}: ${result.body}")
@@ -110,9 +107,9 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
     }
   }
 
-  protected def processResults(content: JsValue, hatAddress: String, hatClientActor: ActorRef, fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
+  protected def processResults(content: JsValue, hatAddress: String, hatClient: AuthenticatedHatClient, fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
     val retries: List[FiniteDuration] = FutureRetries.withJitter(List(20.seconds, 2.minutes, 5.minutes, 10.minutes), 0.2, 0.5)
-    FutureRetries.retry(uploadHatData(namespace, endpoint, content, hatAddress, hatClientActor), retries)
+    FutureRetries.retry(uploadHatData(namespace, endpoint, content, hatAddress, hatClient), retries)
   }
 
   protected def uploadHatData(
@@ -120,7 +117,7 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
     endpoint: String,
     data: JsValue,
     hatAddress: String,
-    hatClientActor: ActorRef)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
+    hatClient: AuthenticatedHatClient)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
     val batchdata: JsArray = data match {
       case v: JsArray => v
@@ -128,12 +125,12 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
     }
 
     if (batchdata.value.nonEmpty) { // set the predicate to false to prevent posting to HAT
-      hatClientActor.?(HatClientActor.PostData(namespace, endpoint, batchdata))
-        .flatMap {
-          case ReqFailed(_, _: DuplicateDataException) => Future.successful(Done)
-          case ReqFailed(message, cause)               => Future.failed(HATApiCommunicationException(message, cause))
-          case DataSaved(_)                            => Future.successful(Done)
-          case _                                       => Future.failed(HATApiCommunicationException("Unrecognised message from the HAT Client Actor"))
+      hatClient.postData(namespace, endpoint, batchdata)
+        .map(_ => Done)
+        .recoverWith {
+          case _: DuplicateDataException => Future.successful(Done)
+          case e: ApiException           => Future.failed(HATApiCommunicationException(e.getMessage, e))
+          case e                         => Future.failed(HATApiCommunicationException("Unknown error", e))
         }
     }
     else {
