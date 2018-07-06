@@ -50,6 +50,10 @@ object DataPlugManagerActor {
       phata: String,
       error: String) extends DataPlugManagerActorMessage
 
+  case class CancelSchedule(
+      endpoint: ApiEndpointVariant,
+      phata: String) extends DataPlugManagerActorMessage
+
   sealed trait DataPlugSyncDispatcherActorMessage
 
   case class Forward(message: PhataDataPlugVariantSyncerMessage, to: ActorRef) extends DataPlugSyncDispatcherActorMessage
@@ -119,6 +123,11 @@ class DataPlugManagerActor @Inject() (
         Future.successful(())
       }
 
+    case CancelSchedule(variant, phata) =>
+      val jobIdentifier = (phata, variant.endpoint.name, variant.variant.getOrElse(""))
+      logger.info(s"Cancelling previous schedule $jobIdentifier on request.")
+      syncingSchedules.get(jobIdentifier).map(_.cancel())
+
     case Stop(variant, phata) =>
       val actorKey = s"${syncerActorKey(phata, variant)}-supervisor"
       logger.warn(s"Stopping actor $actorKey")
@@ -134,18 +143,24 @@ class DataPlugManagerActor @Inject() (
     val actorKey = syncerActorKey(phata, variant)
     context.system.scheduler.schedule(1.second, endpointInterface.refreshInterval) {
 
-      val eventualSyncMessage = for {
-        endpointCall <- dataplugEndpointService.retrieveLastSuccessfulEndpointVariant(phata, variant.endpoint.name, variant.variant)
-          .map(maybeEndpointVariant => maybeEndpointVariant.flatMap(_.configuration).orElse(maybeEndpointCall))
-        maybeAccessToken <- hatTokenService.forUser(phata) if maybeAccessToken.isDefined
-        syncerActor <- startSyncerActor(phata, maybeAccessToken.get.accessToken, variant, endpointInterface, actorKey)
-      } yield Forward(Fetch(endpointCall, 0), syncerActor)
+      hatTokenService.forUser(phata) flatMap {
+        case Some(hatCredentials) =>
+          val eventualSyncMessage = for {
+            endpointCall <- dataplugEndpointService.retrieveLastSuccessfulEndpointVariant(phata, variant.endpoint.name, variant.variant)
+              .map(maybeEndpointVariant => maybeEndpointVariant.flatMap(_.configuration).orElse(maybeEndpointCall))
+            syncerActor <- startSyncerActor(phata, hatCredentials.accessToken, variant, endpointInterface, actorKey)
+          } yield Forward(Fetch(endpointCall, 0), syncerActor)
 
-      eventualSyncMessage.recover {
-        case e =>
-          logger.error(s"Error while trying to start sycning dat for $phata, variant $variant: ${e.getMessage}", e)
-          DataPlugManagerActor.Nop()
-      } pipeTo throttledSyncActor
+          eventualSyncMessage.recover {
+            case e =>
+              logger.error(s"Error while trying to start syncing dat for $phata, variant $variant: ${e.getMessage}", e)
+              DataPlugManagerActor.Nop()
+          } pipeTo throttledSyncActor
+
+        case None =>
+          logger.error(s"HAT token missing/expired for $phata. Cancelling schedule.")
+          Future.successful(DataPlugManagerActor.CancelSchedule(variant, phata)) pipeTo self
+      }
     }
   }
 

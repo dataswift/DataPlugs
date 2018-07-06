@@ -85,8 +85,9 @@ class HatLoginController @Inject() (
 
     authResult.recover {
       case e: ProviderException =>
-        logger.warn(Messages("auth.hatcredentials.incorrect"), e)
-        Redirect(dataPlugViewSet.indexRedirect).flashing("error" -> Messages("auth.hatcredentials.incorrect"))
+        val signinHatForm = Form("hataddress" -> nonEmptyText)
+        logger.warn("Failed to login - HAT App version outdated. Please update and try again.", e)
+        Ok(dataPlugViewSet.signIn(signinHatForm, Some("Failed to login - HAT App version outdated. Please update and try again.")))
     }
   }
 
@@ -94,7 +95,7 @@ class HatLoginController @Inject() (
 
   def signinHat: Action[AnyContent] = Action.async { implicit request =>
     signinHatForm.bindFromRequest.fold(
-      formWithErrors => Future.successful(BadRequest(dataPlugViewSet.signIn(signinHatForm))),
+      formWithErrors => Future.successful(BadRequest(dataPlugViewSet.signIn(signinHatForm, None))),
       address => {
         val hatHost = address.stripPrefix("http://").stripPrefix("https://").replaceAll("[^A-Za-z0-9.:]", "")
 

@@ -24,7 +24,7 @@ trait DataPlugViewSet {
     endpointVariants: Option[Seq[ApiEndpointVariantChoice]],
     variantsForm: Form[List[String]])(implicit request: RequestHeader, user: User, messages: Messages): Html
 
-  def signIn(form: Form[String])(implicit request: RequestHeader, messages: Messages): Html
+  def signIn(form: Form[String], errorMessage: Option[String])(implicit request: RequestHeader, messages: Messages): Html
 
   def indexRedirect: Call
 

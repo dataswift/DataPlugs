@@ -28,8 +28,8 @@ class DataPlugViewSetDefault extends DataPlugViewSet {
       variantsForm)
   }
 
-  def signIn(form: Form[String])(implicit request: RequestHeader, messages: Messages): Html =
-    dataplugViews.html.signIn(form)
+  def signIn(form: Form[String], errorMessage: Option[String])(implicit request: RequestHeader, messages: Messages): Html =
+    dataplugViews.html.signIn(form, errorMessage)
 
   def indexRedirect: Call =
     org.hatdex.dataplug.controllers.routes.Application.index()

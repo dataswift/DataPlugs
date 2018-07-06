@@ -9,10 +9,10 @@
 package org.hatdex.dataplug.controllers
 
 import javax.inject.Inject
-
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Clock
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+import com.nimbusds.jwt.SignedJWT
 import org.hatdex.dataplug.actors.IoExecutionContext
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointStatus, ApiEndpointVariantChoice }
 import org.hatdex.dataplug.models.User
@@ -24,6 +24,7 @@ import play.api.data.Forms._
 import play.api.mvc._
 
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.Try
 
 class Application @Inject() (
     components: ControllerComponents,
@@ -43,10 +44,19 @@ class Application @Inject() (
   def signIn(): Action[AnyContent] = UserAwareAction { implicit request =>
     val signinHatForm = Form("hataddress" -> nonEmptyText)
 
-    request.identity map { _ =>
-      Redirect(dataPlugViewSet.indexRedirect)
-    } getOrElse {
-      Ok(dataPlugViewSet.signIn(signinHatForm))
+    (request.queryString.get("token"), request.identity) match {
+      case (_, Some(_)) => Redirect(dataPlugViewSet.indexRedirect)
+      case (Some(Seq(accessToken)), None) =>
+        val maybeSignedJWT = Try(SignedJWT.parse(accessToken))
+        val maybeTokenVersionCorrect = maybeSignedJWT.map(_.getJWTClaimsSet.getClaims.containsKey("application"))
+
+        if (maybeTokenVersionCorrect.isSuccess && !maybeTokenVersionCorrect.get) {
+          Ok(dataPlugViewSet.signIn(signinHatForm, Some("Failed to login - HAT App version outdated. Please update and try again.")))
+        }
+        else {
+          Ok(dataPlugViewSet.signIn(signinHatForm, Some("Failed to login. Please make sure you have the latest version of the HAT app and try again.")))
+        }
+      case (None, None) => Ok(dataPlugViewSet.signIn(signinHatForm, None))
     }
   }
 

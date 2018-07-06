@@ -13,25 +13,12 @@
     </li>
 }
 
-@customScripts = {
-    <script>
-        function quitBox(cmd) {
-        	if (cmd === 'close') {
-                open(location, '_self').close();
-        	}
-            return false;
-        }
-    </script>
-}
-
-@org.hatdex.dataplug.views.html.templates.main(Messages("sign.in.title"), menubarContent = menubarContent, scripts = customScripts) {
+@org.hatdex.dataplug.views.html.templates.main(Messages("sign.in.title"), menubarContent = menubarContent) {
     <div class="row">
         <div class="plug-content">
             <div class="complete-instructions">
                 @Messages("complete.instructions")
             </div>
-
-            <input type="button" class="btn btn-dataplug" name="cloes" id="close" value=" @Messages("button.rumpel")" onclick="return quitBox('close');" />
         </div>
     </div>
 }

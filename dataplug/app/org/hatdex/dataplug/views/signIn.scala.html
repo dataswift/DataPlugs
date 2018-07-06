@@ -1,4 +1,4 @@
-@(signInForm: Form[String])(implicit request: RequestHeader, messages: Messages)
+@(signInForm: Form[String], errorMessage: Option[String])(implicit request: RequestHeader, messages: Messages)
 
 @import views.html.b3
 @import b3.vertical.fieldConstructor
@@ -7,7 +7,15 @@
 @import org.hatdex.dataplug.controllers.routes
 
 @templates.main(Messages("sign.in.title")) {
+
     <div class="row">
+        @errorMessage.map { message =>
+            <div class="alert alert-danger alert-dismissable" role="alert" style="font-size: 14px; font-weight: bold; text-align: center;">
+                <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                @message
+            </div>
+        }
+
         <div class="plug-content">
             <h2 class="signin-header">@Messages("signin.hat.header")</h2>
             <fieldset class="signin">
