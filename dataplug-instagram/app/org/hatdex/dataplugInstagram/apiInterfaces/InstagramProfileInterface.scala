@@ -7,11 +7,11 @@ import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import com.mohiva.play.silhouette.impl.providers.oauth2.InstagramProvider
-import org.hatdex.dataplug.utils.{AuthenticatedHatClient, FutureTransformations, Mailer}
+import org.hatdex.dataplug.utils.{ AuthenticatedHatClient, FutureTransformations, Mailer }
 import org.hatdex.dataplug.actors.Errors.SourceDataProcessingException
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
-import org.hatdex.dataplug.apiInterfaces.authProviders.{OAuth2TokenHelper, RequestAuthenticatorOAuth2}
-import org.hatdex.dataplug.apiInterfaces.models.{ApiEndpointCall, ApiEndpointMethod}
+import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
+import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplugInstagram.models.InstagramProfile
 import play.api.Logger
@@ -19,8 +19,8 @@ import play.api.libs.json._
 import play.api.libs.ws.WSClient
 
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Success, Try }
 
 class InstagramProfileInterface @Inject() (
     val wsClient: WSClient,
@@ -48,10 +48,10 @@ class InstagramProfileInterface @Inject() (
   }
 
   override protected def processResults(
-                                         content: JsValue,
-                                         hatAddress: String,
-                                         hatClient: AuthenticatedHatClient,
-                                         fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
+    content: JsValue,
+    hatAddress: String,
+    hatClient: AuthenticatedHatClient,
+    fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
     for {
       validatedData <- FutureTransformations.transform(validateMinDataStructure(content))

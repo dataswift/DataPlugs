@@ -17,7 +17,7 @@ setup.twitter.info=Choose Twitter data to be synchronized to your HAT.
 
 setup.link=Link your bank accounts from:
 
-complete.instructions=Success! Twitter data synchronisation has been activated. You can close this window yourself or click the button below to close it automatically.
+complete.instructions=Success! Twitter data synchronisation has been activated. You can close this window now.
 
 disconnect.instructions=Your Plug is currently set up and running successfully. Manage all your Data Plugs in Web Rumpel, or return to Rumpel Lite.
 

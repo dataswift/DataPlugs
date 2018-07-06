@@ -23,7 +23,7 @@ disconnect.instructions=Your Plug is currently set up and running successfully. 
 
 disconnect.note=(Having problems? Try to disconnect the plug and reconnect to Twitter again.)
 
-complete.instructions=Success! Google calendar data synchronisation has been activated. You can close this window yourself or click the button below to close it automatically.
+complete.instructions=Success! Google calendar data synchronisation has been activated. You can close this window now.
 
 button.rumpel=Close this window
 

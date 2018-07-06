@@ -6,11 +6,11 @@ import akka.http.scaladsl.model.Uri
 import akka.util.Timeout
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import org.hatdex.dataplug.utils.{AuthenticatedHatClient, FutureTransformations, Mailer}
+import org.hatdex.dataplug.utils.{ AuthenticatedHatClient, FutureTransformations, Mailer }
 import org.hatdex.dataplug.actors.Errors.SourceDataProcessingException
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
-import org.hatdex.dataplug.apiInterfaces.authProviders.{OAuth2TokenHelper, RequestAuthenticatorOAuth2}
-import org.hatdex.dataplug.apiInterfaces.models.{ApiEndpointCall, ApiEndpointMethod}
+import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
+import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplugSpotify.apiInterfaces.authProviders.SpotifyProvider
 import org.hatdex.dataplugSpotify.models.SpotifyPlayedTrack
@@ -20,8 +20,8 @@ import play.api.libs.json._
 import play.api.libs.ws.WSClient
 
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Success, Try }
 
 class SpotifyRecentlyPlayedInterface @Inject() (
     val wsClient: WSClient,
@@ -90,10 +90,10 @@ class SpotifyRecentlyPlayedInterface @Inject() (
   }
 
   override protected def processResults(
-                                         content: JsValue,
-                                         hatAddress: String,
-                                         hatClient: AuthenticatedHatClient,
-                                         fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
+    content: JsValue,
+    hatAddress: String,
+    hatClient: AuthenticatedHatClient,
+    fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
     for {
       validatedData <- FutureTransformations.transform(validateMinDataStructure(content))

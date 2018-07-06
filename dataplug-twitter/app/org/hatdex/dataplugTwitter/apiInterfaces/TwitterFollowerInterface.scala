@@ -14,20 +14,20 @@ import akka.util.Timeout
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider
-import org.hatdex.dataplug.utils.{AuthenticatedHatClient, FutureTransformations, Mailer}
+import org.hatdex.dataplug.utils.{ AuthenticatedHatClient, FutureTransformations, Mailer }
 import org.hatdex.dataplug.actors.Errors.SourceDataProcessingException
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
 import org.hatdex.dataplug.apiInterfaces.authProviders.RequestAuthenticatorOAuth1
-import org.hatdex.dataplug.apiInterfaces.models.{ApiEndpointCall, ApiEndpointMethod}
+import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplugTwitter.models._
 import play.api.Logger
 import play.api.libs.json._
-import play.api.libs.ws.{WSClient, WSResponse}
+import play.api.libs.ws.{ WSClient, WSResponse }
 
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Success, Try }
 
 class TwitterFollowerInterface @Inject() (
     val wsClient: WSClient,
@@ -73,10 +73,10 @@ class TwitterFollowerInterface @Inject() (
     super[RequestAuthenticatorOAuth1].buildRequest(params)
 
   override protected def processResults(
-                                         content: JsValue,
-                                         hatAddress: String,
-                                         hatClient: AuthenticatedHatClient,
-                                         fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
+    content: JsValue,
+    hatAddress: String,
+    hatClient: AuthenticatedHatClient,
+    fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
     for {
       users <- FutureTransformations.transform(validateMinDataStructure(content)) // Parse tweets into strongly-typed structures

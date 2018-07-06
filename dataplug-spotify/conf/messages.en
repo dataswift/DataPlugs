@@ -17,7 +17,7 @@ signin.hat.signin=Login with HAT
 
 signin.hat.hint=You will be taken to your personal HAT page. For security reasons, your HAT password can only be entered at that page.
 
-complete.instructions=Success! Spotify's played track history synchronisation has been activated. You can close this window yourself or click the button below to close it automatically.
+complete.instructions=Success! Spotify's played track history synchronisation has been activated. You can close this window now.
 
 disconnect.instructions=Your Plug is currently set up and running successfully. Manage all your Data Plugs in Web Rumpel, or return to Rumpel Lite.
 
