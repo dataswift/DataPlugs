@@ -70,7 +70,7 @@ class OAuth2TokenHelper @Inject() (
 
           wsClient.url(url)
             .withHttpHeaders("Authorization" -> authHeader)
-            .withHttpHeaders(settings.refreshHeaders.toSeq: _*)
+            .addHttpHeaders(settings.refreshHeaders.toSeq: _*)
             .withQueryStringParameters(refreshQueryParams.toSeq: _*)
             .post(params)
             .flatMap(resp => Future.fromTry(buildInfo(resp)))

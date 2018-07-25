@@ -26,7 +26,7 @@ object Dependencies {
   object Library {
     object HATDeX {
       private val version = "2.6.0-SNAPSHOT"
-      val hatClient = "org.hatdex" %% "hat-client-scala-play" % "2.6.1-SNAPSHOT"
+      val hatClient = "org.hatdex" %% "hat-client-scala-play" % "2.6.2-SNAPSHOT"
       val dexClient = "org.hatdex" %% "dex-client-scala-play" % version
       val dexter = "org.hatdex" %% "dexter" % "1.4.3-SNAPSHOT"
       val codegen = "org.hatdex" %% "slick-postgres-driver" % "0.0.9"
