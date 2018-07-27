@@ -145,7 +145,7 @@ object FacebookFeedInterface {
     Map(),
     Map("limit" -> "500", "format" -> "json", "fields" -> ("id,admin_creator,application,call_to_action,caption,created_time,description," +
       "feed_targeting,from,icon,is_hidden,is_published,link,message,message_tags,name,object_id,picture,place," +
-      "privacy,properties,shares,source,status_type,story,targeting,to,type,updated_time,with_tags,full_picture")),
+      "privacy,properties,shares,source,status_type,story,targeting,to,type,updated_time,full_picture")),
     Map(),
     Some(Map()))
 }

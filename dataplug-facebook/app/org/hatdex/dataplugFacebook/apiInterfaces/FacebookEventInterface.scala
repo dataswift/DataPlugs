@@ -147,9 +147,7 @@ object FacebookEventInterface {
     "/me/events",
     ApiEndpointMethod.Get("Get"),
     Map(),
-    Map("limit" -> "250", "pretty" -> "0", "fields" -> ("id,category,cover,description,type,end_time,is_viewer_admin,is_page_owned," +
-      "can_guests_invite,guest_list_enabled,name,owner,parent_group,place,start_time,ticket_uri,timezone,updated_time," +
-      "attending_count,declined_count,maybe_count,noreply_count,rsvp_status")),
+    Map("limit" -> "250", "pretty" -> "0"),
     Map(),
     Some(Map()))
 }
