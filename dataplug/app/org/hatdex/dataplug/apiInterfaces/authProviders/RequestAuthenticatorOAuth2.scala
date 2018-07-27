@@ -53,6 +53,7 @@ trait RequestAuthenticatorOAuth2 extends RequestAuthenticator {
                 _.andThen { // Return the token and then
                   // If the access token has changed from the last known value, save that in the repository
                   case Success(refreshedToken) if refreshedToken.accessToken != authInfo.accessToken =>
+                    logger.debug(s"OAuth info refreshed on ${params.path} endpoint call. New values being saved for $hatAddress: $refreshedToken")
                     val providerLoginInfo = user.linkedUsers.find(_.providerId == provider.id).get
                     authInfoRepository.save[AuthInfoType](providerLoginInfo.loginInfo, refreshedToken)
 

@@ -69,8 +69,8 @@ class OAuth2TokenHelper @Inject() (
             .concat(encodedAuth)
 
           wsClient.url(url)
-            .withHttpHeaders("Authorization" -> authHeader)
-            .addHttpHeaders(settings.refreshHeaders.toSeq: _*)
+            .withHttpHeaders(settings.refreshHeaders.toSeq: _*)
+            .addHttpHeaders("Authorization" -> authHeader)
             .withQueryStringParameters(refreshQueryParams.toSeq: _*)
             .post(params)
             .flatMap(resp => Future.fromTry(buildInfo(resp)))

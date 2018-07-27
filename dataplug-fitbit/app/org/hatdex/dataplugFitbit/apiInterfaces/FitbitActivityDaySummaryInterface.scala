@@ -57,7 +57,7 @@ class FitbitActivityDaySummaryInterface @Inject() (
       else {
         Some(params.copy(
           storageParameters = Some(params.storage + ("earliestDateSynced" -> dateParam)),
-          pathParameters = params.pathParameters + ("date" -> syncDate.minus(1).toString(defaultApiDateFormat))))
+          pathParameters = params.pathParameters + ("date" -> syncDate.minusDays(1).toString(defaultApiDateFormat))))
       }
     }.getOrElse {
       Some(params.copy(
@@ -128,7 +128,17 @@ class FitbitActivityDaySummaryInterface @Inject() (
     (rawData \ "summary").toOption.map {
       case data: JsObject if data.validate[FitbitActivitySummary].isSuccess =>
         logger.info(s"Validated JSON day summary object.")
-        Success(JsArray(Seq(data)))
+        val today = DateTime.now.toString(defaultApiDateFormat)
+        val recordDate = (data \ "summaryDate").as[String]
+
+        if (recordDate == today) {
+          logger.debug(s"Record date is the same as today's date. Skipping.")
+          Success(JsArray(Seq()))
+        }
+        else {
+          logger.debug(s"Record date ($recordDate) does not match today's date ($today). Updating.")
+          Success(JsArray(Seq(data)))
+        }
       case data: JsObject =>
         logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")
         Failure(SourceDataProcessingException(s"Error validating data, some of the required fields missing."))
