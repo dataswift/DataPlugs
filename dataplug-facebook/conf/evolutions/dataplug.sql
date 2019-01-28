@@ -15,3 +15,15 @@ INSERT INTO dataplug_endpoint (name, description, details)
 VALUES
   ('profile/picture', 'User''s Facebook profile picture information', 'snapshots')
 ON CONFLICT (name) DO NOTHING;
+
+--changeset dataplugFacebook:updateExistingDataplugUserRecords
+
+UPDATE dataplug_user
+SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters,fields}', '"id,admin_creator,application,call_to_action,caption,created_time,description,feed_targeting,from,icon,is_hidden,is_published,link,message,message_tags,name,object_id,picture,place,privacy,properties,shares,source,status_type,story,targeting,to,type,updated_time,full_picture"')
+WHERE dataplug_user.dataplug_endpoint = 'feed';
+
+--changeset dataplugFacebook:updateExistingDataplugUserRecords2
+
+UPDATE dataplug_user
+SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters,fields}', '"id,birthday,email,first_name,gender,hometown,is_verified,last_name,locale,name,political,relationship_status,religion,quotes,significant_other,third_party_id,timezone,updated_time,verified,website,friends,age_range,link"')
+WHERE dataplug_user.dataplug_endpoint = 'profile';

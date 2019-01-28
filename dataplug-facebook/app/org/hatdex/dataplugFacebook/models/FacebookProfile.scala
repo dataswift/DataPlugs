@@ -8,6 +8,8 @@ case class FacebookProfile(
     email: Option[String],
     first_name: String,
     last_name: String,
+    friends: Option[List[FacebookBasicUser]],
+    friend_count: Int,
     gender: Option[String],
     is_verified: Boolean,
     locale: String,
@@ -17,12 +19,18 @@ case class FacebookProfile(
     // religion: String,
     // quotes: String,
     third_party_id: String,
-    timezone: Int,
+    timezone: Double,
     updated_time: String,
-    verified: Boolean)
-// website: String,
+    verified: Boolean,
+    link: Option[String],
+    website: Option[String])
+
 // hometown: FacebookHometown,
 // significant_other: FacebookSignificantOther)
+
+case class FacebookBasicUser(
+    name: String,
+    id: String)
 
 case class FacebookHometown(
     id: String,
@@ -33,6 +41,7 @@ case class FacebookSignificantOther(
     name: String)
 
 object FacebookProfile {
+  implicit val facebookBasicUserReads: Reads[FacebookBasicUser] = Json.reads[FacebookBasicUser]
   implicit val facebookHometownReads: Reads[FacebookHometown] = Json.reads[FacebookHometown]
   implicit val facebookSignificantOther: Reads[FacebookSignificantOther] = Json.reads[FacebookSignificantOther]
 

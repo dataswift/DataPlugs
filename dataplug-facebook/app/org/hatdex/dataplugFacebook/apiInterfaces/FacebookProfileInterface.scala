@@ -52,13 +52,37 @@ class FacebookProfileInterface @Inject() (
     hatClient: AuthenticatedHatClient,
     fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
+    val dataValidation =
+      transformData(content)
+        .map(validateMinDataStructure)
+        .getOrElse(Failure(SourceDataProcessingException("Source data malformed, could not insert date in to the structure")))
+
     for {
-      validatedData <- FutureTransformations.transform(validateMinDataStructure(content))
+      validatedData <- FutureTransformations.transform(dataValidation)
       _ <- uploadHatData(namespace, endpoint, validatedData, hatAddress, hatClient) // Upload the data
     } yield {
       logger.debug(s"Successfully synced new records for HAT $hatAddress")
       Done
     }
+  }
+
+  private def transformData(rawData: JsValue): JsResult[JsObject] = {
+    import play.api.libs.json._
+
+    val transformation = __.json.update(
+      __.read[JsObject].map(profile => {
+        val friends = (profile \ "friends" \ "data").asOpt[JsArray].getOrElse(JsArray())
+        val friendCount = (profile \ "friends" \ "summary" \ "total_count").as[JsNumber]
+        val ageMin = (profile \ "age_range" \ "min").asOpt[Int]
+        val ageMax = (profile \ "age_range" \ "max").asOpt[Int]
+
+        profile ++ JsObject(Map(
+          "friends" -> friends,
+          "friend_count" -> friendCount,
+          "age_range" -> JsString(s"${ageMin.getOrElse("unknown")} - ${ageMax.getOrElse("unknown")}")))
+      }))
+
+    rawData.transform(transformation)
   }
 
   def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
@@ -83,7 +107,8 @@ object FacebookProfileInterface {
     ApiEndpointMethod.Get("Get"),
     Map(),
     Map("fields" -> ("id,birthday,email,first_name,gender,hometown,is_verified,last_name,locale,name,political," +
-      "relationship_status,religion,quotes,significant_other,third_party_id,timezone,updated_time,verified,website")),
+      "relationship_status,religion,quotes,significant_other,third_party_id,timezone,updated_time,verified,website," +
+      "friends,age_range,link")),
     Map(),
     Some(Map()))
 }
