@@ -25,7 +25,7 @@ trait UserService extends IdentityService[User] {
   /**
    * Retrieves a user that matches the specified ID.
    *
-   * @param id The ID to retrieve a user.
+   * @param loginInfo The LoginInfo to retrieve a user.
    * @return The retrieved user or None if no user could be retrieved for the given ID.
    */
   def retrieve(loginInfo: LoginInfo): Future[Option[User]]

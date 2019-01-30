@@ -12,15 +12,12 @@ case class FacebookPost(
     name: Option[String],
     object_id: Option[String],
     place: Option[FacebookPlace],
-    picture: Option[String],
     full_picture: Option[String],
     status_type: Option[String],
-    story: Option[String],
     `type`: String,
     updated_time: String,
     from: FacebookFrom,
-    privacy: FacebookPrivacy,
-    application: Option[FacebookApplication])
+    privacy: FacebookPrivacy)
 
 case class FacebookFrom(
     id: String,

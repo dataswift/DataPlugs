@@ -143,9 +143,8 @@ object FacebookFeedInterface {
     "/me/feed",
     ApiEndpointMethod.Get("Get"),
     Map(),
-    Map("limit" -> "500", "format" -> "json", "fields" -> ("id,admin_creator,application,call_to_action,caption,created_time,description," +
-      "feed_targeting,from,icon,is_hidden,is_published,link,message,message_tags,name,object_id,picture,place," +
-      "privacy,properties,shares,source,status_type,story,targeting,to,type,updated_time,full_picture")),
+    Map("limit" -> "500", "format" -> "json", "fields" -> ("id,attachments,caption,created_time,description,from,full_picture," +
+      "icon,is_instagram_eligible,link,message,message_tags,name,object_id,permalink_url,place,shares,status_type,type,updated_time,with_tags")),
     Map(),
     Some(Map()))
 }

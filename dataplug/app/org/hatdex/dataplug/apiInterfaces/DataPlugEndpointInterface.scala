@@ -48,6 +48,7 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
     val authenticatedFetchParameters = authenticateRequest(fetchParams, hatAddress, refreshToken = retrying)
 
     authenticatedFetchParameters flatMap { requestParameters =>
+      logger.debug(s"The parameters are: $requestParameters")
       buildRequest(requestParameters)
     } flatMap { result =>
       result.status match {

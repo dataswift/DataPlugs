@@ -4,26 +4,20 @@ import play.api.libs.json._
 
 case class FacebookProfile(
     id: String,
-    // birthday: Option[String],
+    birthday: Option[String],
     email: Option[String],
     first_name: String,
     last_name: String,
     friends: Option[List[FacebookBasicUser]],
-    friend_count: Int,
-    gender: Option[String],
-    is_verified: Boolean,
-    locale: String,
+    // friend_count: Int, the representation changed to summary.total_count how do I update it here?
+    // gender: Option[String], need extra permissions
     name: String,
+    age_range: Option[String],
     // political: String,
     // relationship_status: String,
     // religion: String,
     // quotes: String,
-    third_party_id: String,
-    timezone: Double,
-    updated_time: String,
-    verified: Boolean,
-    link: Option[String],
-    website: Option[String])
+    link: Option[String])
 
 // hometown: FacebookHometown,
 // significant_other: FacebookSignificantOther)
