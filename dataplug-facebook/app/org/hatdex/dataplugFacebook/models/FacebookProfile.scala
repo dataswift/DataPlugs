@@ -8,9 +8,9 @@ case class FacebookProfile(
     email: Option[String],
     first_name: String,
     last_name: String,
-    friends: Option[List[FacebookBasicUser]],
+    //friends: Option[List[FacebookBasicUser]],
     // friend_count: Int, the representation changed to summary.total_count how do I update it here?
-    // gender: Option[String], need extra permissions
+    gender: Option[String], //need extra permissions
     name: String,
     age_range: Option[String],
     // political: String,

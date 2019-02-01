@@ -2,6 +2,7 @@ package org.hatdex.dataplugFacebook.apiInterfaces
 
 import akka.Done
 import akka.actor.Scheduler
+import akka.http.scaladsl.model.DateTime
 import akka.util.Timeout
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
@@ -78,6 +79,7 @@ class FacebookProfileInterface @Inject() (
 
         profile ++ JsObject(Map(
           "friends" -> friends,
+          "updated_time" -> JsString(DateTime.now.toString),
           "friend_count" -> friendCount,
           "age_range" -> JsString(s"${ageMin.getOrElse("unknown")} - ${ageMax.getOrElse("unknown")}")))
       }))
