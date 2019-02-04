@@ -67,8 +67,8 @@ class FacebookProfileCheck @Inject() (
       ApiEndpointVariantChoice("profile", "User's Facebook profile information", active = true, profileVariant),
       ApiEndpointVariantChoice("profile/picture", "User's Facebook profile picture", active = true, profilePictureVariant),
       ApiEndpointVariantChoice("feed", "User's Facebook posts feed", active = true, feedVariant),
-      ApiEndpointVariantChoice("likes/pages", "User's likes on Facebook", active = false, userLikesVariant),
-      ApiEndpointVariantChoice("events", "Facebook events the user has been invited to", active = false, eventsVariant))
+      ApiEndpointVariantChoice("likes/pages", "User's likes on Facebook", active = true, userLikesVariant),
+      ApiEndpointVariantChoice("events", "Facebook events the user has been invited to", active = true, eventsVariant))
 
     choices
   }

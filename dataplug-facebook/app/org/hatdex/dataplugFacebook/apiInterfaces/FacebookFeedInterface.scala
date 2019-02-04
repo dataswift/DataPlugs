@@ -42,8 +42,13 @@ class FacebookFeedInterface @Inject() (
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     logger.debug("Building continuation...")
 
+    logger.debug(s"Content is $content")
+
     val maybeNextPage = (content \ "paging" \ "next").asOpt[String]
     val maybeSinceParam = params.pathParameters.get("since")
+
+    logger.debug(s"Found possible next page link: $maybeNextPage")
+    logger.debug(s"Found possible next since parameter: $maybeSinceParam")
 
     maybeNextPage.map { nextPage =>
       logger.debug(s"Found next page link (continuing sync): $nextPage")
@@ -82,9 +87,9 @@ class FacebookFeedInterface @Inject() (
 
     logger.debug(s"Updated query parameters: $updatedQueryParams")
 
-    maybeSinceParam.map { sinceParam =>
-      logger.debug(s"Building next sync parameters $updatedQueryParams with 'since': $sinceParam")
-      params.copy(pathParameters = params.pathParameters - "since", queryParameters = updatedQueryParams + ("since" -> sinceParam))
+    maybeSinceParam.map { sinceParameter =>
+      logger.debug(s"Building next sync parameters $updatedQueryParams with 'since': $sinceParameter")
+      params.copy(pathParameters = params.pathParameters - "since", queryParameters = updatedQueryParams + ("since" -> sinceParameter))
     }.getOrElse {
       val maybePreviousPage = (content \ "paging" \ "previous").asOpt[String]
 
@@ -143,8 +148,8 @@ object FacebookFeedInterface {
     "/me/feed",
     ApiEndpointMethod.Get("Get"),
     Map(),
-    Map("limit" -> "500", "format" -> "json", "fields" -> ("id,attachments,caption,created_time,description,from,full_picture," +
-      "icon,is_instagram_eligible,link,message,message_tags,name,object_id,permalink_url,place,shares,status_type,type,updated_time,with_tags")),
+    Map("limit" -> "500", "fields" -> ("id,attachments,caption,created_time,description,from,full_picture,icon,link," +
+      "is_instagram_eligible,message,message_tags,name,object_id,permalink_url,place,shares,status_type,type,updated_time,with_tags")),
     Map(),
     Some(Map()))
 }

@@ -1,7 +1,9 @@
 package org.hatdex.dataplugFacebook.apiInterfaces
 
+import akka.Done
 import akka.actor.Scheduler
 import akka.http.scaladsl.model.Uri
+import akka.util.Timeout
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth2.FacebookProvider
@@ -10,12 +12,13 @@ import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
 import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
 import org.hatdex.dataplug.services.UserService
-import org.hatdex.dataplug.utils.Mailer
+import org.hatdex.dataplug.utils.{ AuthenticatedHatClient, FutureTransformations, Mailer }
 import org.hatdex.dataplugFacebook.models.{ FacebookPost, FacebookUserLikes }
 import play.api.Logger
 import play.api.libs.json.{ JsArray, JsObject, JsValue }
 import play.api.libs.ws.WSClient
 
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.concurrent.duration._
 import scala.util.{ Failure, Success, Try }
 
@@ -39,8 +42,8 @@ class FacebookUserLikesInterface @Inject() (
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     logger.debug("Building continuation...")
 
-    val maybeNextPage = (content \ "paging" \ "cursors" \ "next").asOpt[String]
-    val maybeAfterParam = params.pathParameters.get("after")
+    val maybeNextPage = (content \ "paging" \ "next").asOpt[String]
+    val maybeAfterParam = (content \ "paging" \ "cursor" \ "after").asOpt[String]
 
     maybeNextPage.map { nextPage =>
       logger.debug(s"Found next page link (continuing sync): $nextPage")
@@ -55,12 +58,11 @@ class FacebookUserLikesInterface @Inject() (
         params.copy(queryParameters = updatedQueryParams)
       }
       else {
-        (content \ "paging" \ "cursors" \ "previous").asOpt[String].flatMap { previousPage =>
-          val previousPageUri = Uri(previousPage)
-          previousPageUri.query().get("before").map { beforeParam =>
-            val updatedPathParams = params.pathParameters + ("before" -> beforeParam)
+        (content \ "paging" \ "previous").asOpt[String].flatMap { _ =>
+          (content \ "paging" \ "cursor" \ "after").asOpt[String].map { afterParameter =>
+            val updatedPathParams = params.pathParameters + ("after" -> afterParameter)
 
-            logger.debug(s"Updating query params and setting 'before': $beforeParam")
+            logger.debug(s"Updating query params and setting 'after': $afterParameter")
             params.copy(pathParameters = updatedPathParams, queryParameters = updatedQueryParams)
           }
         }.getOrElse {
@@ -83,17 +85,32 @@ class FacebookUserLikesInterface @Inject() (
       logger.debug(s"Building next sync parameters $updatedQueryParams with 'after': $afterParam")
       params.copy(pathParameters = params.pathParameters - "after", queryParameters = updatedQueryParams + ("after" -> afterParam))
     }.getOrElse {
-      val maybePreviousPage = (content \ "paging" \ "cursors" \ "previous").asOpt[String]
+      val maybePreviousPage = (content \ "paging" \ "cursors" \ "after").asOpt[String]
 
       logger.debug("'before' parameter not found (likely no continuation runs), setting one now")
       maybePreviousPage.flatMap { previousPage =>
-        Uri(previousPage).query().get("before").map { newBeforeParam =>
-          params.copy(queryParameters = params.queryParameters + ("before" -> newBeforeParam))
+        Uri(previousPage).query().get("after").map { newAfterParam =>
+          params.copy(queryParameters = params.queryParameters + ("after" -> newAfterParam))
         }
       }.getOrElse {
         logger.warn("Could not extract previous page 'before' parameter so the new value is not set. Was the feed list empty?")
         params
       }
+    }
+  }
+
+  override protected def processResults(
+    content: JsValue,
+    hatAddress: String,
+    hatClient: AuthenticatedHatClient,
+    fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
+
+    for {
+      validatedData <- FutureTransformations.transform(validateMinDataStructure(content))
+      _ <- uploadHatData(namespace, endpoint, validatedData, hatAddress, hatClient) // Upload the data
+    } yield {
+      logger.debug(s"Successfully synced new records for HAT $hatAddress")
+      Done
     }
   }
 
@@ -126,7 +143,7 @@ object FacebookUserLikesInterface {
     Map(),
     Map("limit" -> "500", "fields" -> ("id,about,created_time,app_links,awards,can_checkin,can_post,category,category_list,checkins," +
       "description,description_html,display_subtext,emails,fan_count,has_added_app,has_whatsapp_number,link," +
-      "location,name, overall_star_rating,phone,place_type,rating_count,username, verification_status, website, whatsapp_number")),
+      "location,name,overall_star_rating,phone,place_type,rating_count,username,verification_status,website,whatsapp_number")),
     Map(),
     Some(Map()))
 }

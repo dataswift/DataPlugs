@@ -75,7 +75,9 @@ trait RequestAuthenticatorOAuth2 extends RequestAuthenticator {
     }
   }
 
-  def attachAccessToken(params: ApiEndpointCall, authInfo: OAuth2Info): ApiEndpointCall =
+  def attachAccessToken(params: ApiEndpointCall, authInfo: OAuth2Info): ApiEndpointCall = {
+    logger.debug(s"token info: ${authInfo}")
     params.copy(headers = params.headers + ("Authorization" -> s"Bearer ${authInfo.accessToken}"))
+  }
 }
 

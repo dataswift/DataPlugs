@@ -45,12 +45,14 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
     hatAddress: String,
     hatClient: AuthenticatedHatClient,
     retrying: Boolean)(implicit ec: ExecutionContext, timeout: Timeout): Future[DataPlugFetchStep] = {
+
     val authenticatedFetchParameters = authenticateRequest(fetchParams, hatAddress, refreshToken = retrying)
 
     authenticatedFetchParameters flatMap { requestParameters =>
       logger.debug(s"The parameters are: $requestParameters")
       buildRequest(requestParameters)
     } flatMap { result =>
+      logger.debug(s"fetch returned: ${result}")
       result.status match {
         case OK =>
           processResults(result.json, hatAddress, hatClient, fetchParams) map { _ =>
