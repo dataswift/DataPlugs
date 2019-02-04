@@ -17,7 +17,7 @@ case class FacebookPost(
     `type`: String,
     updated_time: String,
     from: FacebookFrom,
-    privacy: FacebookPrivacy)
+    privacy: Option[FacebookPrivacy])
 
 case class FacebookFrom(
     id: String,
