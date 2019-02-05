@@ -73,7 +73,7 @@ class FacebookProfileInterface @Inject() (
     val transformation = __.json.update(
       __.read[JsObject].map(profile => {
         val friends = (profile \ "friends" \ "data").asOpt[JsArray].getOrElse(JsArray())
-        val friendCount = (profile \ "friends" \ "summary" \ "total_count").as[JsNumber]
+        val friendCount = (profile \ "friends" \ "summary" \ "total_count").asOpt[JsNumber].getOrElse(JsNumber(0))
         val ageMin = (profile \ "age_range" \ "min").asOpt[Int]
         val ageMax = (profile \ "age_range" \ "max").asOpt[Int]
 
