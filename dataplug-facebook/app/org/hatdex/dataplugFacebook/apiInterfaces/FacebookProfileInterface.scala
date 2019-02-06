@@ -2,11 +2,11 @@ package org.hatdex.dataplugFacebook.apiInterfaces
 
 import akka.Done
 import akka.actor.Scheduler
-import akka.http.scaladsl.model.DateTime
 import akka.util.Timeout
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth2.FacebookProvider
+import org.joda.time.DateTime
 import org.hatdex.dataplug.utils.{ AuthenticatedHatClient, FutureTransformations, Mailer }
 import org.hatdex.dataplug.actors.Errors.SourceDataProcessingException
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
@@ -55,8 +55,8 @@ class FacebookProfileInterface @Inject() (
 
     val dataValidation =
       transformData(content)
-        .map(validateMinDataStructure)
-        .getOrElse(Failure(SourceDataProcessingException("Source data malformed, could not insert date in to the structure")))
+        .map(tempObject => validateMinDataStructure(tempObject, hatAddress))
+        .getOrElse(Failure(SourceDataProcessingException(s"[$hatAddress] Source data malformed, could not insert date in to the structure")))
 
     for {
       validatedData <- FutureTransformations.transform(dataValidation)
@@ -79,7 +79,7 @@ class FacebookProfileInterface @Inject() (
 
         profile ++ JsObject(Map(
           "friends" -> friends,
-          "updated_time" -> JsString(DateTime.now.toString),
+          "hat_updated_time" -> JsString(DateTime.now.toString),
           "friend_count" -> friendCount,
           "age_range" -> JsString(s"${ageMin.getOrElse("unknown")} - ${ageMax.getOrElse("unknown")}")))
       }))
@@ -87,16 +87,16 @@ class FacebookProfileInterface @Inject() (
     rawData.transform(transformation)
   }
 
-  def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
+  def validateMinDataStructure(rawData: JsValue, hatAddress: String): Try[JsArray] = {
     rawData match {
       case data: JsObject if data.validate[FacebookProfile].isSuccess =>
-        logger.info(s"Validated JSON facebook profile object.")
+        logger.info(s"[$hatAddress] Validated JSON facebook profile object.")
         Success(JsArray(Seq(data)))
       case data: JsObject =>
-        logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")
+        logger.error(s"[$hatAddress] Error validating data, some of the required fields missing:\n${data.toString}")
         Failure(SourceDataProcessingException(s"Error validating data, some of the required fields missing."))
       case _ =>
-        logger.error(s"Error parsing JSON object: ${rawData.toString}")
+        logger.error(s"[$hatAddress] Error parsing JSON object: ${rawData.toString}")
         Failure(SourceDataProcessingException(s"Error parsing JSON object."))
     }
   }

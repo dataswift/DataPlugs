@@ -111,7 +111,7 @@ class FacebookEventInterface @Inject() (
     fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
     for {
-      validatedData <- FutureTransformations.transform(validateMinDataStructure(content))
+      validatedData <- FutureTransformations.transform(validateMinDataStructure(content, hatAddress))
       _ <- uploadHatData(namespace, endpoint, validatedData, hatAddress, hatClient) // Upload the data
     } yield {
       logger.debug(s"Successfully synced new records for HAT $hatAddress")
@@ -119,22 +119,22 @@ class FacebookEventInterface @Inject() (
     }
   }
 
-  def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
+  def validateMinDataStructure(rawData: JsValue, hatAddress: String): Try[JsArray] = {
     (rawData \ "data").toOption.map {
       case data: JsArray if data.validate[List[FacebookEvent]].isSuccess =>
-        logger.info(s"Validated JSON array of ${data.value.length} items.")
+        logger.info(s"[$hatAddress] Validated JSON array of ${data.value.length} items.")
         Success(data)
       case data: JsArray =>
-        logger.warn(s"Could not validate full item list. Parsing ${data.value.length} data items one by one.")
+        logger.warn(s"[$hatAddress] Could not validate full item list. Parsing ${data.value.length} data items one by one.")
         Success(JsArray(data.value.filter(_.validate[FacebookEvent].isSuccess)))
       case data: JsObject =>
-        logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")
+        logger.error(s"[$hatAddress] Error validating data, some of the required fields missing:\n${data.toString}")
         Failure(SourceDataProcessingException(s"Error validating data, some of the required fields missing."))
       case data =>
-        logger.error(s"Error parsing JSON object: ${data.validate[List[FacebookEvent]]}")
+        logger.error(s"[$hatAddress] Error parsing JSON object: ${data.validate[List[FacebookEvent]]}")
         Failure(SourceDataProcessingException(s"Error parsing JSON object."))
     }.getOrElse {
-      logger.error(s"Error parsing JSON object: ${rawData.toString}")
+      logger.error(s"[$hatAddress] Error parsing JSON object: ${rawData.toString}")
       Failure(SourceDataProcessingException(s"Error parsing JSON object."))
     }
   }
