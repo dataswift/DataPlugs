@@ -55,7 +55,7 @@ class FacebookProfileInterface @Inject() (
 
     val dataValidation =
       transformData(content)
-        .map(tempObject => validateMinDataStructure(tempObject, hatAddress))
+        .map(validateMinDataStructure(_, hatAddress))
         .getOrElse(Failure(SourceDataProcessingException(s"[$hatAddress] Source data malformed, could not insert date in to the structure")))
 
     for {

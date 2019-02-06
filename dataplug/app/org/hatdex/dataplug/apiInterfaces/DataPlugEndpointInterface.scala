@@ -145,10 +145,11 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
    * Validates whether dataset meets minimum field requirements by trying to cast it into a case class
    *
    * @param rawData JSON value of data to be validated
+   * @param hatAddress String value of the hat address requesting the data. Used to log stuff
    * @return Try block - successful if the data matches minimum structure requirements
    */
 
-  protected def validateMinDataStructure(rawData: JsValue): Try[JsArray]
+  protected def validateMinDataStructure(rawData: JsValue, hatAddress: String): Try[JsArray]
 
   /**
    * Extract timestamp of data record to be stored in the HAT - HAT allows timestamp fields to
