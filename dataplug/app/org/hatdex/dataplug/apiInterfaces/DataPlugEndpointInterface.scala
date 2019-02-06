@@ -141,6 +141,21 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
     }
   }
 
+  //protected def validateMinDataStructure(rawData: JsValue, hatAddress: String): Try[JsArray]
+
+  //protected def validateMinDataStructure(rawData: JsValue): Try[JsArray]
+
+  // TODO: remove single parameter interface once all of the plugs are made compatible
+
+  /**
+   * Validates whether dataset meets minimum field requirements by trying to cast it into a case class
+   *
+   * @param rawData JSON value of data to be validated
+   * @return Try block - successful if the data matches minimum structure requirements
+   */
+  protected def validateMinDataStructure(rawData: JsValue): Try[JsArray] =
+    throw new NotImplementedError("Implementation missing for abstract method \"validateMinDataStructure\"")
+
   /**
    * Validates whether dataset meets minimum field requirements by trying to cast it into a case class
    *
@@ -148,8 +163,8 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
    * @param hatAddress String value of the hat address requesting the data. Used to log stuff
    * @return Try block - successful if the data matches minimum structure requirements
    */
-
-  protected def validateMinDataStructure(rawData: JsValue, hatAddress: String): Try[JsArray]
+  protected def validateMinDataStructure(rawData: JsValue, hatAddress: String): Try[JsArray] =
+    throw new NotImplementedError("Implementation missing for abstract method \"validateMinDataStructure\"")
 
   /**
    * Extract timestamp of data record to be stored in the HAT - HAT allows timestamp fields to

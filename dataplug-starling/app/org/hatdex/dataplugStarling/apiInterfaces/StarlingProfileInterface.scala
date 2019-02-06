@@ -76,7 +76,7 @@ class StarlingProfileInterface @Inject() (
     rawData.transform(transformation)
   }
 
-  def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
+  override def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     logger.debug(s"Body: $rawData")
     rawData match {
       case data: JsObject if data.validate[StarlingIndividualProfile].isSuccess =>

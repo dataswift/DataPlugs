@@ -87,7 +87,7 @@ class FacebookProfileInterface @Inject() (
     rawData.transform(transformation)
   }
 
-  def validateMinDataStructure(rawData: JsValue, hatAddress: String): Try[JsArray] = {
+  override def validateMinDataStructure(rawData: JsValue, hatAddress: String): Try[JsArray] = {
     rawData match {
       case data: JsObject if data.validate[FacebookProfile].isSuccess =>
         logger.info(s"[$hatAddress] Validated JSON facebook profile object.")

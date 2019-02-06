@@ -76,7 +76,7 @@ class SpotifyProfileInterface @Inject() (
     rawData.transform(transformation)
   }
 
-  def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
+  override def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     logger.error(s"Body: $rawData")
     rawData match {
       case data: JsObject if data.validate[SpotifyProfile].isSuccess =>

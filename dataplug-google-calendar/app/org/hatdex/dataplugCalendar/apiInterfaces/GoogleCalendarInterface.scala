@@ -96,7 +96,7 @@ class GoogleCalendarInterface @Inject() (
     rawData.transform(transformation)
   }
 
-  def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
+  override def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     (rawData \ "items").toOption.map {
       case data: JsArray if data.validate[List[GoogleCalendarEvent]].isSuccess =>
         logger.debug(s"Validated JSON object: ${data.value.length}")

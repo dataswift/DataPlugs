@@ -61,7 +61,7 @@ class FacebookProfilePictureInterface @Inject() (
     }
   }
 
-  def validateMinDataStructure(rawData: JsValue, hatAddress: String): Try[JsArray] = {
+  override def validateMinDataStructure(rawData: JsValue, hatAddress: String): Try[JsArray] = {
     (rawData \ "data").toOption.map {
       case data: JsObject if data.validate[FacebookProfilePicture].isSuccess =>
         logger.info(s"[$hatAddress] Validated JSON facebook profile photo object.")

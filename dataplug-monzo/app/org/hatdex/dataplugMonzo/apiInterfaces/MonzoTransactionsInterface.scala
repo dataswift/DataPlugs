@@ -103,7 +103,7 @@ class MonzoTransactionsInterface @Inject() (
     }
   }
 
-  def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
+  override def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     (rawData \ "transactions").toOption.map {
       case data: JsArray if data.validate[List[MonzoTransaction]].isSuccess =>
         logger.debug(s"Validated JSON object:\n${data.toString}")

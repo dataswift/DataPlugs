@@ -106,7 +106,7 @@ class StarlingTransactionsInterface @Inject() (
     }
   }
 
-  def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
+  override def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     (rawData \ "_embedded" \ "transactions").toOption.map {
       case data: JsArray if data.validate[List[StarlingTransaction]].isSuccess =>
         logger.info(s"Validated JSON array of ${data.value.length} items.")

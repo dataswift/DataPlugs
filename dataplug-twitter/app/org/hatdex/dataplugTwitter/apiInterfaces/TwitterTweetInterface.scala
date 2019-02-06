@@ -120,7 +120,7 @@ class TwitterTweetInterface @Inject() (
     }
   }
 
-  def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
+  override def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     rawData match {
       case data: JsArray if data.validate[List[TwitterTweet]].isSuccess =>
         logger.info(s"Validated JSON array of ${data.value.length} items.")

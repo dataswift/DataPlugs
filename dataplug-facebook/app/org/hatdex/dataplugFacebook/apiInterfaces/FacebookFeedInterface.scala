@@ -120,7 +120,7 @@ class FacebookFeedInterface @Inject() (
     }
   }
 
-  def validateMinDataStructure(rawData: JsValue, hatAddress: String): Try[JsArray] = {
+  override def validateMinDataStructure(rawData: JsValue, hatAddress: String): Try[JsArray] = {
     (rawData \ "data").toOption.map {
       case data: JsArray if data.validate[List[FacebookPost]].isSuccess =>
         logger.info(s"[$hatAddress] Validated JSON array of ${data.value.length} items.")
