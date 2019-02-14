@@ -124,3 +124,17 @@ CREATE TABLE hat_token (
 );
 
 --rollback DROP TABLE hat_token;
+
+--changeset dataplug:log_dataplug_user_cache context:structures
+
+CREATE TABLE log_dataplug_user_cache (
+  id                     INT8      NOT NULL DEFAULT nextval('log_dataplug_seq_id') PRIMARY KEY,
+  phata                  VARCHAR   NOT NULL,
+  dataplug_endpoint      VARCHAR   NOT NULL REFERENCES dataplug_endpoint (name),
+  endpoint_configuration JSONB     NOT NULL,
+  endpoint_variant       VARCHAR,
+  created                TIMESTAMP NOT NULL DEFAULT now(),
+  successful             BOOLEAN   NOT NULL,
+  message                VARCHAR
+);
+
