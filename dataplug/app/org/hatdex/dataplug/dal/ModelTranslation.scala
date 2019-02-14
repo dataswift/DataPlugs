@@ -3,6 +3,7 @@ package org.hatdex.dataplug.dal
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.{ OAuth1Info, OAuth2Info }
 import org.hatdex.dataplug.apiInterfaces.models._
+import org.hatdex.dataplug.dal.Tables.{ LogDataplugUser, LogDataplugUserCacheRow }
 import org.hatdex.dataplug.models.User
 import org.joda.time.DateTime
 import play.api.Logger
@@ -56,6 +57,11 @@ trait ModelTranslation {
   implicit def fromDbModel(user: Tables.UserUserRow, maybeLinkedUser: Option[Tables.UserLinkedUserRow]): User = {
     val linkedUser = maybeLinkedUser.map(lu => List(User(lu.providerId.get, lu.userId.get, List()))).getOrElse(List())
     User(user.providerId, user.userId, linkedUser)
+  }
+
+  implicit def toDbModel(phata: String, dataPlugEndpoint: String, configuration: Option[ApiEndpointCall], endpointVariant: Option[String] = None, created: org.joda.time.LocalDateTime, successful: Boolean, message: Option[String] = None): Tables.LogDataplugUserCacheRow = {
+    val jsValue = Json.toJson(configuration)
+    Tables.LogDataplugUserCacheRow(0, phata, dataPlugEndpoint, jsValue, endpointVariant, created, successful, message)
   }
 }
 
