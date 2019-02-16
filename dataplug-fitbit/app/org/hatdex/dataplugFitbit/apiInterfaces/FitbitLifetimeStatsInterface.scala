@@ -77,7 +77,7 @@ class FitbitLifetimeStatsInterface @Inject() (
     rawData.transform(transformation)
   }
 
-  def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
+  override def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     rawData match {
       case data: JsObject if data.validate[FitbitLifetime].isSuccess =>
         logger.info(s"Validated JSON lifetime stats object.")

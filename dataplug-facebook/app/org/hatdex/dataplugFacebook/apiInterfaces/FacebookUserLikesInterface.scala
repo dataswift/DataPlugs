@@ -7,22 +7,22 @@ import akka.util.Timeout
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth2.FacebookProvider
-import org.hatdex.dataplug.utils.{ AuthenticatedHatClient, FutureTransformations, Mailer }
 import org.hatdex.dataplug.actors.Errors.SourceDataProcessingException
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
 import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
 import org.hatdex.dataplug.services.UserService
-import org.hatdex.dataplugFacebook.models.FacebookEvent
+import org.hatdex.dataplug.utils.{ AuthenticatedHatClient, FutureTransformations, Mailer }
+import org.hatdex.dataplugFacebook.models.{ FacebookPost, FacebookUserLikes }
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.{ JsArray, JsObject, JsValue }
 import play.api.libs.ws.WSClient
 
-import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.duration._
 import scala.util.{ Failure, Success, Try }
 
-class FacebookEventInterface @Inject() (
+class FacebookUserLikesInterface @Inject() (
     val wsClient: WSClient,
     val userService: UserService,
     val authInfoRepository: AuthInfoRepository,
@@ -31,43 +31,42 @@ class FacebookEventInterface @Inject() (
     val scheduler: Scheduler,
     val provider: FacebookProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
 
+  val defaultApiEndpoint = FacebookUserLikesInterface.defaultApiEndpoint
+
   val namespace: String = "facebook"
-  val endpoint: String = "events"
+  val endpoint: String = "likes/pages"
   protected val logger: Logger = Logger(this.getClass)
 
-  val defaultApiEndpoint = FacebookEventInterface.defaultApiEndpoint
-
-  val refreshInterval = 6.hours
+  val refreshInterval = 1.hour // No idea if this is ideal, might do with longer?
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     logger.debug("Building continuation...")
 
-    val maybeNextCursor = (content \ "paging" \ "next").asOpt[String]
-      .flatMap(nextPage => Uri(nextPage).query().get("after"))
-    val maybeSinceParam = params.pathParameters.get("since")
+    val maybeNextPage = (content \ "paging" \ "next").asOpt[String]
+    val maybeAfterParam = (content \ "paging" \ "cursor" \ "after").asOpt[String]
 
-    maybeNextCursor.map { afterCursor =>
-      logger.debug(s"Found next page cursor (continuing sync): $afterCursor")
-      val updatedQueryParams = params.queryParameters + ("after" -> afterCursor)
+    maybeNextPage.map { nextPage =>
+      logger.debug(s"Found next page link (continuing sync): $nextPage")
+
+      val nextPageUri = Uri(nextPage)
+      val updatedQueryParams = params.queryParameters ++ nextPageUri.query().toMap
 
       logger.debug(s"Updated query parameters: $updatedQueryParams")
 
-      if (maybeSinceParam.isDefined) {
-        logger.debug("'Since' parameter already set, updating query params")
+      if (maybeAfterParam.isDefined) {
+        logger.debug("\"After\" parameter already set, updating query params")
         params.copy(queryParameters = updatedQueryParams)
       }
       else {
-        val maybeNewSinceParam = for {
-          dataArray <- (content \ "data").asOpt[JsArray]
-          headItem <- dataArray.value.headOption
-          latestUpdateTime <- (headItem \ "start_time").asOpt[String]
-        } yield latestUpdateTime
+        (content \ "paging" \ "previous").asOpt[String].flatMap { _ =>
+          (content \ "paging" \ "cursor" \ "after").asOpt[String].map { afterParameter =>
+            val updatedPathParams = params.pathParameters + ("after" -> afterParameter)
 
-        maybeNewSinceParam.map { newSinceParam =>
-          logger.debug(s"Updating query params and setting 'since': $newSinceParam")
-          params.copy(pathParameters = params.pathParameters + ("since" -> newSinceParam), queryParameters = updatedQueryParams)
+            logger.debug(s"Updating query params and setting 'after': $afterParameter")
+            params.copy(pathParameters = updatedPathParams, queryParameters = updatedQueryParams)
+          }
         }.getOrElse {
-          logger.warn("Unexpected API behaviour: 'since' not set and it was not possible to extract it from response body")
+          logger.warn("Unexpected API behaviour: 'before' not set and it was not possible to extract it from response body")
           params.copy(queryParameters = updatedQueryParams)
         }
       }
@@ -77,28 +76,24 @@ class FacebookEventInterface @Inject() (
   def buildNextSync(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
     logger.debug(s"Building next sync...")
 
-    val maybeSinceParam = params.pathParameters.get("since")
-    val updatedQueryParams = params.queryParameters - "after"
+    val maybeAfterParam = params.pathParameters.get("after")
+    val updatedQueryParams = params.queryParameters - "after" - "access_token"
 
     logger.debug(s"Updated query parameters: $updatedQueryParams")
 
-    maybeSinceParam.map { sinceParam =>
-      logger.debug(s"Building next sync parameters $updatedQueryParams with 'since': $sinceParam")
-      params.copy(pathParameters = params.pathParameters - "since", queryParameters = updatedQueryParams + ("since" -> sinceParam))
+    maybeAfterParam.map { afterParam =>
+      logger.debug(s"Building next sync parameters $updatedQueryParams with 'after': $afterParam")
+      params.copy(pathParameters = params.pathParameters - "after", queryParameters = updatedQueryParams + ("after" -> afterParam))
     }.getOrElse {
-      logger.debug("'Since' parameter not found (likely no continuation runs), setting one now")
+      val maybePreviousPage = (content \ "paging" \ "cursors" \ "after").asOpt[String]
 
-      val maybeNewSinceParam = for {
-        dataArray <- (content \ "data").asOpt[JsArray]
-        headItem <- dataArray.value.headOption
-        latestUpdateTime <- (headItem \ "start_time").asOpt[String]
-      } yield latestUpdateTime
-
-      maybeNewSinceParam.map { newSinceParam =>
-        logger.debug(s"Building next sync parameters $updatedQueryParams with 'since': $newSinceParam")
-        params.copy(queryParameters = updatedQueryParams + ("since" -> newSinceParam))
+      logger.debug("'before' parameter not found (likely no continuation runs), setting one now")
+      maybePreviousPage.flatMap { previousPage =>
+        Uri(previousPage).query().get("after").map { newAfterParam =>
+          params.copy(queryParameters = params.queryParameters + ("after" -> newAfterParam))
+        }
       }.getOrElse {
-        logger.warn("Could not extract latest event update time,'since' field is not set. Was the events list empty?")
+        logger.warn("Could not extract previous page 'before' parameter so the new value is not set. Was the feed list empty?")
         params
       }
     }
@@ -121,33 +116,34 @@ class FacebookEventInterface @Inject() (
 
   override def validateMinDataStructure(rawData: JsValue, hatAddress: String): Try[JsArray] = {
     (rawData \ "data").toOption.map {
-      case data: JsArray if data.validate[List[FacebookEvent]].isSuccess =>
+      case data: JsArray if data.validate[List[FacebookUserLikes]].isSuccess =>
         logger.info(s"[$hatAddress] Validated JSON array of ${data.value.length} items.")
         Success(data)
       case data: JsArray =>
         logger.warn(s"[$hatAddress] Could not validate full item list. Parsing ${data.value.length} data items one by one.")
-        Success(JsArray(data.value.filter(_.validate[FacebookEvent].isSuccess)))
+        Success(JsArray(data.value.filter(_.validate[FacebookUserLikes].isSuccess)))
       case data: JsObject =>
         logger.error(s"[$hatAddress] Error validating data, some of the required fields missing:\n${data.toString}")
         Failure(SourceDataProcessingException(s"Error validating data, some of the required fields missing."))
       case data =>
-        logger.error(s"[$hatAddress] Error parsing JSON object: ${data.validate[List[FacebookEvent]]}")
+        logger.error(s"[$hatAddress] Error parsing JSON object: ${data.validate[List[FacebookPost]]}")
         Failure(SourceDataProcessingException(s"Error parsing JSON object."))
     }.getOrElse {
-      logger.error(s"[$hatAddress] Error parsing JSON object: ${rawData.toString}")
-      Failure(SourceDataProcessingException(s"Error parsing JSON object."))
+      logger.error(s"[$hatAddress] Error parsing JSON object, necessary property not found: ${rawData.toString}")
+      Failure(SourceDataProcessingException(s"Error parsing JSON object, necessary property not found."))
     }
   }
-
 }
 
-object FacebookEventInterface {
+object FacebookUserLikesInterface {
   val defaultApiEndpoint = ApiEndpointCall(
     "https://graph.facebook.com/v2.10",
-    "/me/events",
+    "/me/likes",
     ApiEndpointMethod.Get("Get"),
     Map(),
-    Map("limit" -> "250", "pretty" -> "0"),
+    Map("limit" -> "500", "fields" -> ("id,about,created_time,app_links,awards,can_checkin,can_post,category,category_list,checkins," +
+      "description,description_html,display_subtext,emails,fan_count,has_added_app,has_whatsapp_number,link," +
+      "location,name,overall_star_rating,phone,place_type,rating_count,username,verification_status,website,whatsapp_number")),
     Map(),
     Some(Map()))
 }

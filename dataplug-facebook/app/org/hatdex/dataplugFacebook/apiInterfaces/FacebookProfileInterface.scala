@@ -6,6 +6,7 @@ import akka.util.Timeout
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth2.FacebookProvider
+import org.joda.time.DateTime
 import org.hatdex.dataplug.utils.{ AuthenticatedHatClient, FutureTransformations, Mailer }
 import org.hatdex.dataplug.actors.Errors.SourceDataProcessingException
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
@@ -54,8 +55,8 @@ class FacebookProfileInterface @Inject() (
 
     val dataValidation =
       transformData(content)
-        .map(validateMinDataStructure)
-        .getOrElse(Failure(SourceDataProcessingException("Source data malformed, could not insert date in to the structure")))
+        .map(validateMinDataStructure(_, hatAddress))
+        .getOrElse(Failure(SourceDataProcessingException(s"[$hatAddress] Source data malformed, could not insert date in to the structure")))
 
     for {
       validatedData <- FutureTransformations.transform(dataValidation)
@@ -72,12 +73,13 @@ class FacebookProfileInterface @Inject() (
     val transformation = __.json.update(
       __.read[JsObject].map(profile => {
         val friends = (profile \ "friends" \ "data").asOpt[JsArray].getOrElse(JsArray())
-        val friendCount = (profile \ "friends" \ "summary" \ "total_count").as[JsNumber]
+        val friendCount = (profile \ "friends" \ "summary" \ "total_count").asOpt[JsNumber].getOrElse(JsNumber(0))
         val ageMin = (profile \ "age_range" \ "min").asOpt[Int]
         val ageMax = (profile \ "age_range" \ "max").asOpt[Int]
 
         profile ++ JsObject(Map(
           "friends" -> friends,
+          "hat_updated_time" -> JsString(DateTime.now.toString),
           "friend_count" -> friendCount,
           "age_range" -> JsString(s"${ageMin.getOrElse("unknown")} - ${ageMax.getOrElse("unknown")}")))
       }))
@@ -85,16 +87,16 @@ class FacebookProfileInterface @Inject() (
     rawData.transform(transformation)
   }
 
-  def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
+  override def validateMinDataStructure(rawData: JsValue, hatAddress: String): Try[JsArray] = {
     rawData match {
       case data: JsObject if data.validate[FacebookProfile].isSuccess =>
-        logger.info(s"Validated JSON facebook profile object.")
+        logger.info(s"[$hatAddress] Validated JSON facebook profile object.")
         Success(JsArray(Seq(data)))
       case data: JsObject =>
-        logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")
+        logger.error(s"[$hatAddress] Error validating data, some of the required fields missing:\n${data.toString}")
         Failure(SourceDataProcessingException(s"Error validating data, some of the required fields missing."))
       case _ =>
-        logger.error(s"Error parsing JSON object: ${rawData.toString}")
+        logger.error(s"[$hatAddress] Error parsing JSON object: ${rawData.toString}")
         Failure(SourceDataProcessingException(s"Error parsing JSON object."))
     }
   }
@@ -106,9 +108,8 @@ object FacebookProfileInterface {
     "/me",
     ApiEndpointMethod.Get("Get"),
     Map(),
-    Map("fields" -> ("id,birthday,email,first_name,gender,hometown,is_verified,last_name,locale,name,political," +
-      "relationship_status,religion,quotes,significant_other,third_party_id,timezone,updated_time,verified,website," +
-      "friends,age_range,link")),
+    Map("fields" -> ("id,first_name,last_name,middle_name,name,link,age_range,birthday,email,languages," +
+      "public_key,relationship_status,religion,significant_other,sports,friends")),
     Map(),
     Some(Map()))
 }

@@ -62,7 +62,7 @@ class InstagramProfileInterface @Inject() (
     }
   }
 
-  def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
+  override def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     (rawData \ "data").toOption.map {
       case data: JsObject if data.validate[InstagramProfile].isSuccess =>
         logger.info(s"Validated JSON Instagram profile object.")

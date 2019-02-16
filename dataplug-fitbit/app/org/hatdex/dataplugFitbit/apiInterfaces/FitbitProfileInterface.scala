@@ -77,7 +77,7 @@ class FitbitProfileInterface @Inject() (
     rawData.transform(transformation)
   }
 
-  def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
+  override def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     (rawData \ "user").toOption.map {
       case data: JsObject if data.validate[FitbitProfile].isSuccess =>
         logger.info(s"Validated JSON fitbit profile object.")

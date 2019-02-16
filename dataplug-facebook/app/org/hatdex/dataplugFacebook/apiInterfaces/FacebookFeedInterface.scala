@@ -42,8 +42,13 @@ class FacebookFeedInterface @Inject() (
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     logger.debug("Building continuation...")
 
+    logger.debug(s"Content is $content")
+
     val maybeNextPage = (content \ "paging" \ "next").asOpt[String]
     val maybeSinceParam = params.pathParameters.get("since")
+
+    logger.debug(s"Found possible next page link: $maybeNextPage")
+    logger.debug(s"Found possible next since parameter: $maybeSinceParam")
 
     maybeNextPage.map { nextPage =>
       logger.debug(s"Found next page link (continuing sync): $nextPage")
@@ -82,9 +87,9 @@ class FacebookFeedInterface @Inject() (
 
     logger.debug(s"Updated query parameters: $updatedQueryParams")
 
-    maybeSinceParam.map { sinceParam =>
-      logger.debug(s"Building next sync parameters $updatedQueryParams with 'since': $sinceParam")
-      params.copy(pathParameters = params.pathParameters - "since", queryParameters = updatedQueryParams + ("since" -> sinceParam))
+    maybeSinceParam.map { sinceParameter =>
+      logger.debug(s"Building next sync parameters $updatedQueryParams with 'since': $sinceParameter")
+      params.copy(pathParameters = params.pathParameters - "since", queryParameters = updatedQueryParams + ("since" -> sinceParameter))
     }.getOrElse {
       val maybePreviousPage = (content \ "paging" \ "previous").asOpt[String]
 
@@ -107,7 +112,7 @@ class FacebookFeedInterface @Inject() (
     fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
     for {
-      validatedData <- FutureTransformations.transform(validateMinDataStructure(content))
+      validatedData <- FutureTransformations.transform(validateMinDataStructure(content, hatAddress))
       _ <- uploadHatData(namespace, endpoint, validatedData, hatAddress, hatClient) // Upload the data
     } yield {
       logger.debug(s"Successfully synced new records for HAT $hatAddress")
@@ -115,22 +120,22 @@ class FacebookFeedInterface @Inject() (
     }
   }
 
-  def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
+  override def validateMinDataStructure(rawData: JsValue, hatAddress: String): Try[JsArray] = {
     (rawData \ "data").toOption.map {
       case data: JsArray if data.validate[List[FacebookPost]].isSuccess =>
-        logger.info(s"Validated JSON array of ${data.value.length} items.")
+        logger.info(s"[$hatAddress] Validated JSON array of ${data.value.length} items.")
         Success(data)
       case data: JsArray =>
-        logger.warn(s"Could not validate full item list. Parsing ${data.value.length} data items one by one.")
+        logger.warn(s"[$hatAddress] Could not validate full item list. Parsing ${data.value.length} data items one by one.")
         Success(JsArray(data.value.filter(_.validate[FacebookPost].isSuccess)))
       case data: JsObject =>
-        logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")
+        logger.error(s"[$hatAddress] Error validating data, some of the required fields missing:\n${data.toString}")
         Failure(SourceDataProcessingException(s"Error validating data, some of the required fields missing."))
       case data =>
-        logger.error(s"Error parsing JSON object: ${data.validate[List[FacebookPost]]}")
+        logger.error(s"[$hatAddress] Error parsing JSON object: ${data.validate[List[FacebookPost]]}")
         Failure(SourceDataProcessingException(s"Error parsing JSON object."))
     }.getOrElse {
-      logger.error(s"Error parsing JSON object, necessary property not found: ${rawData.toString}")
+      logger.error(s"[$hatAddress] Error parsing JSON object, necessary property not found: ${rawData.toString}")
       Failure(SourceDataProcessingException(s"Error parsing JSON object, necessary property not found."))
     }
   }
@@ -143,9 +148,8 @@ object FacebookFeedInterface {
     "/me/feed",
     ApiEndpointMethod.Get("Get"),
     Map(),
-    Map("limit" -> "500", "format" -> "json", "fields" -> ("id,admin_creator,application,call_to_action,caption,created_time,description," +
-      "feed_targeting,from,icon,is_hidden,is_published,link,message,message_tags,name,object_id,picture,place," +
-      "privacy,properties,shares,source,status_type,story,targeting,to,type,updated_time,full_picture")),
+    Map("limit" -> "500", "fields" -> ("id,attachments,caption,created_time,description,from,full_picture,icon,link," +
+      "is_instagram_eligible,message,message_tags,name,object_id,permalink_url,place,shares,status_type,type,updated_time,with_tags")),
     Map(),
     Some(Map()))
 }

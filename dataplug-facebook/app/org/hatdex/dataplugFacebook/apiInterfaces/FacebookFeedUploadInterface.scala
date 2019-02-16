@@ -34,16 +34,16 @@ class FacebookFeedUploadInterface @Inject() (
 
   def post(hatAddress: String, content: DataPlugNotableShareRequest)(implicit ec: ExecutionContext): Future[FacebookFeedUpdate] = {
     val apiEndpoint = if (content.photo.isDefined) {
-      logger.debug(s"Found photo. Uploading to Facebook, caption:\n${content.message}\n photo:\n${content.photo.get}")
-      logger.info(s"Posting to Facebook with media attached for $hatAddress")
+      logger.debug(s"[$hatAddress] Found photo. Uploading to Facebook, caption:\n${content.message}\n photo:\n${content.photo.get}")
+      logger.info(s"[$hatAddress] Posting to Facebook with media attached for $hatAddress")
       photoUploadApiEndpoint.copy(
         method = ApiEndpointMethod.Post("Post", Json.stringify(Json.obj(
           "caption" -> content.message,
           "url" -> content.photo.get))))
     }
     else {
-      logger.debug(s"Found message. Posting to Facebook:\n$content")
-      logger.info(s"Posting to Facebook w/o media for $hatAddress")
+      logger.debug(s"[$hatAddress] Found message. Posting to Facebook:\n$content")
+      logger.info(s"[$hatAddress] Posting to Facebook w/o media for $hatAddress")
       defaultApiEndpoint.copy(
         method = ApiEndpointMethod.Post("Post", Json.stringify(Json.obj("message" -> content.message))))
     }
@@ -57,10 +57,10 @@ class FacebookFeedUploadInterface @Inject() (
             Future.successful(Json.parse(result.body).as[FacebookFeedUpdate])
           case BAD_REQUEST =>
             Future.failed(SourceAuthenticationException(
-              s"Authentication with Facebook failed. Response details: ${result.body}"))
+              s"[$hatAddress] Authentication with Facebook failed. Response details: ${result.body}"))
           case status =>
             Future.failed(SourceApiCommunicationException(
-              s"Unexpected response from facebook (status code $status): ${result.body}"))
+              s"[$hatAddress] Unexpected response from facebook (status code $status): ${result.body}"))
         }
       }
     }
@@ -77,7 +77,7 @@ class FacebookFeedUploadInterface @Inject() (
           case OK =>
             Future.successful(Unit)
           case status =>
-            Future.failed(SourceApiCommunicationException(s"Unexpected response from facebook when deleting post $providerId (status code $status): ${result.body}"))
+            Future.failed(SourceApiCommunicationException(s"[$hatAddress] Unexpected response from facebook when deleting post $providerId (status code $status): ${result.body}"))
         }
       }
     }
