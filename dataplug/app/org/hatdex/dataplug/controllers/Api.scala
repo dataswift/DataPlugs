@@ -77,7 +77,7 @@ class Api @Inject() (
           case Right(_) =>
             for {
               choices <- syncerActorManager.currentProviderApiVariantChoices(request.identity, provider)(ioEC) if choices.exists(_.active)
-              apiEndpointStatuses <- dataPlugEndpointService.listCurrentEndpointStatuses(request.identity.userId)
+              apiEndpointStatuses <- dataPlugEndpointService.listCachedCurrentEndpointStatuses(request.identity.userId)
               _ <- syncerActorManager.runPhataActiveVariantChoices(request.identity.userId, token)
             } yield {
               logger.info(s"Refreshed HAT token for ${request.identity.userId}")
