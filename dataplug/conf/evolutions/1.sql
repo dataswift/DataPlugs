@@ -127,14 +127,12 @@ CREATE TABLE hat_token (
 
 --changeset dataplug:log_dataplug_user_cache context:structures
 
-CREATE TABLE log_dataplug_user_cache (
-  id                     INT8      NOT NULL DEFAULT nextval('log_dataplug_seq_id') PRIMARY KEY,
-  phata                  VARCHAR   NOT NULL,
-  dataplug_endpoint      VARCHAR   NOT NULL REFERENCES dataplug_endpoint (name),
-  endpoint_configuration JSONB     NOT NULL,
-  endpoint_variant       VARCHAR,
-  created                TIMESTAMP NOT NULL DEFAULT now(),
-  successful             BOOLEAN   NOT NULL,
-  message                VARCHAR
-);
+CREATE TABLE log_dataplug_user_cache AS
+SELECT DISTINCT ON (phata, dataplug_endpoint) *
+FROM log_dataplug_user AS log_table
+WHERE log_table.created = (SELECT MAX(created)
+                    FROM log_dataplug_user AS log_table2
+                    WHERE log_table.phata = log_table2.phata AND log_table.dataplug_endpoint = log_table2.dataplug_endpoint)
+GROUP BY created, phata, dataplug_endpoint, id;
+
 
