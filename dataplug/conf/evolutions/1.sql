@@ -125,14 +125,31 @@ CREATE TABLE hat_token (
 
 --rollback DROP TABLE hat_token;
 
---changeset dataplug:log_dataplug_user_cache context:structures
+--changeset dataplug:log_dataplug_user_status context:structures
 
-CREATE TABLE log_dataplug_user_cache AS
+CREATE SEQUENCE log_dataplug_status_seq_id START WITH 1;
+
+CREATE TABLE log_dataplug_user_status (
+  id                     INT8      NOT NULL DEFAULT nextval('log_dataplug_status_seq_id') PRIMARY KEY,
+  phata                  VARCHAR   NOT NULL,
+  dataplug_endpoint      VARCHAR   NOT NULL REFERENCES dataplug_endpoint (name),
+  endpoint_configuration JSONB     NOT NULL,
+  endpoint_variant       VARCHAR,
+  created                TIMESTAMP NOT NULL DEFAULT now(),
+  updated                TIMESTAMP NOT NULL DEFAULT now(),
+  successful             BOOLEAN   NOT NULL,
+  message                VARCHAR
+);
+
+INSERT INTO log_dataplug_user_status (id, phata, dataplug_endpoint, endpoint_configuration, endpoint_variant, created, successful, message)
 SELECT DISTINCT ON (phata, dataplug_endpoint) *
 FROM log_dataplug_user AS log_table
 WHERE log_table.created = (SELECT MAX(created)
                     FROM log_dataplug_user AS log_table2
                     WHERE log_table.phata = log_table2.phata AND log_table.dataplug_endpoint = log_table2.dataplug_endpoint)
 GROUP BY created, phata, dataplug_endpoint, id;
+
+--rollback DROP TABLE log_dataplug_user_status;
+--rollback DROP SEQUENCE log_dataplug_status_seq_id;
 
 

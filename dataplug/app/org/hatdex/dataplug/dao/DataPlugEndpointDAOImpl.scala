@@ -125,7 +125,7 @@ class DataPlugEndpointDAOImpl @Inject() (protected val dbConfigProvider: Databas
    * @param phata The user phata.
    * @param endpointStatus The plug endpoint name.
    */
-  def saveEndpointStatus(phata: String, endpointStatus: ApiEndpointStatus): Future[Unit] = {
+  def saveEndpointStatus(phata: String, endpointStatus: ApiEndpointStatus): Future[Done] = {
     val q = Tables.LogDataplugUser += Tables.LogDataplugUserRow(
       0,
       phata,
@@ -136,8 +136,9 @@ class DataPlugEndpointDAOImpl @Inject() (protected val dbConfigProvider: Databas
       endpointStatus.successful,
       endpointStatus.message)
 
-    updateCachedEndpointStatus(phata, endpointStatus)
-    db.run(q).map(_ => Unit)
+    db.run(q).flatMap(_ =>
+
+      updateCachedEndpointStatus(phata, endpointStatus))
   }
 
   /**
@@ -146,22 +147,24 @@ class DataPlugEndpointDAOImpl @Inject() (protected val dbConfigProvider: Databas
    * @param phata The user phata.
    * @param endpointStatus The plug endpoint name.
    */
-  def updateCachedEndpointStatus(phata: String, endpointStatus: ApiEndpointStatus): Future[Unit] = {
+  def updateCachedEndpointStatus(phata: String, endpointStatus: ApiEndpointStatus): Future[Done] = {
 
-    val endpointUrl = endpointStatus.apiEndpoint.endpoint.description
+    val endpointUrl = endpointStatus.apiEndpoint.endpoint.name
+    val dateNow = DateTime.now().toLocalDateTime
 
     val q = for {
-      rowsAffected <- Tables.LogDataplugUserCache
+      rowsAffected <- Tables.LogDataplugUserStatus
         .filter(log => log.phata === phata && log.dataplugEndpoint === endpointUrl)
-        .map(log => (log.phata, log.dataplugEndpoint, log.endpointVariant, log.endpointConfiguration, log.created, log.successful, log.message))
-        .update(phata, endpointStatus.apiEndpoint.endpoint.name, endpointStatus.apiEndpoint.variant, Json.toJson(endpointStatus.endpointCall), DateTime.now().toLocalDateTime, endpointStatus.successful, endpointStatus.message)
+        .map(log => (log.phata, log.dataplugEndpoint, log.endpointVariant, log.endpointConfiguration, log.updated, log.successful, log.message))
+        .update(phata, endpointStatus.apiEndpoint.endpoint.name, endpointStatus.apiEndpoint.variant, Json.toJson(endpointStatus.endpointCall), dateNow, endpointStatus.successful, endpointStatus.message)
       result <- rowsAffected match {
-        case 0 => Tables.LogDataplugUserCache += toDbModel(
+        case 0 => Tables.LogDataplugUserStatus += toDbModel(
           phata,
           endpointStatus.apiEndpoint.endpoint.name,
           endpointStatus.apiEndpoint.configuration,
           endpointStatus.apiEndpoint.variant,
-          endpointStatus.timestamp.toLocalDateTime,
+          dateNow,
+          dateNow,
           endpointStatus.successful,
           endpointStatus.message)
         case 1 => DBIO.successful(1)
@@ -169,7 +172,7 @@ class DataPlugEndpointDAOImpl @Inject() (protected val dbConfigProvider: Databas
       }
     } yield result
 
-    db.run(q).map(_ => Unit)
+    db.run(q).map(_ => Done)
   }
 
   /**
@@ -209,14 +212,14 @@ class DataPlugEndpointDAOImpl @Inject() (protected val dbConfigProvider: Databas
    * @return The available API endpoint configurations
    */
   def listCachedCurrentEndpointStatuses(phata: String): Future[Seq[ApiEndpointStatus]] = {
-    val innerQuery = Tables.LogDataplugUserCache.groupBy(u => (u.phata, u.dataplugEndpoint, u.endpointVariant))
+    val innerQuery = Tables.LogDataplugUserStatus.groupBy(u => (u.phata, u.dataplugEndpoint, u.endpointVariant))
       .map({
         case (key, group) =>
           (key._1, key._2, key._3, group.map(_.created).max)
       })
 
     val q = for {
-      ldu <- Tables.LogDataplugUserCache.filter(ldu => ldu.phata === phata)
+      ldu <- Tables.LogDataplugUserStatus.filter(ldu => ldu.phata === phata)
         .join(innerQuery).on((l, r) => l.phata === r._1 && l.dataplugEndpoint === r._2 && l.endpointVariant === r._3 && l.created === r._4)
         .map(_._1)
       du <- Tables.DataplugUser.filter(du => du.dataplugEndpoint === ldu.dataplugEndpoint && du.phata === ldu.dataplugEndpoint && du.endpointVariant === ldu.dataplugEndpoint)
