@@ -58,7 +58,7 @@ trait DataPlugEndpointDAO {
    * @param plugName The plug endpoint name.
    * @param endpoint Endpoint configuration
    */
-  def saveEndpointStatus(phata: String, endpoint: ApiEndpointStatus): Future[Unit]
+  def saveEndpointStatus(phata: String, endpoint: ApiEndpointStatus): Future[Done]
 
   /**
    * Fetches endpoint status for a given phata and plug endpoint

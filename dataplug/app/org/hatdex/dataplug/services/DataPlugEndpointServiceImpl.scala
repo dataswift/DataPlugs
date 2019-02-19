@@ -76,7 +76,7 @@ class DataPlugEndpointServiceImpl @Inject() (
    * @param phata The user phata.
    * @param endpointStatus The endpoint status object
    */
-  def saveEndpointStatus(phata: String, endpointStatus: ApiEndpointStatus): Future[Unit] =
+  def saveEndpointStatus(phata: String, endpointStatus: ApiEndpointStatus): Future[Done] =
     dataPlugEndpointDao.saveEndpointStatus(phata, endpointStatus)
 
   /**
@@ -87,7 +87,7 @@ class DataPlugEndpointServiceImpl @Inject() (
    * @param variant Endpoint variant to fetch status for
    */
   def saveEndpointStatus(phata: String, variant: ApiEndpointVariant,
-    endpointCall: ApiEndpointCall, success: Boolean, message: Option[String]): Future[Unit] = {
+    endpointCall: ApiEndpointCall, success: Boolean, message: Option[String]): Future[Done] = {
     dataPlugEndpointDao.retrievePhataEndpoints(phata)
       .map(_.find(e => e.endpoint.name == variant.endpoint.name && e.variant == variant.variant).get)
       .flatMap { endpoint =>

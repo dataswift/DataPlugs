@@ -60,10 +60,10 @@ trait DataPlugEndpointService {
    * @param plugName The plug endpoint name.
    * @param endpoint Endpoint configuration
    */
-  def saveEndpointStatus(phata: String, endpoint: ApiEndpointStatus): Future[Unit]
+  def saveEndpointStatus(phata: String, endpoint: ApiEndpointStatus): Future[Done]
 
   def saveEndpointStatus(phata: String, variant: ApiEndpointVariant,
-    endpoint: ApiEndpointCall, success: Boolean, message: Option[String]): Future[Unit]
+    endpoint: ApiEndpointCall, success: Boolean, message: Option[String]): Future[Done]
 
   /**
    * Fetches endpoint status for a given phata and plug endpoint
