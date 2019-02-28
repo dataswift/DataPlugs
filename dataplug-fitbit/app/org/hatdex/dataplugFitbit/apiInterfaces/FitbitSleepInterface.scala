@@ -104,7 +104,7 @@ class FitbitSleepInterface @Inject() (
     }
   }
 
-  def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
+  override def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     (rawData \ "sleep").toOption.map {
       case data: JsArray if data.validate[List[FitbitSleep]].isSuccess =>
         logger.info(s"Validated JSON array of ${data.value.length} items.")

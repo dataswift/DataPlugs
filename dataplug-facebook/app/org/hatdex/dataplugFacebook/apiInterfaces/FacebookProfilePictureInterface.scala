@@ -53,7 +53,7 @@ class FacebookProfilePictureInterface @Inject() (
     fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
     for {
-      validatedData <- FutureTransformations.transform(validateMinDataStructure(content))
+      validatedData <- FutureTransformations.transform(validateMinDataStructure(content, hatAddress))
       _ <- uploadHatData(namespace, endpoint, validatedData, hatAddress, hatClient) // Upload the data
     } yield {
       logger.debug(s"Successfully synced new records for HAT $hatAddress")
@@ -61,19 +61,19 @@ class FacebookProfilePictureInterface @Inject() (
     }
   }
 
-  def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
+  override def validateMinDataStructure(rawData: JsValue, hatAddress: String): Try[JsArray] = {
     (rawData \ "data").toOption.map {
       case data: JsObject if data.validate[FacebookProfilePicture].isSuccess =>
-        logger.info(s"Validated JSON facebook profile photo object.")
+        logger.info(s"[$hatAddress] Validated JSON facebook profile photo object.")
         Success(JsArray(Seq(data)))
       case data: JsObject =>
-        logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")
+        logger.error(s"[$hatAddress] Error validating data, some of the required fields missing:\n${data.toString}")
         Failure(SourceDataProcessingException(s"Error validating data, some of the required fields missing."))
       case _ =>
-        logger.error(s"Error parsing JSON object: ${rawData.toString}")
+        logger.error(s"[$hatAddress] Error parsing JSON object: ${rawData.toString}")
         Failure(SourceDataProcessingException(s"Error parsing JSON object."))
     }.getOrElse {
-      logger.error(s"Error parsing JSON object, necessary property not found: ${rawData.toString}")
+      logger.error(s"[$hatAddress] Error parsing JSON object, necessary property not found: ${rawData.toString}")
       Failure(SourceDataProcessingException(s"Error parsing JSON object, necessary property not found."))
     }
   }

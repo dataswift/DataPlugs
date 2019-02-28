@@ -87,7 +87,7 @@ class TwitterFollowerInterface @Inject() (
     }
   }
 
-  def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
+  override def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     (rawData \ "users").toOption.map {
       case data: JsArray if data.validate[List[TwitterUser]].isSuccess =>
         logger.debug(s"Validated JSON object:\n${data.toString}")

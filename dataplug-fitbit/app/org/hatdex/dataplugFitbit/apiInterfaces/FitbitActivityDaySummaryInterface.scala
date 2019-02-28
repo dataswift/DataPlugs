@@ -124,7 +124,7 @@ class FitbitActivityDaySummaryInterface @Inject() (
     rawData.transform(transformation)
   }
 
-  def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
+  override def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     (rawData \ "summary").toOption.map {
       case data: JsObject if data.validate[FitbitActivitySummary].isSuccess =>
         logger.info(s"Validated JSON day summary object.")
