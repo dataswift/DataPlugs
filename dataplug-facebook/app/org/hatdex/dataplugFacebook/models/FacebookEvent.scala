@@ -6,16 +6,16 @@ case class FacebookEvent(
     id: String,
     name: String,
     description: Option[String],
-    owner: FacebookEventOwner,
+    owner: Option[FacebookEventOwner],
     start_time: String,
     end_time: Option[String],
-    updated_time: String,
-    attending_count: Int,
-    declined_count: Int,
-    maybe_count: Int,
-    noreply_count: Int,
+    updated_time: Option[String],
+    attending_count: Option[Int],
+    declined_count: Option[Int],
+    maybe_count: Option[Int],
+    noreply_count: Option[Int],
     rsvp_status: String,
-    `type`: String,
+    `type`: Option[String],
     place: Option[FacebookPlace])
 
 case class FacebookEventOwner(

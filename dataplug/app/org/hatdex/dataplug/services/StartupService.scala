@@ -28,10 +28,12 @@ class StartupServiceImpl @Inject() (
   val eventualMigrations: Future[Unit] = FutureRetries.retry(schemaMigration.run(migrations), List(5.seconds, 10.seconds, 20.seconds))
 
   eventualMigrations.onComplete {
-    case Success(_) => logger.info("Database migrations finished successfully")
-    case Failure(e) => logger.error(s"Database migrations failed ${e.getMessage}")
+    case Success(_) =>
+      logger.info("Database migrations finished successfully")
+      logger.info("Starting all active DataPlug variant choices")
+      syncerActorManager.startAllActiveVariantChoices()
+    case Failure(e) =>
+      logger.error(s"Database migrations failed ${e.getMessage}")
   }
 
-  logger.info("Starting all active DataPlug variant choices")
-  syncerActorManager.startAllActiveVariantChoices()
 }

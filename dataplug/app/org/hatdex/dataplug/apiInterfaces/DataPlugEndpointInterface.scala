@@ -45,11 +45,14 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
     hatAddress: String,
     hatClient: AuthenticatedHatClient,
     retrying: Boolean)(implicit ec: ExecutionContext, timeout: Timeout): Future[DataPlugFetchStep] = {
+
     val authenticatedFetchParameters = authenticateRequest(fetchParams, hatAddress, refreshToken = retrying)
 
     authenticatedFetchParameters flatMap { requestParameters =>
+      logger.debug(s"The parameters are: $requestParameters")
       buildRequest(requestParameters)
     } flatMap { result =>
+      logger.debug(s"fetch returned: ${result}")
       result.status match {
         case OK =>
           processResults(result.json, hatAddress, hatClient, fetchParams) map { _ =>
@@ -138,14 +141,30 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
     }
   }
 
+  //protected def validateMinDataStructure(rawData: JsValue, hatAddress: String): Try[JsArray]
+
+  //protected def validateMinDataStructure(rawData: JsValue): Try[JsArray]
+
+  // TODO: remove single parameter interface once all of the plugs are made compatible
+
   /**
    * Validates whether dataset meets minimum field requirements by trying to cast it into a case class
    *
    * @param rawData JSON value of data to be validated
    * @return Try block - successful if the data matches minimum structure requirements
    */
+  protected def validateMinDataStructure(rawData: JsValue): Try[JsArray] =
+    throw new NotImplementedError("Implementation missing for abstract method \"validateMinDataStructure\"")
 
-  protected def validateMinDataStructure(rawData: JsValue): Try[JsArray]
+  /**
+   * Validates whether dataset meets minimum field requirements by trying to cast it into a case class
+   *
+   * @param rawData JSON value of data to be validated
+   * @param hatAddress String value of the hat address requesting the data. Used to log stuff
+   * @return Try block - successful if the data matches minimum structure requirements
+   */
+  protected def validateMinDataStructure(rawData: JsValue, hatAddress: String): Try[JsArray] =
+    throw new NotImplementedError("Implementation missing for abstract method \"validateMinDataStructure\"")
 
   /**
    * Extract timestamp of data record to be stored in the HAT - HAT allows timestamp fields to

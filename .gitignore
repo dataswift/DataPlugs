@@ -22,9 +22,13 @@ dist
 /share
 /project/.sbtserver
 /content-raw/*.zip
+*.keystore
 
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
 .sass-cache
+
+# Keystore
+*.keystore
