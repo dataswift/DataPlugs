@@ -75,7 +75,7 @@ class InstagramProfileInterface @Inject() (
       __.read[JsObject].map(profile => {
 
         profile ++ JsObject(Map(
-          "hat_updated_time" -> JsValue(LocalDateTime.now().toString)))
+          "hat_updated_time" -> JsString(LocalDateTime.now().toString)))
       }))
 
     rawData.transform(transformation)
