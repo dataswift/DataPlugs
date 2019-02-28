@@ -67,7 +67,6 @@ class FacebookProfileInterface @Inject() (
   }
 
   private def transformData(rawData: JsValue): JsResult[JsObject] = {
-    import play.api.libs.json._
 
     val transformation = __.json.update(
       __.read[JsObject].map(profile => {
