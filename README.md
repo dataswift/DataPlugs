@@ -79,6 +79,10 @@ Server configuration can be customised by adjusting parameters in `conf/applicat
 The dataplug can be run locally by executing
 
     sbt "project dataplug-{providerName}" "run -Dconfig.resource=application.dev.conf"
+    
+Facebook and Instagram plugs require the use of `https`. To run those plugs locally you have to execute
+
+    sbt "project dataplug-(providenName)" "run -Dconfig.resource=application.dev.conf -Dhttps.port=9443"
 
 ## License
 
