@@ -9,18 +9,18 @@ import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth2.FacebookProvider
 import org.hatdex.dataplug.actors.Errors.SourceDataProcessingException
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
-import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
-import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
+import org.hatdex.dataplug.apiInterfaces.authProviders.{OAuth2TokenHelper, RequestAuthenticatorOAuth2}
+import org.hatdex.dataplug.apiInterfaces.models.{ApiEndpointCall, ApiEndpointMethod}
 import org.hatdex.dataplug.services.UserService
-import org.hatdex.dataplug.utils.{ AuthenticatedHatClient, FutureTransformations, Mailer }
-import org.hatdex.dataplugFacebook.models.{ FacebookPost, FacebookUserLikes }
+import org.hatdex.dataplug.utils.{AuthenticatedHatClient, FutureTransformations, Mailer}
+import org.hatdex.dataplugFacebook.models.{FacebookPost, FacebookUserLikes}
 import play.api.Logger
-import play.api.libs.json.{ JsArray, JsObject, JsValue }
+import play.api.libs.json._
 import play.api.libs.ws.WSClient
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
-import scala.util.{ Failure, Success, Try }
+import scala.util.{Failure, Success, Try}
 
 class FacebookUserLikesInterface @Inject() (
     val wsClient: WSClient,
@@ -115,6 +115,7 @@ class FacebookUserLikesInterface @Inject() (
   }
 
   override def validateMinDataStructure(rawData: JsValue, hatAddress: String): Try[JsArray] = {
+
     (rawData \ "data").toOption.map {
       case data: JsArray if data.validate[List[FacebookUserLikes]].isSuccess =>
         logger.info(s"[$hatAddress] Validated JSON array of ${data.value.length} items.")
@@ -141,7 +142,7 @@ object FacebookUserLikesInterface {
     "/me/likes",
     ApiEndpointMethod.Get("Get"),
     Map(),
-    Map("limit" -> "500", "fields" -> ("id,about,created_time,app_links,awards,can_checkin,can_post,category,category_list,checkins," +
+    Map("summary" -> "total_count", "limit" -> "500", "fields" -> ("id,about,created_time,app_links,awards,can_checkin,can_post,category,category_list,checkins," +
       "description,description_html,display_subtext,emails,fan_count,has_added_app,has_whatsapp_number,link," +
       "location,name,overall_star_rating,phone,place_type,rating_count,username,verification_status,website,whatsapp_number")),
     Map(),
