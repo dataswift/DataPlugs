@@ -40,45 +40,42 @@ class InstagramFeedInterface @Inject() (
   val refreshInterval = 1.hour
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
-    None
-    //    logger.debug("Building continuation...")
-    //
-    //    val maybeMinIdParam = params.pathParameters.get("min_id")
-    //
-    //    if (maybeMinIdParam.isDefined) {
-    //      None
-    //    }
-    //    else {
-    //      val maybeNextMaxId = (content \ "pagination" \ "next_max_id").asOpt[String]
-    //      val maybeMinIdStorage = params.storage.get("min_id")
-    //
-    //      (maybeNextMaxId, maybeMinIdStorage) match {
-    //        case (Some(nextMaxId), Some(_)) =>
-    //          Some(params.copy(queryParameters = params.queryParameters + ("max_id" -> nextMaxId)))
-    //        case (Some(nextMaxId), None) =>
-    //          Some(params.copy(
-    //            queryParameters = params.queryParameters + ("max_id" -> nextMaxId),
-    //            storageParameters = Some(params.storage + ("min_id" -> extractHeadId(content).get))))
-    //        case (None, _) => None
-    //      }
-    //    }
+    logger.debug("Building continuation...")
+
+    val maybeMinIdParam = params.pathParameters.get("min_id")
+    if (maybeMinIdParam.isDefined) {
+      None
+    }
+    else {
+      val maybeNextMaxId = (content \ "pagination" \ "next_max_id").asOpt[String]
+      val maybeMinIdStorage = params.storage.get("min_id")
+
+      (maybeNextMaxId, maybeMinIdStorage) match {
+        case (Some(nextMaxId), Some(_)) =>
+          Some(params.copy(queryParameters = params.queryParameters + ("max_id" -> nextMaxId)))
+        case (Some(nextMaxId), None) =>
+          Some(params.copy(
+            queryParameters = params.queryParameters + ("max_id" -> nextMaxId),
+            storageParameters = Some(params.storage + ("min_id" -> extractHeadId(content).get))))
+        case (None, _) => None
+      }
+    }
   }
 
   def buildNextSync(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
-    params
-    //    logger.debug(s"Building next sync...")
-    //
-    //    params.storage.get("min_id").map { savedMinId =>
-    //      params.copy(
-    //        queryParameters = params.queryParameters + ("min_id" -> savedMinId) - "max_id",
-    //        storageParameters = Some(params.storage - "min_id"))
-    //    }.getOrElse {
-    //      val maybeHeadId = extractHeadId(content)
-    //
-    //      maybeHeadId.map { headId =>
-    //        params.copy(queryParameters = params.queryParameters + ("min_id" -> headId))
-    //      }.getOrElse(params)
-    //    }
+    logger.debug(s"Building next sync...")
+
+    params.storage.get("min_id").map { savedMinId =>
+      params.copy(
+        queryParameters = params.queryParameters + ("min_id" -> savedMinId) - "max_id",
+        storageParameters = Some(params.storage - "min_id"))
+    }.getOrElse {
+      val maybeHeadId = extractHeadId(content)
+
+      maybeHeadId.map { headId =>
+        params.copy(queryParameters = params.queryParameters + ("min_id" -> headId))
+      }.getOrElse(params)
+    }
   }
 
   override protected def processResults(
