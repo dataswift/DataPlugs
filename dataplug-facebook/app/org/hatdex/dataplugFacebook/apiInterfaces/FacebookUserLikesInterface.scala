@@ -9,18 +9,18 @@ import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth2.FacebookProvider
 import org.hatdex.dataplug.actors.Errors.SourceDataProcessingException
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
-import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
-import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
+import org.hatdex.dataplug.apiInterfaces.authProviders.{OAuth2TokenHelper, RequestAuthenticatorOAuth2}
+import org.hatdex.dataplug.apiInterfaces.models.{ApiEndpointCall, ApiEndpointMethod}
 import org.hatdex.dataplug.services.UserService
-import org.hatdex.dataplug.utils.{ AuthenticatedHatClient, FutureTransformations, Mailer }
-import org.hatdex.dataplugFacebook.models.{ FacebookPost, FacebookUserLikes }
+import org.hatdex.dataplug.utils.{AuthenticatedHatClient, FutureTransformations, Mailer}
+import org.hatdex.dataplugFacebook.models.{FacebookPost, FacebookUserLikes}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
-import scala.util.{ Failure, Success, Try }
+import scala.util.{Failure, Success, Try}
 
 class FacebookUserLikesInterface @Inject() (
     val wsClient: WSClient,
