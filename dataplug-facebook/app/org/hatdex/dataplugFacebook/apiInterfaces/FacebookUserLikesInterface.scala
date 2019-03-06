@@ -114,9 +114,27 @@ class FacebookUserLikesInterface @Inject() (
     }
   }
 
+  private def transformData(rawData: JsValue): JsResult[JsObject] = {
+
+    val totalPagesLiked = (rawData \ "summary" \ "total_count").asOpt[JsNumber].getOrElse(JsNumber(0))
+    val transformation = __.json.update(
+      __.read[JsObject].map(pagesLikes => {
+
+        val data = (pagesLikes \ "data").asOpt[JsArray].getOrElse(JsArray())
+        val newData = data.value.map { item =>
+
+          item.as[JsObject] ++ JsObject(Map("number_of_pages_liked" -> totalPagesLiked))
+        }
+        JsObject(Map("data" -> Json.toJson(newData)))
+      }))
+
+    rawData.transform(transformation)
+  }
+
   override def validateMinDataStructure(rawData: JsValue, hatAddress: String): Try[JsArray] = {
 
-    (rawData \ "data").toOption.map {
+    val transformedData = transformData(rawData).getOrElse(JsString(""))
+    (transformedData \ "data").toOption.map {
       case data: JsArray if data.validate[List[FacebookUserLikes]].isSuccess =>
         logger.info(s"[$hatAddress] Validated JSON array of ${data.value.length} items.")
         Success(data)
