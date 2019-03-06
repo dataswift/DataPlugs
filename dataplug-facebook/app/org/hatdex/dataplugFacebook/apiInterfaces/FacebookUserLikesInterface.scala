@@ -105,8 +105,13 @@ class FacebookUserLikesInterface @Inject() (
     hatClient: AuthenticatedHatClient,
     fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
+    val dataValidation =
+      transformData(content)
+        .map(validateMinDataStructure(_, hatAddress))
+        .getOrElse(Failure(SourceDataProcessingException(s"[$hatAddress] Source data malformed, could not insert date in to the structure")))
+
     for {
-      validatedData <- FutureTransformations.transform(validateMinDataStructure(content, hatAddress))
+      validatedData <- FutureTransformations.transform(dataValidation)
       _ <- uploadHatData(namespace, endpoint, validatedData, hatAddress, hatClient) // Upload the data
     } yield {
       logger.debug(s"Successfully synced new records for HAT $hatAddress")
@@ -117,15 +122,13 @@ class FacebookUserLikesInterface @Inject() (
   private def transformData(rawData: JsValue): JsResult[JsObject] = {
 
     val totalPagesLiked = (rawData \ "summary" \ "total_count").asOpt[JsNumber].getOrElse(JsNumber(0))
-    val transformation = __.json.update(
-      __.read[JsObject].map(pagesLikes => {
-
-        val data = (pagesLikes \ "data").asOpt[JsArray].getOrElse(JsArray())
-        val newData = data.value.map { item =>
-
-          item.as[JsObject] ++ JsObject(Map("number_of_pages_liked" -> totalPagesLiked))
+    val transformation = (__ \ "data").json.update(
+      __.read[JsArray].map(pagesLikesData => {
+        val updatedLikesData = pagesLikesData.value.map { like =>
+          like.as[JsObject] ++ JsObject(Map("number_of_pages_liked" -> totalPagesLiked))
         }
-        JsObject(Map("data" -> Json.toJson(newData)))
+
+        JsArray(updatedLikesData)
       }))
 
     rawData.transform(transformation)
@@ -133,8 +136,7 @@ class FacebookUserLikesInterface @Inject() (
 
   override def validateMinDataStructure(rawData: JsValue, hatAddress: String): Try[JsArray] = {
 
-    val transformedData = transformData(rawData).getOrElse(JsString(""))
-    (transformedData \ "data").toOption.map {
+    (rawData \ "data").toOption.map {
       case data: JsArray if data.validate[List[FacebookUserLikes]].isSuccess =>
         logger.info(s"[$hatAddress] Validated JSON array of ${data.value.length} items.")
         Success(data)
