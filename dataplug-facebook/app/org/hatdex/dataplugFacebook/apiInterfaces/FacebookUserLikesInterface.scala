@@ -37,13 +37,13 @@ class FacebookUserLikesInterface @Inject() (
   val endpoint: String = "likes/pages"
   protected val logger: Logger = Logger(this.getClass)
 
-  val refreshInterval = 1.hour // No idea if this is ideal, might do with longer?
+  val refreshInterval = 1.day // No idea if this is ideal, might do with longer?
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     logger.debug("Building continuation...")
 
     val maybeNextPage = (content \ "paging" \ "next").asOpt[String]
-    val maybeAfterParam = (content \ "paging" \ "cursor" \ "after").asOpt[String]
+    val maybeBeforeParam = params.pathParameters.get("before")
 
     maybeNextPage.map { nextPage =>
       logger.debug(s"Found next page link (continuing sync): $nextPage")
@@ -53,22 +53,20 @@ class FacebookUserLikesInterface @Inject() (
 
       logger.debug(s"Updated query parameters: $updatedQueryParams")
 
-      if (maybeAfterParam.isDefined) {
-        logger.debug("\"After\" parameter already set, updating query params")
+      if (maybeBeforeParam.isDefined) {
+        logger.debug("\"Before\" parameter already set, updating query params")
         params.copy(queryParameters = updatedQueryParams)
       }
       else {
-        (content \ "paging" \ "previous").asOpt[String].flatMap { _ =>
-          (content \ "paging" \ "cursor" \ "after").asOpt[String].map { afterParameter =>
-            val updatedPathParams = params.pathParameters + ("after" -> afterParameter)
+        (content \ "paging" \ "cursors" \ "before").asOpt[String].map { beforeParameter =>
+          val updatedPathParams = params.pathParameters + ("before" -> beforeParameter)
 
-            logger.debug(s"Updating query params and setting 'after': $afterParameter")
-            params.copy(pathParameters = updatedPathParams, queryParameters = updatedQueryParams)
-          }
-        }.getOrElse {
-          logger.warn("Unexpected API behaviour: 'before' not set and it was not possible to extract it from response body")
-          params.copy(queryParameters = updatedQueryParams)
+          logger.debug(s"Updating query params and setting 'before': $beforeParameter")
+          params.copy(pathParameters = updatedPathParams, queryParameters = updatedQueryParams)
         }
+      }.getOrElse {
+        logger.warn("Unexpected API behaviour: 'before' not set and it was not possible to extract it from response body")
+        params.copy(queryParameters = updatedQueryParams)
       }
     }
   }
@@ -76,21 +74,21 @@ class FacebookUserLikesInterface @Inject() (
   def buildNextSync(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
     logger.debug(s"Building next sync...")
 
-    val maybeAfterParam = params.pathParameters.get("after")
+    val maybeBeforeParam = params.pathParameters.get("before")
     val updatedQueryParams = params.queryParameters - "after" - "access_token"
 
     logger.debug(s"Updated query parameters: $updatedQueryParams")
 
-    maybeAfterParam.map { afterParam =>
-      logger.debug(s"Building next sync parameters $updatedQueryParams with 'after': $afterParam")
-      params.copy(pathParameters = params.pathParameters - "after", queryParameters = updatedQueryParams + ("after" -> afterParam))
+    maybeBeforeParam.map { beforeParameter =>
+      logger.debug(s"Building next sync parameters $updatedQueryParams with 'before': $beforeParameter")
+      params.copy(pathParameters = params.pathParameters - "before", queryParameters = updatedQueryParams + ("before" -> beforeParameter))
     }.getOrElse {
-      val maybePreviousPage = (content \ "paging" \ "cursors" \ "after").asOpt[String]
+      val maybePreviousPage = (content \ "paging" \ "cursors" \ "before").asOpt[String]
 
-      logger.debug("'before' parameter not found (likely no continuation runs), setting one now")
+      logger.debug("'Before' parameter not found (likely no continuation runs), setting one now")
       maybePreviousPage.flatMap { previousPage =>
-        Uri(previousPage).query().get("after").map { newAfterParam =>
-          params.copy(queryParameters = params.queryParameters + ("after" -> newAfterParam))
+        Uri(previousPage).query().get("before").map { newBefore =>
+          params.copy(queryParameters = params.queryParameters + ("before" -> newBefore))
         }
       }.getOrElse {
         logger.warn("Could not extract previous page 'before' parameter so the new value is not set. Was the feed list empty?")
