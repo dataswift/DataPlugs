@@ -23,7 +23,7 @@ import org.hatdex.dataplug.services._
 import org.hatdex.libs.dal.SchemaMigration
 import org.hatdex.dataplug.dal.SchemaMigrationImpl
 import org.hatdex.dataplugSpotify.apiInterfaces.authProviders.SpotifyProvider
-import org.hatdex.dataplugSpotify.apiInterfaces.{ SpotifyProfileCheck, SpotifyProfileInterface, SpotifyRecentlyPlayedInterface }
+import org.hatdex.dataplugSpotify.apiInterfaces._
 import play.api.Configuration
 import play.api.libs.concurrent.AkkaGuiceSupport
 
@@ -52,15 +52,16 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   /**
    * Provides the social provider registry.
    *
-   * @param googleCalendarEndpoint The google calendar api endpoint implementation, injected
    * @return The DataPlugRegistry.
    */
   @Provides
   def provideDataPlugCollection(
     spotifyProfileInterface: SpotifyProfileInterface,
+    spotifyUserPlaylistInterface: SpotifyUserPlaylistsInterface,
+    spotifyUserPlaylistTracksInterface: SpotifyUserPlaylistTracksInterface,
     spotifyRecentlyPlayedInterface: SpotifyRecentlyPlayedInterface): DataPlugRegistry = {
 
-    DataPlugRegistry(Seq(spotifyProfileInterface, spotifyRecentlyPlayedInterface))
+    DataPlugRegistry(Seq(spotifyProfileInterface, spotifyUserPlaylistInterface, spotifyUserPlaylistTracksInterface, spotifyRecentlyPlayedInterface))
   }
 
   @Provides
@@ -75,7 +76,7 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   /**
    * Provides the social provider registry.
    *
-   * @param spotifyProvider The Fitbit provider implementation.
+   * @param spotifyProvider The Spotify provider implementation.
    * @return The Silhouette environment.
    */
   @Provides
@@ -87,12 +88,12 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   }
 
   /**
-   * Provides the Fitbit provider.
+   * Provides the Spotify provider.
    *
    * @param httpLayer The HTTP layer implementation.
    * @param stateHandler The OAuth2 state provider implementation.
    * @param configuration The Play configuration.
-   * @return The Fitbit provider.
+   * @return The Spotify provider.
    */
   @Provides
   def provideSpotifyProvider(

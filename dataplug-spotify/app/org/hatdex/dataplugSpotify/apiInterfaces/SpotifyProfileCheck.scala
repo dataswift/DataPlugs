@@ -28,14 +28,16 @@ class SpotifyProfileCheck @Inject() (
 
   val defaultApiEndpoint = ApiEndpointCall(
     "https://api.spotify.com",
-    "/v1/me",
+    "/v1/me/playlists",
     ApiEndpointMethod.Get("Get"),
     Map(),
     Map(),
     Map(),
     Some(Map()))
 
-  def generateEndpointChoices(responseBody: Option[JsValue]): Seq[ApiEndpointVariantChoice] = staticEndpointChoices
+  def generateEndpointChoices(responseBody: Option[JsValue]): Seq[ApiEndpointVariantChoice] = {
+    staticEndpointChoices ++ getTracksFromPlaylists(responseBody)
+  }
 
   def staticEndpointChoices: Seq[ApiEndpointVariantChoice] = {
     val profileVariant = ApiEndpointVariant(
@@ -48,9 +50,34 @@ class SpotifyProfileCheck @Inject() (
       Some(""), Some(""),
       Some(SpotifyRecentlyPlayedInterface.defaultApiEndpoint))
 
+    val userPlaylistsVariant = ApiEndpointVariant(
+      ApiEndpoint("playlists/user", "User's Spotify playlists", None),
+      Some(""), Some(""),
+      Some(SpotifyUserPlaylistsInterface.defaultApiEndpoint))
+
     Seq(
       ApiEndpointVariantChoice("profile", "User's Spotify profile information", active = true, profileVariant),
+      ApiEndpointVariantChoice("playlists/user", "User's Spotify playlists", active = true, userPlaylistsVariant),
       ApiEndpointVariantChoice("feed", "A feed of Spotify tracks played", active = true, recentlyPlayedVariant))
+  }
+
+  private def getTracksFromPlaylists(body: Option[JsValue]): Seq[ApiEndpointVariantChoice] = {
+    body.map { responseBody =>
+      (responseBody \ "items").as[Seq[JsValue]] map { playlist =>
+        val playlistId = (playlist \ "id").as[String]
+        val name = (playlist \ "name").as[String]
+        val pathParameters = SpotifyUserPlaylistTracksInterface.defaultApiEndpoint.pathParameters + ("playlistId" -> playlistId)
+        val variant = ApiEndpointVariant(
+          ApiEndpoint("playlists/tracks", "Spotify Playlist Tracks", None),
+          Some(playlistId),
+          Some(name),
+          Some(SpotifyUserPlaylistTracksInterface.defaultApiEndpoint.copy(
+            pathParameters = pathParameters,
+            storageParameters = Some(Map("playlistName" -> name)))))
+
+        ApiEndpointVariantChoice(playlistId, name, active = false, variant)
+      }
+    }.getOrElse(Seq())
   }
 
 }
