@@ -13,7 +13,7 @@ import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMe
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.{ AuthenticatedHatClient, FutureTransformations, Mailer }
 import org.hatdex.dataplugSpotify.apiInterfaces.authProviders.SpotifyProvider
-import org.hatdex.dataplugSpotify.models.{ SpotifyPlayedTrack, SpotifyPlaylistTrack }
+import org.hatdex.dataplugSpotify.models.SpotifyPlaylistTrack
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
@@ -35,9 +35,7 @@ class SpotifyUserPlaylistTracksInterface @Inject() (
   val namespace: String = "spotify"
   val endpoint: String = "playlists/tracks"
   protected val logger: Logger = Logger(this.getClass)
-
   val defaultApiEndpoint: ApiEndpointCall = SpotifyProfileInterface.defaultApiEndpoint
-
   val refreshInterval: FiniteDuration = 1.day
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
@@ -93,7 +91,7 @@ class SpotifyUserPlaylistTracksInterface @Inject() (
     fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
     val dataValidation =
-      transformData(content)
+      transformData(content, fetchParameters)
         .map(validateMinDataStructure)
         .getOrElse(Failure(SourceDataProcessingException("Source data malformed, could not insert date in to the structure")))
 
@@ -106,14 +104,16 @@ class SpotifyUserPlaylistTracksInterface @Inject() (
     }
   }
 
-  private def transformData(rawData: JsValue): JsResult[JsObject] = {
-
+  private def transformData(rawData: JsValue, fetchParameters: ApiEndpointCall): JsResult[JsObject] = {
+    val playlistId = fetchParameters.storage.get("playlistId")
     val transformation = (__ \ "items").json.update(
       __.read[JsArray].map { o =>
         val updatedValue = o.value.map { item =>
-          item.as[JsObject] ++ JsObject(Map("hat_updated_time" -> JsString(DateTime.now.toString)))
+          playlistId match {
+            case Some(value) => item.as[JsObject] ++ JsObject(Map("hat_updated_time" -> JsString(DateTime.now.toString), "playlistId" -> JsString(value)))
+            case _ => item.as[JsObject] ++ JsObject(Map("hat_updated_time" -> JsString(DateTime.now.toString)))
+          }
         }
-
         JsArray(updatedValue)
       })
 
@@ -136,7 +136,6 @@ class SpotifyUserPlaylistTracksInterface @Inject() (
 }
 
 object SpotifyUserPlaylistTracksInterface {
-
   lazy val defaultApiEndpoint = ApiEndpointCall(
     "https://api.spotify.com",
     s"/v1/playlists/[playlistId]/tracks",
@@ -146,4 +145,3 @@ object SpotifyUserPlaylistTracksInterface {
     Map(),
     Some(Map()))
 }
-

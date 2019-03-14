@@ -109,10 +109,7 @@ class SpotifyUserPlaylistsInterface @Inject() (
     hatClient: AuthenticatedHatClient,
     fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
-    val dataValidation =
-      transformData(content)
-        .map(validateMinDataStructure)
-        .getOrElse(Failure(SourceDataProcessingException("Source data malformed, could not insert date in to the structure")))
+    val dataValidation = validateMinDataStructure(rawData = content)
 
     for {
       result <- Future.successful(generateChangedPlaylistIds(content, fetchParameters))
@@ -122,19 +119,6 @@ class SpotifyUserPlaylistsInterface @Inject() (
       logger.debug(s"Successfully synced new records for HAT $hatAddress")
       Done
     }
-  }
-
-  private def transformData(rawData: JsValue): JsResult[JsObject] = {
-    val transformation = (__ \ "items").json.update(
-      __.read[JsArray].map { o =>
-        val updatedValue = o.value.map { item =>
-          item.as[JsObject] ++ JsObject(Map("hat_updated_time" -> JsString(DateTime.now.toString)))
-        }
-
-        JsArray(updatedValue)
-      })
-
-    rawData.transform(transformation)
   }
 
   override def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {

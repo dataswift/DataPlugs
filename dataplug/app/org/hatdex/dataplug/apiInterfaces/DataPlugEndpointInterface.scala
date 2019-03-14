@@ -94,6 +94,12 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
         case NOT_FOUND =>
           logger.warn(s"Not found for request $fetchParams - ${result.status}: ${result.body}")
           Future.failed(SourceApiCommunicationException(s"Not found for request $fetchParams for $hatAddress - ${result.status}: ${result.body}"))
+        case TOO_MANY_REQUESTS =>
+          logger.warn(s"Too many requests. API limit exceeded: $fetchParams - ${result.status}: ${result.body}")
+          Future.failed(SourceApiCommunicationException(s"Too many requests. API limit exceeded: $fetchParams - ${result.status}: ${result.body}"))
+        case FORBIDDEN =>
+          logger.warn(s"Too many requests (API limit exceeded) or no permissions: $fetchParams - ${result.status}: ${result.body}")
+          Future.failed(SourceApiCommunicationException(s"Too many requests (API limit exceeded) or no permissions: $fetchParams - ${result.status}: ${result.body}"))
         case _ =>
           logger.warn(s"Unsuccessful response from api endpoint $fetchParams for $hatAddress - ${result.status}: ${result.body}")
           Future.successful(DataPlugFetchNextSync(fetchParams))
