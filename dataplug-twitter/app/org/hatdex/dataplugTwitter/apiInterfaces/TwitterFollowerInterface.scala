@@ -47,19 +47,34 @@ class TwitterFollowerInterface @Inject() (
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     (content \ "next_cursor_str").as[String] match {
-      case "0" => None
+      case "0" =>
+        val maybeMostRecentFollower = params.storageParameters.flatMap(_.get("mostRecentFollower"))
+        maybeMostRecentFollower match {
+          case Some(_) => Some(params.copy(queryParameters = params.queryParameters + ("cursor" -> "-1")))
+          case _       => None
+        }
+
       case cursor: String => {
+        logger.debug("Cursor found")
         val tempParams = checkIfWeHaveNewFollowers(content, checkForMostRecentFollower(content, params))
         tempParams match {
-          case Some(parameters) => Some(parameters.copy(queryParameters = parameters.queryParameters + ("cursor" -> cursor)))
-          case _                => None
+          case Some(parameters) =>
+            val maybeMostRecentFollower = params.storageParameters.flatMap(_.get("mostRecentFollower"))
+            maybeMostRecentFollower match {
+              case Some(_) => Some(parameters.copy(queryParameters = parameters.queryParameters + ("cursor" -> "-1")))
+              case _       => Some(parameters.copy(queryParameters = parameters.queryParameters + ("cursor" -> cursor)))
+            }
+
+          case _ =>
+            logger.debug(s"No new parameters")
+            None
         }
       }
     }
   }
 
   def buildNextSync(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
-    params.copy(storageParameters = Some(params.storageParameters.getOrElse(Map.empty[String, String]) - "tempMostRecentFollower"))
+    updateStorageParametersMostRecentFollower(params)
   }
 
   private def checkForMostRecentFollower(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
@@ -67,6 +82,7 @@ class TwitterFollowerInterface @Inject() (
     maybeMostRecentFollower match {
       case None =>
         (content \ "users").as[JsArray].value.head.validate[TwitterUser].map { user =>
+          logger.debug(s"the most recent follower found in JSON is:  ${{ user.id.toString }}")
           params.copy(storageParameters = Some(params.storage ++ Map("tempMostRecentFollower" -> user.id.toString)))
         }.getOrElse(params)
 
@@ -78,25 +94,47 @@ class TwitterFollowerInterface @Inject() (
     val maybeTempMostRecentFollower = params.storageParameters.flatMap(_.get("tempMostRecentFollower"))
     val maybeMostRecentFollower = params.storageParameters.flatMap(_.get("mostRecentFollower"))
 
+    logger.debug(s"maybeTempMostRecentFollower $maybeTempMostRecentFollower")
+    logger.debug(s"maybeMostRecentFollower $maybeMostRecentFollower")
+
     maybeMostRecentFollower match {
       case Some(value) => // This is NOT the first sync ever
 
         maybeTempMostRecentFollower match {
           case Some(_) => //means this is not the first sync EVER and we have gone through the new data
+            logger.debug("means this is not the first sync EVER and we have gone through the new data")
             val users = (content \ "users").as[JsArray].validate[Seq[TwitterUser]].get
-            users.contains(value) match {
-              case true => None // we found the id we have saved. No need to sync the rest data
-              case _    => Some(params) // Possibly the user we had saved has been removed from followers
+            users.find { user => user.id.toString == value } match {
+              case Some(_) =>
+                logger.debug("we found the id we have saved. No need to sync the rest data")
+                None // we found the id we have saved. No need to sync the rest data
+
+              case _ =>
+                logger.debug("Possibly the user we had saved has been removed from followers")
+                Some(params) // Possibly the user we had saved has been removed from followers
             }
 
-          case _ => Some(params) // This should not happen really. Means this is NOT the first sync and we have NOT gone through the new data, makes no sense
+          case _ =>
+            logger.debug("This should not happen really. Means this is NOT the first sync and we have NOT gone through the new data, makes no sense")
+            Some(params) // This should not happen really. Means this is NOT the first sync and we have NOT gone through the new data, makes no sense
         }
 
-      case _ => //This is the first sync ever
-        maybeTempMostRecentFollower match {
-          case Some(value) => Some(params.copy(storageParameters = Some(params.storage ++ Map("mostRecentFollower" -> value)))) // Just save the value for later user
-          case _           => Some(params)
-        }
+      //This is the first sync ever
+      case _ => Some(params)
+    }
+  }
+
+  private def updateStorageParametersMostRecentFollower(params: ApiEndpointCall): ApiEndpointCall = {
+    val maybeTempMostRecentFollower = params.storageParameters.flatMap(_.get("tempMostRecentFollower"))
+
+    maybeTempMostRecentFollower match {
+      case Some(value) =>
+        logger.debug(s"This is the first sync. The most recent follower is:  ${value}")
+        params.copy(storageParameters = Some(params.storage - "mostRecentFollower" - "tempMostRecentFollower" ++ Map("mostRecentFollower" -> value)))
+
+      case _ =>
+        logger.debug("No recent follower has been found")
+        params
     }
   }
 
@@ -121,7 +159,7 @@ class TwitterFollowerInterface @Inject() (
   override def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     (rawData \ "users").toOption.map {
       case data: JsArray if data.validate[List[TwitterUser]].isSuccess =>
-        logger.debug(s"Validated JSON object:\n${data.toString}")
+        logger.debug(s"Validated JSON object: \n${data.value.length}")
         Success(data)
       case data: JsArray =>
         logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")
