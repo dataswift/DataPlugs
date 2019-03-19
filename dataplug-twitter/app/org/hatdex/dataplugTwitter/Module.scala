@@ -55,13 +55,14 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   /**
    * Provides the social provider registry.
    *
-   * @param twitterInterface The google calendar api endpoint implementation, injected
+   * @param twitterInterface The twitter tweets api endpoint implementation, injected
+   * @param twitterFollowerInterface The twitter followers api endpoint implementation, injected
    * @return The DataPlugRegistry.
    */
   @Provides
-  def provideDataPlugCollection(twitterInterface: TwitterTweetInterface): DataPlugRegistry = {
+  def provideDataPlugCollection(twitterInterface: TwitterTweetInterface, twitterFollowerInterface: TwitterFollowerInterface, twitterFriendInterface: TwitterFriendInterface): DataPlugRegistry = {
 
-    DataPlugRegistry(Seq(twitterInterface))
+    DataPlugRegistry(Seq(twitterInterface, twitterFollowerInterface, twitterFriendInterface))
   }
 
   @Provides

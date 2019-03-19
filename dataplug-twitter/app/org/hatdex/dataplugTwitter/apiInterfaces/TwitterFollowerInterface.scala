@@ -41,32 +41,63 @@ class TwitterFollowerInterface @Inject() (
 
   val namespace: String = "twitter"
   val endpoint: String = "followers"
-  protected val logger: Logger = Logger("TwitterFollowersInterface")
-
+  protected val logger: Logger = Logger(this.getClass)
   val defaultApiEndpoint = TwitterFollowerInterface.defaultApiEndpoint
-
   val refreshInterval = 24.hours
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     (content \ "next_cursor_str").as[String] match {
       case "0" => None
       case cursor: String => {
-        Some(params.copy(queryParameters = params.queryParameters + ("cursor" -> cursor)))
+        val tempParams = checkIfWeHaveNewFollowers(content, checkForMostRecentFollower(content, params))
+        tempParams match {
+          case Some(parameters) => Some(parameters.copy(queryParameters = parameters.queryParameters + ("cursor" -> cursor)))
+          case _                => None
+        }
       }
     }
   }
 
   def buildNextSync(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
-    //implement
-    //    val maybeNextSyncToken = (content \ "nextSyncToken").asOpt[String]
-    //
-    //    maybeNextSyncToken map { nextSyncToken =>
-    //      val updatedParams = params.queryParameters + ("syncToken" -> nextSyncToken) - "pageToken"
-    //      params.copy(queryParameters = updatedParams)
-    //    } getOrElse {
-    //      params
-    //    }
-    params
+    params.copy(storageParameters = Some(params.storageParameters.getOrElse(Map.empty[String, String]) - "tempMostRecentFollower"))
+  }
+
+  private def checkForMostRecentFollower(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
+    val maybeMostRecentFollower = params.storageParameters.flatMap(_.get("tempMostRecentFollower"))
+    maybeMostRecentFollower match {
+      case None =>
+        (content \ "users").as[JsArray].value.head.validate[TwitterUser].map { user =>
+          params.copy(storageParameters = Some(params.storage ++ Map("tempMostRecentFollower" -> user.id.toString)))
+        }.getOrElse(params)
+
+      case _ => params
+    }
+  }
+
+  private def checkIfWeHaveNewFollowers(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
+    val maybeTempMostRecentFollower = params.storageParameters.flatMap(_.get("tempMostRecentFollower"))
+    val maybeMostRecentFollower = params.storageParameters.flatMap(_.get("mostRecentFollower"))
+
+    maybeMostRecentFollower match {
+      case Some(value) => // This is NOT the first sync ever
+
+        maybeTempMostRecentFollower match {
+          case Some(_) => //means this is not the first sync EVER and we have gone through the new data
+            val users = (content \ "users").as[JsArray].validate[Seq[TwitterUser]].get
+            users.contains(value) match {
+              case true => None // we found the id we have saved. No need to sync the rest data
+              case _    => Some(params) // Possibly the user we had saved has been removed from followers
+            }
+
+          case _ => Some(params) // This should not happen really. Means this is NOT the first sync and we have NOT gone through the new data, makes no sense
+        }
+
+      case _ => //This is the first sync ever
+        maybeTempMostRecentFollower match {
+          case Some(value) => Some(params.copy(storageParameters = Some(params.storage ++ Map("mostRecentFollower" -> value)))) // Just save the value for later user
+          case _           => Some(params)
+        }
+    }
   }
 
   override protected def buildRequest(params: ApiEndpointCall)(implicit ec: ExecutionContext): Future[WSResponse] =
@@ -103,7 +134,6 @@ class TwitterFollowerInterface @Inject() (
       Failure(SourceDataProcessingException(s"Error parsing JSON object."))
     }
   }
-
 }
 
 object TwitterFollowerInterface {
