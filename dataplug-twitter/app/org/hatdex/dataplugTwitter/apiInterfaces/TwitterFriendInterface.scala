@@ -41,11 +41,13 @@ class TwitterFriendInterface @Inject() (
   val endpoint: String = "friends"
   protected val logger: Logger = Logger(this.getClass)
   val defaultApiEndpoint = TwitterFriendInterface.defaultApiEndpoint
-  val refreshInterval = 1.minute
+  val refreshInterval = 24.hours
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     (content \ "next_cursor_str").as[String] match {
-      case "0" => None
+      case "0" =>
+        logger.debug("Cursor is 0")
+        None
 
       case cursor: String => {
         logger.debug("Cursor found")
@@ -53,6 +55,7 @@ class TwitterFriendInterface @Inject() (
         tempParams match {
           case Some(parameters) =>
             val maybeMostRecentFollower = params.storageParameters.flatMap(_.get("mostRecentFollower"))
+            logger.debug(s"Most recent follower in continuation has been found and it's: $maybeMostRecentFollower")
             maybeMostRecentFollower match {
               case Some(_) => Some(parameters.copy(queryParameters = parameters.queryParameters + ("cursor" -> "-1")))
               case _       => Some(parameters.copy(queryParameters = parameters.queryParameters + ("cursor" -> cursor)))
@@ -124,15 +127,15 @@ class TwitterFriendInterface @Inject() (
     maybeTempMostRecentFollower match {
       case Some(value) =>
         logger.debug(s"This is the first sync. The most recent follower is:  ${value}")
-        params.copy(storageParameters = Some(params.storage - "mostRecentFollower" - "tempMostRecentFollower" ++ Map("mostRecentFollower" -> value)))
+        params.copy(queryParameters = params.queryParameters - "cursor", storageParameters = Some(params.storage - "mostRecentFollower" - "tempMostRecentFollower" ++ Map("mostRecentFollower" -> value)))
 
       case _ =>
         logger.debug("No recent follower has been found")
         val maybeMostRecentUser = (content \ "users").as[JsArray].validate[Seq[TwitterUser]].get.headOption
         maybeMostRecentUser match {
-          case Some(value) => params.copy(storageParameters = Some(params.storage - "mostRecentFollower" - "tempMostRecentFollower" ++ Map("mostRecentFollower" -> value.id.toString)))
+          case Some(value) => params.copy(queryParameters = params.queryParameters - "cursor", storageParameters = Some(params.storage - "mostRecentFollower" - "tempMostRecentFollower" ++ Map("mostRecentFollower" -> value.id.toString)))
 
-          case _           => params
+          case _           => params.copy(queryParameters = params.queryParameters - "cursor")
         }
     }
   }

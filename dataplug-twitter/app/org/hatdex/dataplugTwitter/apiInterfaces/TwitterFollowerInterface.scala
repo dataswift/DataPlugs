@@ -47,12 +47,7 @@ class TwitterFollowerInterface @Inject() (
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     (content \ "next_cursor_str").as[String] match {
-      case "0" =>
-        val maybeMostRecentFollower = params.storageParameters.flatMap(_.get("mostRecentFollower"))
-        maybeMostRecentFollower match {
-          case Some(_) => Some(params.copy(queryParameters = params.queryParameters + ("cursor" -> "-1")))
-          case _       => None
-        }
+      case "0" => None
 
       case cursor: String => {
         logger.debug("Cursor found")
@@ -74,7 +69,7 @@ class TwitterFollowerInterface @Inject() (
   }
 
   def buildNextSync(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
-    updateStorageParametersMostRecentFollower(params)
+    updateStorageParametersMostRecentFollower(content, params)
   }
 
   private def checkForMostRecentFollower(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
@@ -124,17 +119,23 @@ class TwitterFollowerInterface @Inject() (
     }
   }
 
-  private def updateStorageParametersMostRecentFollower(params: ApiEndpointCall): ApiEndpointCall = {
+  private def updateStorageParametersMostRecentFollower(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
+    logger.debug(s"Build next sync parameters are: ${params}")
     val maybeTempMostRecentFollower = params.storageParameters.flatMap(_.get("tempMostRecentFollower"))
 
     maybeTempMostRecentFollower match {
       case Some(value) =>
         logger.debug(s"This is the first sync. The most recent follower is:  ${value}")
-        params.copy(storageParameters = Some(params.storage - "mostRecentFollower" - "tempMostRecentFollower" ++ Map("mostRecentFollower" -> value)))
+        params.copy(queryParameters = params.queryParameters - "cursor", storageParameters = Some(params.storage - "mostRecentFollower" - "tempMostRecentFollower" ++ Map("mostRecentFollower" -> value)))
 
       case _ =>
         logger.debug("No recent follower has been found")
-        params
+        val maybeMostRecentUser = (content \ "users").as[JsArray].validate[Seq[TwitterUser]].get.headOption
+        maybeMostRecentUser match {
+          case Some(value) => params.copy(queryParameters = params.queryParameters - "cursor", storageParameters = Some(params.storage - "mostRecentFollower" - "tempMostRecentFollower" ++ Map("mostRecentFollower" -> value.id.toString)))
+
+          case _           => params.copy(queryParameters = params.queryParameters - "cursor")
+        }
     }
   }
 

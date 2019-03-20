@@ -60,9 +60,15 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
    * @return The DataPlugRegistry.
    */
   @Provides
-  def provideDataPlugCollection(twitterInterface: TwitterTweetInterface, twitterFollowerInterface: TwitterFollowerInterface, twitterFriendInterface: TwitterFriendInterface): DataPlugRegistry = {
+  def provideDataPlugCollection(
+    twitterInterface: TwitterTweetInterface,
+    twitterFollowerInterface: TwitterFollowerInterface,
+    twitterFriendInterface: TwitterFriendInterface): DataPlugRegistry = {
 
-    DataPlugRegistry(Seq(twitterInterface, twitterFollowerInterface, twitterFriendInterface))
+    DataPlugRegistry(Seq(
+      twitterInterface,
+      twitterFollowerInterface,
+      twitterFriendInterface))
   }
 
   @Provides
