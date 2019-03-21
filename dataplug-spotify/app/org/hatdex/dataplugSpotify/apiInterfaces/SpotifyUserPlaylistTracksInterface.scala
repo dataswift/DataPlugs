@@ -36,7 +36,7 @@ class SpotifyUserPlaylistTracksInterface @Inject() (
   val endpoint: String = "playlists/tracks"
   protected val logger: Logger = Logger(this.getClass)
   val defaultApiEndpoint: ApiEndpointCall = SpotifyProfileInterface.defaultApiEndpoint
-  val refreshInterval: FiniteDuration = 1.day
+  val refreshInterval: FiniteDuration = 365.days
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     logger.debug("Building continuation...")
