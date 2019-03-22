@@ -101,7 +101,7 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
              | Fetch Parameters: $fetchParams.
              | Content: ${Json.prettyPrint(result.json)}
               """.stripMargin, exception)
-          Future.failed(exception)
+          Future.successful(DataPlugFetchNextSync(fetchParams))
         case _ =>
           logger.warn(s"Unsuccessful response from api endpoint $fetchParams for $hatAddress - ${result.status}: ${result.body}")
           Future.successful(DataPlugFetchNextSync(fetchParams))

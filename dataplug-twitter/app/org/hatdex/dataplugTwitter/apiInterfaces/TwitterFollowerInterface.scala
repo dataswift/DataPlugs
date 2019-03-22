@@ -51,7 +51,7 @@ class TwitterFollowerInterface @Inject() (
 
       case cursor: String => {
         logger.debug("Cursor found")
-        val tempParams = checkIfWeHaveNewFollowers(content, checkForMostRecentFollower(content, params))
+        val tempParams = checkForNewFollowers(content, checkForMostRecentFollower(content, params))
         tempParams match {
           case Some(parameters) =>
             val maybeMostRecentFollower = params.storageParameters.flatMap(_.get("mostRecentFollower"))
@@ -60,7 +60,7 @@ class TwitterFollowerInterface @Inject() (
               case _       => Some(parameters.copy(queryParameters = parameters.queryParameters + ("cursor" -> cursor)))
             }
 
-          case _ =>
+          case None =>
             logger.debug(s"No new parameters")
             None
         }
@@ -81,61 +81,54 @@ class TwitterFollowerInterface @Inject() (
           params.copy(storageParameters = Some(params.storage ++ Map("tempMostRecentFollower" -> user.id.toString)))
         }.getOrElse(params)
 
-      case _ => params
+      case Some(_) => params
     }
   }
 
-  private def checkIfWeHaveNewFollowers(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
-    val maybeTempMostRecentFollower = params.storageParameters.flatMap(_.get("tempMostRecentFollower"))
-    val maybeMostRecentFollower = params.storageParameters.flatMap(_.get("mostRecentFollower"))
+  private def searchForUser(content: JsValue, mostRecentFollower: String, params: ApiEndpointCall) = {
+    val users = (content \ "users").asOpt[Seq[TwitterUser]].getOrElse(Seq.empty[TwitterUser])
+    val maybeUser = users.find { user => user.id.toString == mostRecentFollower }
+    maybeUser match {
+      case Some(_) =>
+        logger.debug("we found the id we have saved. No need to sync the rest data")
+        None
 
-    logger.debug(s"maybeTempMostRecentFollower $maybeTempMostRecentFollower")
-    logger.debug(s"maybeMostRecentFollower $maybeMostRecentFollower")
+      case None =>
+        logger.debug("Possibly the user we had saved has been removed from followers")
+        Some(params)
+    }
+  }
 
-    maybeMostRecentFollower match {
-      case Some(value) => // This is NOT the first sync ever
+  private def checkForNewFollowers(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
+    val maybeCurrentMostRecentFollower = params.storageParameters.flatMap(_.get("tempMostRecentFollower"))
+    val maybeCachedMostRecentFollower = params.storageParameters.flatMap(_.get("mostRecentFollower"))
 
-        maybeTempMostRecentFollower match {
-          case Some(_) => //means this is not the first sync EVER and we have gone through the new data
-            logger.debug("means this is not the first sync EVER and we have gone through the new data")
-            val users = (content \ "users").as[JsArray].validate[Seq[TwitterUser]].get
-            users.find { user => user.id.toString == value } match {
-              case Some(_) =>
-                logger.debug("we found the id we have saved. No need to sync the rest data")
-                None // we found the id we have saved. No need to sync the rest data
-
-              case _ =>
-                logger.debug("Possibly the user we had saved has been removed from followers")
-                Some(params) // Possibly the user we had saved has been removed from followers
-            }
-
-          case _ =>
-            logger.debug("This should not happen really. Means this is NOT the first sync and we have NOT gone through the new data, makes no sense")
-            Some(params) // This should not happen really. Means this is NOT the first sync and we have NOT gone through the new data, makes no sense
-        }
-
-      //This is the first sync ever
-      case _ => Some(params)
+    if (maybeCachedMostRecentFollower.isDefined && maybeCurrentMostRecentFollower.isDefined) {
+      searchForUser(content, maybeCachedMostRecentFollower.get, params)
+    }
+    else {
+      if (maybeCachedMostRecentFollower.isDefined && maybeCurrentMostRecentFollower.isDefined) {
+        logger.warn("This should not happen really. Means this is NOT the first sync and we have NOT gone through the new data, makes no sense")
+      }
+      Some(params)
     }
   }
 
   private def updateStorageParametersMostRecentFollower(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
-    logger.debug(s"Build next sync parameters are: ${params}")
-    val maybeTempMostRecentFollower = params.storageParameters.flatMap(_.get("tempMostRecentFollower"))
+    val result = for {
+      mostRecentFollower <- params.storageParameters.flatMap(_.get("tempMostRecentFollower"))
+    } yield {
+      logger.debug(s"This is the first sync")
+      params.copy(queryParameters = params.queryParameters - "cursor", storageParameters = Some(params.storage - "mostRecentFollower" - "tempMostRecentFollower" ++ Map("mostRecentFollower" -> mostRecentFollower)))
+    }
 
-    maybeTempMostRecentFollower match {
-      case Some(value) =>
-        logger.debug(s"This is the first sync. The most recent follower is:  ${value}")
-        params.copy(queryParameters = params.queryParameters - "cursor", storageParameters = Some(params.storage - "mostRecentFollower" - "tempMostRecentFollower" ++ Map("mostRecentFollower" -> value)))
-
-      case _ =>
-        logger.debug("No recent follower has been found")
-        val maybeMostRecentUser = (content \ "users").as[JsArray].validate[Seq[TwitterUser]].get.headOption
-        maybeMostRecentUser match {
-          case Some(value) => params.copy(queryParameters = params.queryParameters - "cursor", storageParameters = Some(params.storage - "mostRecentFollower" - "tempMostRecentFollower" ++ Map("mostRecentFollower" -> value.id.toString)))
-
-          case _           => params.copy(queryParameters = params.queryParameters - "cursor")
-        }
+    result.getOrElse {
+      logger.debug("No recent follower has been found")
+      val maybeMostRecentUser = (content \ "users").asOpt[Seq[TwitterUser]].getOrElse(Seq.empty[TwitterUser]).headOption
+      maybeMostRecentUser match {
+        case Some(value) => params.copy(queryParameters = params.queryParameters - "cursor", storageParameters = Some(params.storage - "mostRecentFollower" - "tempMostRecentFollower" ++ Map("mostRecentFollower" -> value.id.toString)))
+        case None        => params.copy(queryParameters = params.queryParameters - "cursor")
+      }
     }
   }
 
