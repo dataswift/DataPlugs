@@ -23,7 +23,7 @@ import org.hatdex.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl }
 import org.hatdex.dataplug.services._
 import org.hatdex.libs.dal.SchemaMigration
 import org.hatdex.dataplug.dal.SchemaMigrationImpl
-import org.hatdex.dataplugCalendar.apiInterfaces.{ GoogleCalendarInterface, GoogleCalendarList }
+import org.hatdex.dataplugCalendar.apiInterfaces.{ GoogleCalendarEventsInterface, GoogleCalendarList, GoogleCalendarsInterface }
 import play.api.Configuration
 import play.api.libs.concurrent.AkkaGuiceSupport
 
@@ -56,10 +56,11 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
    */
   @Provides
   def provideDataPlugCollection(
-    googleCalendarEndpoint: GoogleCalendarInterface): DataPlugRegistry = {
+    googleCalendarEventsInterface: GoogleCalendarEventsInterface,
+    googleCalendarsInterface: GoogleCalendarsInterface): DataPlugRegistry = {
 
     DataPlugRegistry(Seq(
-      googleCalendarEndpoint))
+      googleCalendarEventsInterface, googleCalendarsInterface))
   }
 
   @Provides

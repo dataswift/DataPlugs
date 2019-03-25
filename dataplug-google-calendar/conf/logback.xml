@@ -28,6 +28,9 @@
   <!-- PLUG-SPECIFIC LOGGERS -->
   <logger name="org.hatdex.dataplugCalendar" level="INFO" />
   <logger name="org.hatdex.dataplugCalendar.apiInterfaces.*" level="INFO" />
+  <logger name="org.hatdex.dataplugCalendar.apiInterfaces.GoogleCalendarsInterface" level="INFO" />
+  <logger name="org.hatdex.dataplugCalendar.apiInterfaces.GoogleCalendarEventsInterface" level="INFO" />
+  <logger name="org.hatdex.dataplugCalendar.apiInterfaces.GoogleCalendarList" level="INFO" />
   <logger name="org.hatdex.dataplugCalendar.controllers.Api" level="INFO" />
 
   <!-- CORE PLUG LOGGERS -->
