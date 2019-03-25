@@ -64,7 +64,7 @@ class GoogleCalendarEventsInterface @Inject() (
     hatClient: AuthenticatedHatClient,
     fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
-    val validatedData = transformData(content, fetchParameters.pathParameters("calendarId"), fetchParameters.storageParameters.get("calendarName"))
+    val validatedData = transformData(content, fetchParameters.pathParameters("calendarId"), fetchParameters.storage("calendarName"))
       .map(validateMinDataStructure)
       .getOrElse(Failure(SourceDataProcessingException("Source data malformed, could not insert calendar ID in the structure")))
 
