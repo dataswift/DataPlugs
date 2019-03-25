@@ -41,7 +41,7 @@ class TwitterFriendInterface @Inject() (
   val endpoint: String = "friends"
   protected val logger: Logger = Logger(this.getClass)
   val defaultApiEndpoint = TwitterFriendInterface.defaultApiEndpoint
-  val refreshInterval = 1.minute
+  val refreshInterval = 24.hours
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     (content \ "next_cursor_str").as[String] match {
@@ -108,7 +108,7 @@ class TwitterFriendInterface @Inject() (
       searchForUser(content, maybeCachedMostRecentFollower.get, params)
     }
     else {
-      if (maybeCachedMostRecentFollower.isDefined && maybeCurrentMostRecentFollower.isDefined) {
+      if (maybeCachedMostRecentFollower.isDefined && maybeCurrentMostRecentFollower.isEmpty) {
         logger.warn("This should not happen really. Means this is NOT the first sync and we have NOT gone through the new data, makes no sense")
       }
       Some(params)

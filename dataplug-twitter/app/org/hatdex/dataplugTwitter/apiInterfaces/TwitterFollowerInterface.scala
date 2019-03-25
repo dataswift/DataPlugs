@@ -107,7 +107,7 @@ class TwitterFollowerInterface @Inject() (
       searchForUser(content, maybeCachedMostRecentFollower.get, params)
     }
     else {
-      if (maybeCachedMostRecentFollower.isDefined && maybeCurrentMostRecentFollower.isDefined) {
+      if (maybeCachedMostRecentFollower.isDefined && maybeCurrentMostRecentFollower.isEmpty) {
         logger.warn("This should not happen really. Means this is NOT the first sync and we have NOT gone through the new data, makes no sense")
       }
       Some(params)
