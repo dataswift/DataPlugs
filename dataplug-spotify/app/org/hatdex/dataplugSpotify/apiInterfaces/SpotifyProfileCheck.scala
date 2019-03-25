@@ -9,6 +9,7 @@ import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpoint, _ }
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugSpotify.apiInterfaces.authProviders.SpotifyProvider
+import org.hatdex.dataplugSpotify.models.SpotifyUsersPlaylist
 import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.libs.ws.WSClient
@@ -62,20 +63,20 @@ class SpotifyProfileCheck @Inject() (
   }
 
   private def getTracksFromPlaylists(body: Option[JsValue]): Seq[ApiEndpointVariantChoice] = {
-    body.map { responseBody =>
-      (responseBody \ "items").as[Seq[JsValue]] map { playlist =>
-        val playlistId = (playlist \ "id").as[String]
-        val name = (playlist \ "name").as[String]
-        val pathParameters = SpotifyUserPlaylistTracksInterface.defaultApiEndpoint.pathParameters + ("playlistId" -> playlistId)
-        val variant = ApiEndpointVariant(
-          ApiEndpoint("playlists/tracks", "Spotify Playlist Tracks", None),
-          Some(playlistId),
-          Some(name),
-          Some(SpotifyUserPlaylistTracksInterface.defaultApiEndpoint.copy(
-            pathParameters = pathParameters,
-            storageParameters = Some(Map("playlistName" -> name)))))
+    body.flatMap { responseBody =>
+      (responseBody \ "items").asOpt[Seq[SpotifyUsersPlaylist]].map { playlists =>
+        playlists.map { playlist =>
+          val pathParameters = SpotifyUserPlaylistTracksInterface.defaultApiEndpoint.pathParameters + ("playlistId" -> playlist.id)
+          val variant = ApiEndpointVariant(
+            ApiEndpoint("playlists/tracks", "Spotify Playlist Tracks", None),
+            Some(playlist.id),
+            Some(playlist.name),
+            Some(SpotifyUserPlaylistTracksInterface.defaultApiEndpoint.copy(
+              pathParameters = pathParameters,
+              storageParameters = Some(Map("playlistName" -> playlist.name)))))
 
-        ApiEndpointVariantChoice(playlistId, name, active = false, variant)
+          ApiEndpointVariantChoice(playlist.id, playlist.name, active = false, variant)
+        }
       }
     }.getOrElse(Seq())
   }

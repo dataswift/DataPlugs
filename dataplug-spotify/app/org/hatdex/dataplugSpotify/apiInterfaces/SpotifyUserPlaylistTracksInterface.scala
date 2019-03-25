@@ -111,7 +111,7 @@ class SpotifyUserPlaylistTracksInterface @Inject() (
         val updatedValue = o.value.map { item =>
           playlistId match {
             case Some(value) => item.as[JsObject] ++ JsObject(Map("hat_updated_time" -> JsString(DateTime.now.toString), "playlistId" -> JsString(value)))
-            case _ => item.as[JsObject] ++ JsObject(Map("hat_updated_time" -> JsString(DateTime.now.toString)))
+            case None        => item.as[JsObject] ++ JsObject(Map("hat_updated_time" -> JsString(DateTime.now.toString)))
           }
         }
         JsArray(updatedValue)

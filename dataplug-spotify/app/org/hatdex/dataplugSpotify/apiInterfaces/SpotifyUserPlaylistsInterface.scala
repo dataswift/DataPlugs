@@ -14,7 +14,6 @@ import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.{ AuthenticatedHatClient, FutureTransformations, Mailer }
 import org.hatdex.dataplugSpotify.apiInterfaces.authProviders.SpotifyProvider
 import org.hatdex.dataplugSpotify.models.SpotifyUsersPlaylist
-import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
@@ -85,22 +84,26 @@ class SpotifyUserPlaylistsInterface @Inject() (
   }
 
   private def generateChangedPlaylistIds(content: JsValue, fetchParameters: ApiEndpointCall): Map[String, String] = {
-    val savedSnapshotIdStorage = fetchParameters.storageParameters.getOrElse(Map.empty[String, String])
-    val idsToAdd: Map[String, String] = Map.empty[String, String]
+    val savedSnapshotIdStorage = fetchParameters.storage
 
-    (content \ "items").as[JsArray].value.map { playlist =>
-      val newSnapshotId = (playlist \ "snapshot_id").as[String]
-      val playlistId = (playlist \ "id").as[String]
-      val maybeSnapshotId = savedSnapshotIdStorage.find(_._1 == playlistId)
-      maybeSnapshotId match {
-        case Some(snapshot) if (snapshot._2 != newSnapshotId) =>
-          idsToAdd ++ Map(snapshot)
+    logger.debug(s"The content is: $content")
+    val test = (content \ "items").asOpt[Seq[SpotifyUsersPlaylist]].map { playlists =>
+      playlists.foldLeft(Map.empty[String, String]) { (accumulator, value) =>
 
-        case _ => idsToAdd ++ Map(playlistId -> newSnapshotId)
+        logger.debug(s"The playlist is: $value")
+        val maybeSnapshotId = savedSnapshotIdStorage.find(_._1 == value.id)
+        logger.debug(s"The found snaphostID is: $maybeSnapshotId")
+        maybeSnapshotId match {
+          case Some(snapshot) if (snapshot._2 != value.snapshot_id) =>
+            accumulator ++ Map(snapshot)
+
+          case None => accumulator ++ Map(value.id -> value.snapshot_id)
+        }
       }
-    }
+    }.getOrElse(Map.empty[String, String])
 
-    idsToAdd
+    logger.debug(s"The snapshot id is: $test")
+    test
   }
 
   override protected def processResults(
@@ -124,7 +127,7 @@ class SpotifyUserPlaylistsInterface @Inject() (
   override def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     logger.error(s"Body: $rawData")
     rawData match {
-      case data: JsObject if (data \ "items").as[JsArray].validate[Seq[SpotifyUsersPlaylist]].isSuccess =>
+      case data: JsObject if (data \ "items").validate[Seq[SpotifyUsersPlaylist]].isSuccess =>
         logger.info(s"Validated JSON spotify user playlists object.")
         Success((data \ "items").as[JsArray])
       case data: JsObject =>
