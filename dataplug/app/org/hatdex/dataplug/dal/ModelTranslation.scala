@@ -3,7 +3,6 @@ package org.hatdex.dataplug.dal
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.{ OAuth1Info, OAuth2Info }
 import org.hatdex.dataplug.apiInterfaces.models._
-import org.hatdex.dataplug.dal.Tables.{ LogDataplugUser, LogDataplugUserStatusRow }
 import org.hatdex.dataplug.models.User
 import org.joda.time.DateTime
 import play.api.Logger
@@ -59,10 +58,13 @@ trait ModelTranslation {
     User(user.providerId, user.userId, linkedUser)
   }
 
-  implicit def toDbModel(phata: String, dataPlugEndpoint: String, configuration: Option[ApiEndpointCall], endpointVariant: Option[String] = None, created: org.joda.time.LocalDateTime, updated: org.joda.time.LocalDateTime, successful: Boolean, message: Option[String] = None): Tables.LogDataplugUserStatusRow = {
+  implicit def toDbModel(phata: String, dataPlugEndpoint: String, configuration: Option[ApiEndpointCall], endpointVariant: Option[String] = None, created: org.joda.time.LocalDateTime, updated: org.joda.time.LocalDateTime, successful: Boolean, message: Option[String] = None): Tables.DataplugUserStatusRow = {
     val jsValue = Json.toJson(configuration)
-    Tables.LogDataplugUserStatusRow(0, phata, dataPlugEndpoint, jsValue, endpointVariant, created, updated, successful, message)
+    Tables.DataplugUserStatusRow(0, phata, dataPlugEndpoint, jsValue, endpointVariant, created, updated, successful, message)
   }
+
+  implicit def fromDbModel(ldu: Tables.DataplugUserStatusRow, du: Tables.DataplugUserRow, de: Tables.DataplugEndpointRow): ApiEndpointStatus =
+    ApiEndpointStatus(ldu.phata, fromDbModel(de, du), ldu.endpointConfiguration.as[ApiEndpointCall], ldu.updated.toDateTime(), ldu.successful, ldu.message)
 }
 
 object ModelTranslation extends ModelTranslation {

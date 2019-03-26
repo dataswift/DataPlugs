@@ -74,14 +74,6 @@ trait DataPlugEndpointService {
   def listCurrentEndpointStatuses(phata: String): Future[Seq[ApiEndpointStatus]]
 
   /**
-   * Fetches cached endpoint status for a given phata and plug endpoint
-   *
-   * @param phata The user phata.
-   * @return The available API endpoint configurations
-   */
-  def listCachedCurrentEndpointStatuses(phata: String): Future[Seq[ApiEndpointStatus]]
-
-  /**
    * Retrieves most recent endpoint status for a given phata and plug endpoint
    *
    * @param phata The user phata.
