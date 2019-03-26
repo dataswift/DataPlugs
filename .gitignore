@@ -4,6 +4,7 @@ project/project
 project/target
 target
 tmp
+*.keystore
 .history
 dist
 /.idea
@@ -22,6 +23,7 @@ dist
 /share
 /project/.sbtserver
 /content-raw/*.zip
+*.keystore
 
 # Elastic Beanstalk Files
 .elasticbeanstalk/*

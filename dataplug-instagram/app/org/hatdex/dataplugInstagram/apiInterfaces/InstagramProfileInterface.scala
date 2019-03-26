@@ -1,5 +1,7 @@
 package org.hatdex.dataplugInstagram.apiInterfaces
 
+import java.time.LocalDateTime
+
 import akka.Done
 import akka.actor.Scheduler
 import akka.util.Timeout
@@ -53,13 +55,30 @@ class InstagramProfileInterface @Inject() (
     hatClient: AuthenticatedHatClient,
     fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
+    val dataValidation =
+      transformData(content)
+        .map(validateMinDataStructure)
+        .getOrElse(Failure(SourceDataProcessingException("Source data malformed, could not insert date in to the structure")))
+
     for {
-      validatedData <- FutureTransformations.transform(validateMinDataStructure(content))
+      validatedData <- FutureTransformations.transform(dataValidation)
       _ <- uploadHatData(namespace, endpoint, validatedData, hatAddress, hatClient) // Upload the data
     } yield {
       logger.debug(s"Successfully synced new records for HAT $hatAddress")
       Done
     }
+  }
+
+  private def transformData(rawData: JsValue): JsResult[JsObject] = {
+
+    val transformation = __.json.update(
+      __.read[JsObject].map(profile => {
+
+        profile ++ JsObject(Map(
+          "hat_updated_time" -> JsString(LocalDateTime.now().toString)))
+      }))
+
+    rawData.transform(transformation)
   }
 
   override def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {

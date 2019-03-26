@@ -72,7 +72,7 @@ class FitbitProfileInterface @Inject() (
     import play.api.libs.json._
 
     val transformation = (__ \ "user").json.update(
-      __.read[JsObject].map(o => o ++ JsObject(Map("dateCreated" -> JsString(DateTime.now.toString)))))
+      __.read[JsObject].map(o => o ++ JsObject(Map("hat_updated_time" -> JsString(DateTime.now.toString)))))
 
     rawData.transform(transformation)
   }
