@@ -9,6 +9,7 @@ import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpoint, _ }
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
 import org.hatdex.dataplugSpotify.apiInterfaces.authProviders.SpotifyProvider
+import org.hatdex.dataplugSpotify.models.SpotifyUsersPlaylist
 import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.libs.ws.WSClient
@@ -28,14 +29,16 @@ class SpotifyProfileCheck @Inject() (
 
   val defaultApiEndpoint = ApiEndpointCall(
     "https://api.spotify.com",
-    "/v1/me",
+    "/v1/me/playlists",
     ApiEndpointMethod.Get("Get"),
     Map(),
     Map(),
     Map(),
     Some(Map()))
 
-  def generateEndpointChoices(responseBody: Option[JsValue]): Seq[ApiEndpointVariantChoice] = staticEndpointChoices
+  def generateEndpointChoices(responseBody: Option[JsValue]): Seq[ApiEndpointVariantChoice] = {
+    staticEndpointChoices ++ getTracksFromPlaylists(responseBody)
+  }
 
   def staticEndpointChoices: Seq[ApiEndpointVariantChoice] = {
     val profileVariant = ApiEndpointVariant(
@@ -48,9 +51,34 @@ class SpotifyProfileCheck @Inject() (
       Some(""), Some(""),
       Some(SpotifyRecentlyPlayedInterface.defaultApiEndpoint))
 
+    val userPlaylistsVariant = ApiEndpointVariant(
+      ApiEndpoint("playlists/user", "User's Spotify playlists", None),
+      Some(""), Some(""),
+      Some(SpotifyUserPlaylistsInterface.defaultApiEndpoint))
+
     Seq(
       ApiEndpointVariantChoice("profile", "User's Spotify profile information", active = true, profileVariant),
+      ApiEndpointVariantChoice("playlists/user", "User's Spotify playlists", active = true, userPlaylistsVariant),
       ApiEndpointVariantChoice("feed", "A feed of Spotify tracks played", active = true, recentlyPlayedVariant))
+  }
+
+  private def getTracksFromPlaylists(body: Option[JsValue]): Seq[ApiEndpointVariantChoice] = {
+    body.flatMap { responseBody =>
+      (responseBody \ "items").asOpt[Seq[SpotifyUsersPlaylist]].map { playlists =>
+        playlists.map { playlist =>
+          val pathParameters = SpotifyUserPlaylistTracksInterface.defaultApiEndpoint.pathParameters + ("playlistId" -> playlist.id)
+          val variant = ApiEndpointVariant(
+            ApiEndpoint("playlists/tracks", "Spotify Playlist Tracks", None),
+            Some(playlist.id),
+            Some(playlist.name),
+            Some(SpotifyUserPlaylistTracksInterface.defaultApiEndpoint.copy(
+              pathParameters = pathParameters,
+              storageParameters = Some(Map("playlistName" -> playlist.name)))))
+
+          ApiEndpointVariantChoice(playlist.id, playlist.name, active = false, variant)
+        }
+      }
+    }.getOrElse(Seq())
   }
 
 }

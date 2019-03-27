@@ -6,6 +6,10 @@ case class SpotifyPlayedTrack(
     track: SpotifyTrack,
     played_at: String)
 
+case class SpotifyPlaylistTrack(
+    track: SpotifyTrack,
+    added_at: String)
+
 case class SpotifyTrack(
     artists: List[SpotifyArtist],
     available_markets: List[String],
@@ -27,6 +31,10 @@ case class SpotifyArtist(
 
 object SpotifyPlayedTrack {
   implicit val spotifyPlayedTrackReads: Reads[SpotifyPlayedTrack] = Json.reads[SpotifyPlayedTrack]
+}
+
+object SpotifyPlaylistTrack {
+  implicit val spotifyPlaylistTrackReads: Reads[SpotifyPlaylistTrack] = Json.reads[SpotifyPlaylistTrack]
 }
 
 object SpotifyTrack {
