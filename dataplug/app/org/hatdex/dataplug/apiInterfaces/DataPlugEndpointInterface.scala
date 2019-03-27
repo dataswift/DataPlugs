@@ -11,7 +11,7 @@ package org.hatdex.dataplug.apiInterfaces
 import akka.Done
 import akka.actor.Scheduler
 import akka.util.Timeout
-import org.hatdex.dataplug.actors.Errors.{ DataPlugError, _ }
+import org.hatdex.dataplug.actors.Errors.{ DataPlugError, SourceApiError, _ }
 import org.hatdex.dataplug.apiInterfaces.authProviders.RequestAuthenticator
 import org.hatdex.dataplug.apiInterfaces.models._
 import org.hatdex.dataplug.utils.{ AuthenticatedHatClient, FutureRetries }
@@ -94,6 +94,14 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
         case NOT_FOUND =>
           logger.warn(s"Not found for request $fetchParams - ${result.status}: ${result.body}")
           Future.failed(SourceApiCommunicationException(s"Not found for request $fetchParams for $hatAddress - ${result.status}: ${result.body}"))
+        case TOO_MANY_REQUESTS =>
+          val exception = new SourceApiError(s"Too many requests for request $fetchParams for $hatAddress. Response: ${result.status} - ${result.body}")
+          mailer.serverExceptionNotifyInternal(s"""
+             | Reached rate limit for a plug for $hatAddress.
+             | Fetch Parameters: $fetchParams.
+             | Content: ${Json.prettyPrint(result.json)}
+              """.stripMargin, exception)
+          Future.successful(DataPlugFetchNextSync(fetchParams))
         case _ =>
           logger.warn(s"Unsuccessful response from api endpoint $fetchParams for $hatAddress - ${result.status}: ${result.body}")
           Future.successful(DataPlugFetchNextSync(fetchParams))
