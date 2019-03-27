@@ -87,7 +87,7 @@ class SpotifyUserPlaylistsInterface @Inject() (
     val savedSnapshotIdStorage = fetchParameters.storage
 
     logger.debug(s"The content is: $content")
-    val test = (content \ "items").asOpt[Seq[SpotifyUsersPlaylist]].map { playlists =>
+    (content \ "items").asOpt[Seq[SpotifyUsersPlaylist]].map { playlists =>
       playlists.foldLeft(Map.empty[String, String]) { (accumulator, value) =>
 
         logger.debug(s"The playlist is: $value")
@@ -101,9 +101,6 @@ class SpotifyUserPlaylistsInterface @Inject() (
         }
       }
     }.getOrElse(Map.empty[String, String])
-
-    logger.debug(s"The snapshot id is: $test")
-    test
   }
 
   override protected def processResults(

@@ -31,7 +31,7 @@ class TwitterTweetsCheck @Inject() (
 
   val namespace: String = "twitter"
   val endpoint: String = "tweets"
-  protected val logger: Logger = Logger("TwitterTweetsInterface")
+  protected val logger: Logger = Logger(this.getClass)
 
   val defaultApiEndpoint = ApiEndpointCall(
     "https://api.twitter.com",
@@ -45,12 +45,25 @@ class TwitterTweetsCheck @Inject() (
   def generateEndpointChoices(responseBody: Option[JsValue]): Seq[ApiEndpointVariantChoice] = staticEndpointChoices
 
   def staticEndpointChoices: Seq[ApiEndpointVariantChoice] = {
-    val variant = ApiEndpointVariant(
+    val variantTweets = ApiEndpointVariant(
       ApiEndpoint("tweets", "Tweets", None),
       Some(""), Some(""),
       Some(TwitterTweetInterface.defaultApiEndpoint))
 
-    Seq(ApiEndpointVariantChoice("tweets", "My Tweets", active = true, variant))
+    val variantFollowers = ApiEndpointVariant(
+      ApiEndpoint("followers", "Followers", None),
+      Some(""), Some(""),
+      Some(TwitterFollowerInterface.defaultApiEndpoint))
+
+    val variantFriends = ApiEndpointVariant(
+      ApiEndpoint("friends", "Friends", None),
+      Some(""), Some(""),
+      Some(TwitterFriendInterface.defaultApiEndpoint))
+
+    Seq(
+      ApiEndpointVariantChoice("tweets", "My Tweets", active = true, variantTweets),
+      ApiEndpointVariantChoice("followers", "My Followers", active = true, variantFollowers),
+      ApiEndpointVariantChoice("friends", "My Friends", active = true, variantFriends))
   }
 
   override protected def buildRequest(params: ApiEndpointCall)(implicit ec: ExecutionContext): Future[WSResponse] =

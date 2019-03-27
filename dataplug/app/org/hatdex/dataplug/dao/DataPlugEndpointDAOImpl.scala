@@ -122,12 +122,28 @@ class DataPlugEndpointDAOImpl @Inject() (protected val dbConfigProvider: Databas
    * Saves endpoint status for a given phata and plug endpoint
    *
    * @param phata The user phata.
-   * @param plugName The plug endpoint name.
-   * @param endpoint Endpoint configuration
+   * @param endpointStatus The plug endpoint name.
    */
-  def saveEndpointStatus(phata: String, endpointStatus: ApiEndpointStatus): Future[Unit] = {
+  def saveEndpointStatus(phata: String, endpointStatus: ApiEndpointStatus): Future[Done] = {
+    val eventualEndpointStatusLog = saveEndpointStatusLog(phata, endpointStatus)
+    val eventualEndpointStatus = upsertEndpointStatus(phata, endpointStatus)
+
+    for {
+      _ <- eventualEndpointStatus
+      _ <- eventualEndpointStatusLog
+    } yield Done
+  }
+
+  /**
+   * Saves endpoint status log for a given phata and plug endpoint
+   *
+   * @param phata The user phata.
+   * @param endpointStatus The plug endpoint name.
+   */
+  private def saveEndpointStatusLog(phata: String, endpointStatus: ApiEndpointStatus): Future[Done] = {
     val q = Tables.LogDataplugUser += Tables.LogDataplugUserRow(
-      0, phata,
+      0,
+      phata,
       endpointStatus.apiEndpoint.endpoint.name,
       Json.toJson(endpointStatus.endpointCall),
       endpointStatus.apiEndpoint.variant,
@@ -135,16 +151,50 @@ class DataPlugEndpointDAOImpl @Inject() (protected val dbConfigProvider: Databas
       endpointStatus.successful,
       endpointStatus.message)
 
-    db.run(q).map(_ => Unit)
+    db.run(q).map(_ => Done)
   }
 
   /**
-   * Fetches endpoint status for a given phata and plug endpoint
+   * Upserts endpoint status for a given phata and plug endpoint
+   *
+   * @param phata The user phata.
+   * @param endpointStatus The plug endpoint name.
+   */
+  private def upsertEndpointStatus(phata: String, endpointStatus: ApiEndpointStatus): Future[Done] = {
+
+    val endpointUrl = endpointStatus.apiEndpoint.endpoint.name
+    val dateNow = DateTime.now().toLocalDateTime
+
+    val q = for {
+      rowsAffected <- Tables.DataplugUserStatus
+        .filter(log => log.phata === phata && log.dataplugEndpoint === endpointUrl && log.endpointVariant === endpointStatus.apiEndpoint.variant)
+        .map(log => (log.phata, log.dataplugEndpoint, log.endpointVariant, log.endpointConfiguration, log.updated, log.successful, log.message))
+        .update(phata, endpointStatus.apiEndpoint.endpoint.name, endpointStatus.apiEndpoint.variant, Json.toJson(endpointStatus.endpointCall), dateNow, endpointStatus.successful, endpointStatus.message)
+      result <- rowsAffected match {
+        case 0 => Tables.DataplugUserStatus += toDbModel(
+          phata,
+          endpointStatus.apiEndpoint.endpoint.name,
+          endpointStatus.apiEndpoint.configuration,
+          endpointStatus.apiEndpoint.variant,
+          dateNow,
+          dateNow,
+          endpointStatus.successful,
+          endpointStatus.message)
+        case 1 => DBIO.successful(1)
+        case n => DBIO.failed(new RuntimeException(s"Expected 0 or 1 change, not $n for user $phata"))
+      }
+    } yield result
+
+    db.run(q).map(_ => Done)
+  }
+
+  /**
+   * Fetches endpoint status from logs for a given phata and plug endpoint
    *
    * @param phata The user phata.
    * @return The available API endpoint configurations
    */
-  def listCurrentEndpointStatuses(phata: String): Future[Seq[ApiEndpointStatus]] = {
+  def listEndpointStatusLogs(phata: String): Future[Seq[ApiEndpointStatus]] = {
     val innerQuery = Tables.LogDataplugUser.groupBy(u => (u.phata, u.dataplugEndpoint, u.endpointVariant))
       .map({
         case (key, group) =>
@@ -155,7 +205,7 @@ class DataPlugEndpointDAOImpl @Inject() (protected val dbConfigProvider: Databas
       ldu <- Tables.LogDataplugUser.filter(ldu => ldu.phata === phata)
         .join(innerQuery).on((l, r) => l.phata === r._1 && l.dataplugEndpoint === r._2 && l.endpointVariant === r._3 && l.created === r._4)
         .map(_._1)
-      du <- Tables.DataplugUser.filter(du => du.dataplugEndpoint === ldu.dataplugEndpoint && du.phata === ldu.dataplugEndpoint && du.endpointVariant === ldu.dataplugEndpoint)
+      du <- Tables.DataplugUser.filter(du => du.dataplugEndpoint === ldu.dataplugEndpoint && du.phata === ldu.phata && du.endpointVariant === ldu.endpointVariant)
       de <- ldu.dataplugEndpointFk
     } yield (ldu, du, de)
 
@@ -166,6 +216,22 @@ class DataPlugEndpointDAOImpl @Inject() (protected val dbConfigProvider: Databas
             ApiEndpointStatus(ldu.phata, fromDbModel(de, du), ldu.endpointConfiguration.as[ApiEndpointCall], ldu.created.toDateTime(), ldu.successful, ldu.message)
         }
       }
+  }
+
+  /**
+   * Fetches endpoint status for a given phata and plug endpoint
+   *
+   * @param phata The user phata.
+   * @return The available API endpoint configurations
+   */
+  def listCurrentEndpointStatuses(phata: String): Future[Seq[ApiEndpointStatus]] = {
+    val query = for {
+      ldu <- Tables.DataplugUserStatus.filter(_.phata === phata)
+      du <- Tables.DataplugUser.filter(du => du.dataplugEndpoint === ldu.dataplugEndpoint && du.phata === ldu.phata && du.endpointVariant === ldu.endpointVariant)
+      de <- ldu.dataplugEndpointFk
+    } yield (ldu, du, de)
+
+    db.run(query.result).map(_.map(r => fromDbModel(r._1, r._2, r._3)))
   }
 
   /**

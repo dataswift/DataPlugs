@@ -13,7 +13,7 @@ trait Tables {
   import slick.jdbc.{ GetResult => GR }
 
   /** DDL for all tables. Call .create to execute. */
-  lazy val schema: profile.SchemaDescription = Array(DataplugEndpoint.schema, DataplugUser.schema, HatToken.schema, LogDataplugUser.schema, SharedNotables.schema, UserLink.schema, UserLinkedUser.schema, UserOauth1Info.schema, UserOauth2Info.schema, UserUser.schema).reduceLeft(_ ++ _)
+  lazy val schema: profile.SchemaDescription = Array(DataplugEndpoint.schema, DataplugUser.schema, DataplugUserStatus.schema, HatToken.schema, LogDataplugUser.schema, SharedNotables.schema, UserLink.schema, UserLinkedUser.schema, UserOauth1Info.schema, UserOauth2Info.schema, UserUser.schema).reduceLeft(_ ++ _)
   @deprecated("Use .schema instead of .ddl", "3.0")
   def ddl = schema
 
@@ -95,6 +95,56 @@ trait Tables {
   }
   /** Collection-like TableQuery object for table DataplugUser */
   lazy val DataplugUser = new TableQuery(tag => new DataplugUser(tag))
+
+  /**
+   * Entity class storing rows of table DataplugUserStatus
+   *  @param id Database column id SqlType(bigserial), AutoInc, PrimaryKey
+   *  @param phata Database column phata SqlType(varchar)
+   *  @param dataplugEndpoint Database column dataplug_endpoint SqlType(varchar)
+   *  @param endpointConfiguration Database column endpoint_configuration SqlType(jsonb)
+   *  @param endpointVariant Database column endpoint_variant SqlType(varchar), Default(None)
+   *  @param created Database column created SqlType(timestamp)
+   *  @param updated Database column updated SqlType(timestamp)
+   *  @param successful Database column successful SqlType(bool)
+   *  @param message Database column message SqlType(varchar), Default(None)
+   */
+  case class DataplugUserStatusRow(id: Long, phata: String, dataplugEndpoint: String, endpointConfiguration: play.api.libs.json.JsValue, endpointVariant: Option[String] = None, created: org.joda.time.LocalDateTime, updated: org.joda.time.LocalDateTime, successful: Boolean, message: Option[String] = None)
+  /** GetResult implicit for fetching DataplugUserStatusRow objects using plain SQL queries */
+  implicit def GetResultDataplugUserStatusRow(implicit e0: GR[Long], e1: GR[String], e2: GR[play.api.libs.json.JsValue], e3: GR[Option[String]], e4: GR[org.joda.time.LocalDateTime], e5: GR[Boolean]): GR[DataplugUserStatusRow] = GR {
+    prs =>
+      import prs._
+      DataplugUserStatusRow.tupled((<<[Long], <<[String], <<[String], <<[play.api.libs.json.JsValue], <<?[String], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Boolean], <<?[String]))
+  }
+  /** Table description of table dataplug_user_status. Objects of this class serve as prototypes for rows in queries. */
+  class DataplugUserStatus(_tableTag: Tag) extends profile.api.Table[DataplugUserStatusRow](_tableTag, "dataplug_user_status") {
+    def * = (id, phata, dataplugEndpoint, endpointConfiguration, endpointVariant, created, updated, successful, message) <> (DataplugUserStatusRow.tupled, DataplugUserStatusRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(id), Rep.Some(phata), Rep.Some(dataplugEndpoint), Rep.Some(endpointConfiguration), endpointVariant, Rep.Some(created), Rep.Some(updated), Rep.Some(successful), message).shaped.<>({ r => import r._; _1.map(_ => DataplugUserStatusRow.tupled((_1.get, _2.get, _3.get, _4.get, _5, _6.get, _7.get, _8.get, _9))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column id SqlType(bigserial), AutoInc, PrimaryKey */
+    val id: Rep[Long] = column[Long]("id", O.AutoInc, O.PrimaryKey)
+    /** Database column phata SqlType(varchar) */
+    val phata: Rep[String] = column[String]("phata")
+    /** Database column dataplug_endpoint SqlType(varchar) */
+    val dataplugEndpoint: Rep[String] = column[String]("dataplug_endpoint")
+    /** Database column endpoint_configuration SqlType(jsonb) */
+    val endpointConfiguration: Rep[play.api.libs.json.JsValue] = column[play.api.libs.json.JsValue]("endpoint_configuration")
+    /** Database column endpoint_variant SqlType(varchar), Default(None) */
+    val endpointVariant: Rep[Option[String]] = column[Option[String]]("endpoint_variant", O.Default(None))
+    /** Database column created SqlType(timestamp) */
+    val created: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("created")
+    /** Database column updated SqlType(timestamp) */
+    val updated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("updated")
+    /** Database column successful SqlType(bool) */
+    val successful: Rep[Boolean] = column[Boolean]("successful")
+    /** Database column message SqlType(varchar), Default(None) */
+    val message: Rep[Option[String]] = column[Option[String]]("message", O.Default(None))
+
+    /** Foreign key referencing DataplugEndpoint (database name dataplug_user_status_dataplug_endpoint_fkey) */
+    lazy val dataplugEndpointFk = foreignKey("dataplug_user_status_dataplug_endpoint_fkey", dataplugEndpoint, DataplugEndpoint)(r => r.name, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
+  }
+  /** Collection-like TableQuery object for table DataplugUserStatus */
+  lazy val DataplugUserStatus = new TableQuery(tag => new DataplugUserStatus(tag))
 
   /**
    * Entity class storing rows of table HatToken

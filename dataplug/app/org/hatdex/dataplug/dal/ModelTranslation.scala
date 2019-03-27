@@ -57,6 +57,14 @@ trait ModelTranslation {
     val linkedUser = maybeLinkedUser.map(lu => List(User(lu.providerId.get, lu.userId.get, List()))).getOrElse(List())
     User(user.providerId, user.userId, linkedUser)
   }
+
+  implicit def toDbModel(phata: String, dataPlugEndpoint: String, configuration: Option[ApiEndpointCall], endpointVariant: Option[String] = None, created: org.joda.time.LocalDateTime, updated: org.joda.time.LocalDateTime, successful: Boolean, message: Option[String] = None): Tables.DataplugUserStatusRow = {
+    val jsValue = Json.toJson(configuration)
+    Tables.DataplugUserStatusRow(0, phata, dataPlugEndpoint, jsValue, endpointVariant, created, updated, successful, message)
+  }
+
+  implicit def fromDbModel(ldu: Tables.DataplugUserStatusRow, du: Tables.DataplugUserRow, de: Tables.DataplugEndpointRow): ApiEndpointStatus =
+    ApiEndpointStatus(ldu.phata, fromDbModel(de, du), ldu.endpointConfiguration.as[ApiEndpointCall], ldu.updated.toDateTime(), ldu.successful, ldu.message)
 }
 
 object ModelTranslation extends ModelTranslation {

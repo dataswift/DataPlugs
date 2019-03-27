@@ -54,6 +54,9 @@ class TwitterTweetInterface @Inject() (
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     val maybeTweets = content.asOpt[JsArray]
 
+    logger.debug(s"Building continuation for twitter followers with ApiEndpointCall: $params")
+    logger.debug(s"Building continuation for twitter followers with data: $content")
+
     // If it's a first continuation call, the ID of the first tweet will be saved into path parameters
     val continuationParams = params.pathParameters.get("firstTweetId").map { _ =>
       params
