@@ -8,7 +8,7 @@ import org.hatdex.dataplug.apiInterfaces.models.{ DataPlugFetchContinuation, Dat
 import org.hatdex.dataplug.models.User
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.testkit.{ DataPlugEndpointInterfaceTestHelper, TestModule }
-import org.hatdex.dataplugCalendar.apiInterfaces.GoogleCalendarInterface
+import org.hatdex.dataplugCalendar.apiInterfaces.GoogleCalendarEventsInterface
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
 import org.specs2.specification.BeforeAfterAll
@@ -20,7 +20,7 @@ import play.api.{ Configuration, Logger }
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class GoogleCalendarInterfaceSpec(implicit val ee: ExecutionEnv) extends Specification with DataPlugEndpointInterfaceTestHelper with BeforeAfterAll {
+class GoogleCalendarEventsInterfaceSpec(implicit val ee: ExecutionEnv) extends Specification with DataPlugEndpointInterfaceTestHelper with BeforeAfterAll {
 
   val injector = new GuiceApplicationBuilder()
     .loadConfig(env => { Logger.info(s"Loading config for env $env"); Configuration.load(env) })
@@ -55,7 +55,7 @@ class GoogleCalendarInterfaceSpec(implicit val ee: ExecutionEnv) extends Specifi
   "Google Calendar Interface" should {
     implicit val timeout: Timeout = 10.seconds
     "Fetch data" in {
-      val interface = injector.instanceOf[GoogleCalendarInterface]
+      val interface = injector.instanceOf[GoogleCalendarEventsInterface]
       interface.buildFetchParameters(None) flatMap { apiCall =>
         interface.fetch(apiCall, "test.hubofallthings.net", null) map { nextStep =>
           nextStep must beAnInstanceOf[DataPlugFetchContinuation]
@@ -65,7 +65,7 @@ class GoogleCalendarInterfaceSpec(implicit val ee: ExecutionEnv) extends Specifi
     }
 
     "Fetch continuations" in {
-      val interface = injector.instanceOf[GoogleCalendarInterface]
+      val interface = injector.instanceOf[GoogleCalendarEventsInterface]
       interface.buildFetchParameters(None) flatMap { apiCall =>
         interface.fetch(apiCall, "test.hubofallthings.net", null) map { nextStep =>
           nextStep must beAnInstanceOf[DataPlugFetchContinuation]

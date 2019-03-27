@@ -8,6 +8,7 @@ import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, Requ
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpoint, _ }
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.Mailer
+import org.hatdex.dataplugCalendar.models.GoogleCalendar
 import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.libs.ws.WSClient
@@ -34,21 +35,35 @@ class GoogleCalendarList @Inject() (
     Some(Map()))
 
   def generateEndpointChoices(maybeResponseBody: Option[JsValue]): Seq[ApiEndpointVariantChoice] = {
-    maybeResponseBody.map { responseBody =>
-      (responseBody \ "items").as[Seq[JsValue]] map { calendar =>
-        val calendarId = (calendar \ "id").as[String]
-        val summary = (calendar \ "summary").as[String]
-        val pathParameters = GoogleCalendarInterface.defaultApiEndpoint.pathParameters + ("calendarId" -> calendarId)
+    staticEndpointChoices ++ generateCalendarEventsEndpoints(maybeResponseBody)
+  }
+
+  def staticEndpointChoices: Seq[ApiEndpointVariantChoice] = {
+    val calendarsVariant = ApiEndpointVariant(
+      ApiEndpoint("google/calendars", "User's google calendars", None),
+      Some(""), Some(""),
+      Some(GoogleCalendarsInterface.defaultApiEndpoint))
+
+    Seq(
+      ApiEndpointVariantChoice("google/calendars", "User's google calendars", active = true, calendarsVariant))
+  }
+
+  private def generateCalendarEventsEndpoints(maybeResponseBody: Option[JsValue]): Seq[ApiEndpointVariantChoice] = {
+    import org.hatdex.dataplugCalendar.models.GoogleCalendarJsonProtocol._
+
+    maybeResponseBody.flatMap { responseBody =>
+      (responseBody \ "items").asOpt[Seq[GoogleCalendar]].map{calendars => calendars.map { calendar =>
+        val pathParameters = GoogleCalendarEventsInterface.defaultApiEndpoint.pathParameters + ("calendarId" -> calendar.id)
         val variant = ApiEndpointVariant(
           ApiEndpoint("google/events", "Google Calendars", None),
-          Some(calendarId), Some(summary),
-          Some(GoogleCalendarInterface.defaultApiEndpoint.copy(
+          Some(calendar.id), Some(calendar.summary),
+          Some(GoogleCalendarEventsInterface.defaultApiEndpoint.copy(
             pathParameters = pathParameters,
-            storageParameters = Some(Map("calendarName" -> summary)))))
+            storageParameters = Some(Map("calendarName" -> calendar.summary)))))
 
-        ApiEndpointVariantChoice(calendarId, summary, active = false, variant)
+        ApiEndpointVariantChoice(calendar.id, calendar.summary, active = false, variant)
       }
-    }.getOrElse(Seq())
+    }}.getOrElse(Seq())
   }
 
 }
