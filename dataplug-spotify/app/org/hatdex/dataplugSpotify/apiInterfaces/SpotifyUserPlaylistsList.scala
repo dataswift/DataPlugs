@@ -47,7 +47,7 @@ class SpotifyUserPlaylistsList @Inject() (
               pathParameters = pathParameters,
               storageParameters = Some(Map("playlistName" -> playlist.name)))))
 
-          ApiEndpointVariantChoice(playlist.id, playlist.name, active = false, variant)
+          ApiEndpointVariantChoice(playlist.id, playlist.name, active = true, variant)
         }
       }
     }.getOrElse(Seq())
