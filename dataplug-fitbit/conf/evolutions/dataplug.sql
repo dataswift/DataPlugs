@@ -11,3 +11,18 @@ VALUES
   ('activity', 'User''s Fitbit activity list', 'sequence'),
   ('profile', 'User''s Fitbit profile information', 'snapshots')
   ON CONFLICT (name) DO NOTHING;
+
+--changeset dataplugFitbit:updateExistingWeightPathParameters
+
+UPDATE dataplug_user
+SET endpoint_configuration = jsonb_set(endpoint_configuration, '{pathParameters,endDate}'::TEXT[], to_char(CURRENT_DATE- INTEGER '1', '\"YYYY-MM-DD\"')::jsonb)
+WHERE dataplug_user.dataplug_endpoint = 'weight';
+
+UPDATE dataplug_user
+SET endpoint_configuration = jsonb_set(endpoint_configuration, '{pathParameters,baseDate}'::TEXT[], to_char(CURRENT_DATE - INTEGER '31', '\"YYYY-MM-DD\"')::jsonb)
+WHERE dataplug_user.dataplug_endpoint = 'weight';
+
+UPDATE dataplug_user
+SET endpoint_configuration = jsonb_set(endpoint_configuration, '{storageParameters,earliestSyncedDate}'::TEXT[], to_char(CURRENT_DATE - INTEGER '1', '\"YYYY-MM-DD\"')::jsonb)
+WHERE dataplug_user.dataplug_endpoint = 'weight';
+
