@@ -7,30 +7,30 @@ import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import org.hatdex.dataplug.actors.Errors.SourceDataProcessingException
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
-import org.hatdex.dataplug.apiInterfaces.authProviders.{OAuth2TokenHelper, RequestAuthenticatorOAuth2}
-import org.hatdex.dataplug.apiInterfaces.models.{ApiEndpointCall, ApiEndpointMethod}
+import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
+import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
 import org.hatdex.dataplug.services.UserService
-import org.hatdex.dataplug.utils.{AuthenticatedHatClient, FutureTransformations, Mailer}
+import org.hatdex.dataplug.utils.{ AuthenticatedHatClient, FutureTransformations, Mailer }
 import org.hatdex.dataplugFitbit.apiInterfaces.authProviders.FitbitProvider
 import org.hatdex.dataplugFitbit.models.FitbitActivityGoal
 import org.joda.time.DateTime
-import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
+import org.joda.time.format.{ DateTimeFormat, DateTimeFormatter }
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsObject, JsResult, JsValue}
+import play.api.libs.json.{ JsArray, JsObject, JsResult, JsValue }
 import play.api.libs.ws.WSClient
 
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Success, Try }
 
 class FitbitActivityGoalsInterface @Inject() (
-   val wsClient: WSClient,
-   val userService: UserService,
-   val authInfoRepository: AuthInfoRepository,
-   val tokenHelper: OAuth2TokenHelper,
-   val mailer: Mailer,
-   val scheduler: Scheduler,
-   val provider: FitbitProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
+    val wsClient: WSClient,
+    val userService: UserService,
+    val authInfoRepository: AuthInfoRepository,
+    val tokenHelper: OAuth2TokenHelper,
+    val mailer: Mailer,
+    val scheduler: Scheduler,
+    val provider: FitbitProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
 
   val namespace: String = "fitbit"
   val endpoint: String = "goals/activity"

@@ -95,7 +95,7 @@ class FitbitProfileCheck @Inject() (
       ApiEndpointVariantChoice("weight", "Body weight and BMI measurement", active = true, weightVariant),
       ApiEndpointVariantChoice("goals/sleep", "User's sleep goals", active = true, sleepGoalsVariant),
       ApiEndpointVariantChoice("goals/activity", "User's daily activity goals", active = true, activityGoalsVariant),
-      ApiEndpointVariantChoice("goals/weight", "User's weight goals", active = true, activityGoalsVariant),
+      ApiEndpointVariantChoice("goals/weight", "User's weight goals", active = true, weightGoalsVariant),
       ApiEndpointVariantChoice("goals/fat", "User's fat goals", active = true, fatGoalsVariant),
       //ApiEndpointVariantChoice("lifetime/stats", "User's Fitbit lifetime statistics", active = true, lifetimeVariant),
       ApiEndpointVariantChoice("activity/day/summary", "Summary of user's activity throughout the day", active = true, activitySummaryVariant))
