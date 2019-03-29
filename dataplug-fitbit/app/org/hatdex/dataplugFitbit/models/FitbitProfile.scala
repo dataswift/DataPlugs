@@ -3,7 +3,7 @@ package org.hatdex.dataplugFitbit.models
 import play.api.libs.json._
 
 case class FitbitProfile(
-    dateCreated: String,
+    dateCreated: Option[String],
     aboutMe: Option[String],
     age: Option[Int],
     avatar: String,
