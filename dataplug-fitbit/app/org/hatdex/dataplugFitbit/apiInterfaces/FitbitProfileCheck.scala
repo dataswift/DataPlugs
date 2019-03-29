@@ -64,9 +64,14 @@ class FitbitProfileCheck @Inject() (
       Some(FitbitSleepGoalsInterface.defaultApiEndpoint))
 
     val activityGoalsVariant = ApiEndpointVariant(
-      ApiEndpoint("goals/activity", "User's sleep goals", None),
+      ApiEndpoint("goals/activity", "User's daily activity goals", None),
       Some(""), Some(""),
       Some(FitbitActivityGoalsInterface.defaultApiEndpoint))
+
+    val weightGoalsVariant = ApiEndpointVariant(
+      ApiEndpoint("goals/weight", "User's weight goals", None),
+      Some(""), Some(""),
+      Some(FitbitWeightGoalsInterface.defaultApiEndpoint))
 
     //    val lifetimeVariant = ApiEndpointVariant(
     //      ApiEndpoint("lifetime/stats", "User's Fitbit lifetime statistics", None),
@@ -84,7 +89,8 @@ class FitbitProfileCheck @Inject() (
       ApiEndpointVariantChoice("sleep", "User's Fitbit activity list", active = true, sleepVariant),
       ApiEndpointVariantChoice("weight", "Body weight and BMI measurement", active = true, weightVariant),
       ApiEndpointVariantChoice("goals/sleep", "User's sleep goals", active = true, sleepGoalsVariant),
-      ApiEndpointVariantChoice("goals/activity", "User's activity goals", active = true, activityGoalsVariant),
+      ApiEndpointVariantChoice("goals/activity", "User's daily activity goals", active = true, activityGoalsVariant),
+      ApiEndpointVariantChoice("goals/weight", "User's wight goals", active = true, activityGoalsVariant),
       //ApiEndpointVariantChoice("lifetime/stats", "User's Fitbit lifetime statistics", active = true, lifetimeVariant),
       ApiEndpointVariantChoice("activity/day/summary", "Summary of user's activity throughout the day", active = true, activitySummaryVariant))
 

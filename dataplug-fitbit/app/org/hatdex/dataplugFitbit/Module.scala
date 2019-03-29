@@ -64,6 +64,7 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
     fitbitLifetimeStatsInterface: FitbitLifetimeStatsInterface,
     FitbitSleepGoalsInterface: FitbitSleepGoalsInterface,
     FitbitActivityGoalsInterface: FitbitActivityGoalsInterface,
+    FitbitWeightGoalsInterface: FitbitWeightGoalsInterface,
     fitbitActivityDaySummaryInterface: FitbitActivityDaySummaryInterface): DataPlugRegistry = {
 
     DataPlugRegistry(Seq(
@@ -74,6 +75,7 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
       fitbitLifetimeStatsInterface,
       FitbitSleepGoalsInterface,
       FitbitActivityGoalsInterface,
+      FitbitWeightGoalsInterface,
       fitbitActivityDaySummaryInterface))
   }
 
