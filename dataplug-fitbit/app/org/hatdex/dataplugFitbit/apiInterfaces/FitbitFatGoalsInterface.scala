@@ -12,7 +12,7 @@ import org.hatdex.dataplug.apiInterfaces.models.{ApiEndpointCall, ApiEndpointMet
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.{AuthenticatedHatClient, FutureTransformations, Mailer}
 import org.hatdex.dataplugFitbit.apiInterfaces.authProviders.FitbitProvider
-import org.hatdex.dataplugFitbit.models.FitbitWeightGoal
+import org.hatdex.dataplugFitbit.models.FitbitFatGoal
 import org.joda.time.DateTime
 import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
 import play.api.Logger
@@ -23,7 +23,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-class FitbitWeightGoalsInterface @Inject() (
+class FitbitFatGoalsInterface @Inject() (
   val wsClient: WSClient,
   val userService: UserService,
   val authInfoRepository: AuthInfoRepository,
@@ -33,10 +33,10 @@ class FitbitWeightGoalsInterface @Inject() (
   val provider: FitbitProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
 
   val namespace: String = "fitbit"
-  val endpoint: String = "goals/weight"
+  val endpoint: String = "goals/fat"
   protected val logger: Logger = Logger(this.getClass)
 
-  val defaultApiEndpoint = FitbitWeightGoalsInterface.defaultApiEndpoint
+  val defaultApiEndpoint = FitbitFatGoalsInterface.defaultApiEndpoint
 
   val refreshInterval = 24.hours
 
@@ -79,8 +79,8 @@ class FitbitWeightGoalsInterface @Inject() (
 
   override def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     (rawData \ "goal").toOption.map {
-      case data: JsValue if data.validate[FitbitWeightGoal].isSuccess =>
-        logger.info(s"Validated JSON for fitbit weight goal.")
+      case data: JsValue if data.validate[FitbitFatGoal].isSuccess =>
+        logger.info(s"Validated JSON for fitbit fat goal.")
         Success(JsArray(Seq(data)))
       case data: JsObject =>
         logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")
@@ -96,12 +96,12 @@ class FitbitWeightGoalsInterface @Inject() (
 
 }
 
-object FitbitWeightGoalsInterface {
+object FitbitFatGoalsInterface {
   val apiDateFormat: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss")
 
   val defaultApiEndpoint = ApiEndpointCall(
     "https://api.fitbit.com",
-    "/1.2/user/-/body/log/weight/goal.json",
+    "/1.2/user/-/body/log/fat/goal.json",
     ApiEndpointMethod.Get("Get"),
     Map(),
     Map(),
