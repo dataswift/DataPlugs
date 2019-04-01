@@ -31,7 +31,8 @@ WHERE dataplug_user.dataplug_endpoint = 'weight';
 INSERT INTO dataplug_endpoint (name, description, details)
 VALUES
   ('goals/sleep', 'User''s sleep goals', 'single record a day'),
-  ('goals/activity', 'User''s activity goals', 'single record a day'),
+  ('goals/activity/daily', 'User''s daily activity goals', 'single record a day'),
+  ('goals/activity/weekly', 'User''s weekly activity goals', 'single record a day'),
   ('goals/weight', 'User''s weight goals', 'single record a day'),
   ('goals/fat', 'User''s fat goals', 'single record a day')
   ON CONFLICT (name) DO NOTHING;

@@ -16,14 +16,14 @@ import org.hatdex.dataplugFitbit.models.FitbitActivityGoal
 import org.joda.time.DateTime
 import org.joda.time.format.{ DateTimeFormat, DateTimeFormatter }
 import play.api.Logger
-import play.api.libs.json.{ JsArray, JsObject, JsResult, JsValue }
+import play.api.libs.json.{ JsArray, JsObject, JsValue }
 import play.api.libs.ws.WSClient
 
 import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
 
-class FitbitActivityGoalsInterface @Inject() (
+class FitbitDailyActivityGoalsInterface @Inject() (
     val wsClient: WSClient,
     val userService: UserService,
     val authInfoRepository: AuthInfoRepository,
@@ -33,12 +33,12 @@ class FitbitActivityGoalsInterface @Inject() (
     val provider: FitbitProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
 
   val namespace: String = "fitbit"
-  val endpoint: String = "goals/activity"
+  val endpoint: String = "goals/activity/daily"
   protected val logger: Logger = Logger(this.getClass)
 
-  val defaultApiEndpoint = FitbitSleepGoalsInterface.defaultApiEndpoint
+  val defaultApiEndpoint = FitbitDailyActivityGoalsInterface.defaultApiEndpoint
 
-  val refreshInterval = 24.hours
+  val refreshInterval = 7.days
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     None
@@ -54,13 +54,10 @@ class FitbitActivityGoalsInterface @Inject() (
     hatClient: AuthenticatedHatClient,
     fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
-    val dataValidation =
-      transformData(content)
-        .map(validateMinDataStructure)
-        .getOrElse(Failure(SourceDataProcessingException("Source data malformed, could not insert date in to the structure")))
+    val transformedData = transformData(content).getOrElse(JsObject(Map.empty[String, JsValue]))
 
     for {
-      validatedData <- FutureTransformations.transform(dataValidation)
+      validatedData <- FutureTransformations.transform(validateMinDataStructure(transformedData))
       _ <- uploadHatData(namespace, endpoint, validatedData, hatAddress, hatClient) // Upload the data
     } yield {
       logger.debug(s"Successfully synced new records for HAT $hatAddress")
@@ -68,13 +65,16 @@ class FitbitActivityGoalsInterface @Inject() (
     }
   }
 
-  private def transformData(rawData: JsValue): JsResult[JsObject] = {
+  private def transformData(rawData: JsValue): Option[JsObject] = {
     import play.api.libs.json._
 
-    val transformation = (__ \ "goals").json.update(
+    val transformation = (__ \ "goal").json.update(
       __.read[JsObject].map(o => o ++ JsObject(Map("hatUpdatedTime" -> JsString(DateTime.now.toString)))))
 
-    rawData.transform(transformation)
+    (rawData \ "goal").asOpt[JsObject] match {
+      case Some(value) if value.values.nonEmpty => value.transform(transformation).asOpt
+      case _                                    => None
+    }
   }
 
   override def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
@@ -89,14 +89,21 @@ class FitbitActivityGoalsInterface @Inject() (
         logger.error(s"Error parsing JSON object: ${rawData.toString}")
         Failure(SourceDataProcessingException(s"Error parsing JSON object."))
     }.getOrElse {
-      logger.error(s"Error parsing JSON object, necessary property not found: ${rawData.toString}")
-      Failure(SourceDataProcessingException(s"Error parsing JSON object, necessary property not found."))
+      rawData.asOpt[JsObject] match {
+        case Some(value) if value.values.isEmpty =>
+          logger.info(s"Error validating data, value was empty:\n${value.toString}")
+          Success(JsArray(Seq()))
+
+        case _ =>
+          logger.error(s"Error parsing JSON object, necessary property not found: ${rawData.toString}")
+          Failure(SourceDataProcessingException(s"Error parsing JSON object, necessary property not found."))
+      }
     }
   }
 
 }
 
-object FitbitActivityGoalsInterface {
+object FitbitDailyActivityGoalsInterface {
   val apiDateFormat: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss")
 
   val defaultApiEndpoint = ApiEndpointCall(

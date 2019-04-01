@@ -12,7 +12,8 @@ import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMe
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.{ AuthenticatedHatClient, FutureTransformations, Mailer }
 import org.hatdex.dataplugFitbit.apiInterfaces.authProviders.FitbitProvider
-import org.hatdex.dataplugFitbit.models.FitbitSleepGoal
+import org.hatdex.dataplugFitbit.models.FitbitActivityGoal
+import org.joda.time.DateTime
 import org.joda.time.format.{ DateTimeFormat, DateTimeFormatter }
 import play.api.Logger
 import play.api.libs.json.{ JsArray, JsObject, JsValue }
@@ -22,7 +23,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
 
-class FitbitSleepGoalsInterface @Inject() (
+class FitbitWeeklyAvtivityGoalsInterface @Inject() (
     val wsClient: WSClient,
     val userService: UserService,
     val authInfoRepository: AuthInfoRepository,
@@ -32,10 +33,10 @@ class FitbitSleepGoalsInterface @Inject() (
     val provider: FitbitProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
 
   val namespace: String = "fitbit"
-  val endpoint: String = "goals/sleep"
+  val endpoint: String = "goals/activity/weekly"
   protected val logger: Logger = Logger(this.getClass)
 
-  val defaultApiEndpoint = FitbitSleepGoalsInterface.defaultApiEndpoint
+  val defaultApiEndpoint = FitbitWeeklyAvtivityGoalsInterface.defaultApiEndpoint
 
   val refreshInterval = 7.days
 
@@ -53,8 +54,10 @@ class FitbitSleepGoalsInterface @Inject() (
     hatClient: AuthenticatedHatClient,
     fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
+    val transformedData = transformData(content).getOrElse(JsObject(Map.empty[String, JsValue]))
+
     for {
-      validatedData <- FutureTransformations.transform(validateMinDataStructure(content))
+      validatedData <- FutureTransformations.transform(validateMinDataStructure(transformedData))
       _ <- uploadHatData(namespace, endpoint, validatedData, hatAddress, hatClient) // Upload the data
     } yield {
       logger.debug(s"Successfully synced new records for HAT $hatAddress")
@@ -62,10 +65,22 @@ class FitbitSleepGoalsInterface @Inject() (
     }
   }
 
+  private def transformData(rawData: JsValue): Option[JsObject] = {
+    import play.api.libs.json._
+
+    val transformation = (__ \ "goal").json.update(
+      __.read[JsObject].map(o => o ++ JsObject(Map("hatUpdatedTime" -> JsString(DateTime.now.toString)))))
+
+    (rawData \ "goal").asOpt[JsObject] match {
+      case Some(value) if value.values.nonEmpty => value.transform(transformation).asOpt
+      case _                                    => None
+    }
+  }
+
   override def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
-    (rawData \ "goal").toOption.map {
-      case data: JsValue if data.validate[FitbitSleepGoal].isSuccess =>
-        logger.info(s"Validated JSON for fitbit sleep goal.")
+    (rawData \ "goals").toOption.map {
+      case data: JsValue if data.validate[FitbitActivityGoal].isSuccess =>
+        logger.info(s"Validated JSON for fitbit weekly activity goal.")
         Success(JsArray(Seq(data)))
       case data: JsObject =>
         logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")
@@ -88,15 +103,16 @@ class FitbitSleepGoalsInterface @Inject() (
 
 }
 
-object FitbitSleepGoalsInterface {
+object FitbitWeeklyAvtivityGoalsInterface {
   val apiDateFormat: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss")
 
   val defaultApiEndpoint = ApiEndpointCall(
     "https://api.fitbit.com",
-    "/1.2/user/-/sleep/goal.json",
+    "/1.2/user/-/activities/goals/weekly.json",
     ApiEndpointMethod.Get("Get"),
     Map(),
     Map(),
     Map(),
     Some(Map()))
 }
+
