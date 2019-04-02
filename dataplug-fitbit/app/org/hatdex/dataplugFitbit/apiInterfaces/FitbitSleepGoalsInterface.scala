@@ -64,6 +64,9 @@ class FitbitSleepGoalsInterface @Inject() (
 
   override def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     (rawData \ "goal").toOption.map {
+      case data: JsObject if data.values.isEmpty =>
+        logger.info(s"Error validating data, value was empty:\n${data.toString}")
+        Success(JsArray(Seq()))
       case data: JsValue if data.validate[FitbitSleepGoal].isSuccess =>
         logger.info(s"Validated JSON for fitbit sleep goal.")
         Success(JsArray(Seq(data)))
@@ -74,15 +77,8 @@ class FitbitSleepGoalsInterface @Inject() (
         logger.error(s"Error parsing JSON object: ${rawData.toString}")
         Failure(SourceDataProcessingException(s"Error parsing JSON object."))
     }.getOrElse {
-      rawData.asOpt[JsObject] match {
-        case Some(value) if value.values.isEmpty =>
-          logger.info(s"Error validating data, value was empty:\n${value.toString}")
-          Success(JsArray(Seq()))
-
-        case _ =>
-          logger.error(s"Error parsing JSON object, necessary property not found: ${rawData.toString}")
-          Failure(SourceDataProcessingException(s"Error parsing JSON object, necessary property not found."))
-      }
+      logger.error(s"Error parsing JSON object, necessary property not found: ${rawData.toString}")
+      Failure(SourceDataProcessingException(s"Error parsing JSON object, necessary property not found."))
     }
   }
 
