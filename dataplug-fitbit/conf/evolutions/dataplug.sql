@@ -26,3 +26,14 @@ UPDATE dataplug_user
 SET endpoint_configuration = jsonb_set(endpoint_configuration, '{storageParameters,earliestSyncedDate}'::TEXT[], to_char(CURRENT_DATE - INTEGER '1', '\"YYYY-MM-DD\"')::jsonb)
 WHERE dataplug_user.dataplug_endpoint = 'weight';
 
+--changeset dataplugFitbit:addGoalsEndpoints context:data
+
+INSERT INTO dataplug_endpoint (name, description, details)
+VALUES
+  ('goals/sleep', 'User''s sleep goals', 'single record a day'),
+  ('goals/activity/daily', 'User''s daily activity goals', 'single record a day'),
+  ('goals/activity/weekly', 'User''s weekly activity goals', 'single record a day'),
+  ('goals/weight', 'User''s weight goals', 'single record a day'),
+  ('goals/fat', 'User''s fat goals', 'single record a day')
+  ON CONFLICT (name) DO NOTHING;
+

@@ -58,6 +58,31 @@ class FitbitProfileCheck @Inject() (
       Some(""), Some(""),
       Some(FitbitWeightInterface.defaultApiEndpoint))
 
+    val sleepGoalsVariant = ApiEndpointVariant(
+      ApiEndpoint("goals/sleep", "User's sleep goals", None),
+      Some(""), Some(""),
+      Some(FitbitSleepGoalsInterface.defaultApiEndpoint))
+
+    val dailyActivityGoalsVariant = ApiEndpointVariant(
+      ApiEndpoint("goals/activity/daily", "User's daily activity goals", None),
+      Some(""), Some(""),
+      Some(FitbitDailyActivityGoalsInterface.defaultApiEndpoint))
+
+    val weeklyActivityGoalsVariant = ApiEndpointVariant(
+      ApiEndpoint("goals/activity/weekly", "User's weekly activity goals", None),
+      Some(""), Some(""),
+      Some(FitbitDailyActivityGoalsInterface.defaultApiEndpoint))
+
+    val weightGoalsVariant = ApiEndpointVariant(
+      ApiEndpoint("goals/weight", "User's weight goals", None),
+      Some(""), Some(""),
+      Some(FitbitWeightGoalsInterface.defaultApiEndpoint))
+
+    val fatGoalsVariant = ApiEndpointVariant(
+      ApiEndpoint("goals/fat", "User's fat goals", None),
+      Some(""), Some(""),
+      Some(FitbitFatGoalsInterface.defaultApiEndpoint))
+
     //    val lifetimeVariant = ApiEndpointVariant(
     //      ApiEndpoint("lifetime/stats", "User's Fitbit lifetime statistics", None),
     //      Some(""), Some(""),
@@ -73,6 +98,11 @@ class FitbitProfileCheck @Inject() (
       ApiEndpointVariantChoice("activity", "User's Fitbit activity list", active = true, activityVariant),
       ApiEndpointVariantChoice("sleep", "User's Fitbit activity list", active = true, sleepVariant),
       ApiEndpointVariantChoice("weight", "Body weight and BMI measurement", active = true, weightVariant),
+      ApiEndpointVariantChoice("goals/sleep", "User's sleep goals", active = true, sleepGoalsVariant),
+      ApiEndpointVariantChoice("goals/activity/daily", "User's daily activity goals", active = true, dailyActivityGoalsVariant),
+      ApiEndpointVariantChoice("goals/activity/weekly", "User's weekly activity goals", active = true, weeklyActivityGoalsVariant),
+      ApiEndpointVariantChoice("goals/weight", "User's weight goals", active = true, weightGoalsVariant),
+      ApiEndpointVariantChoice("goals/fat", "User's fat goals", active = true, fatGoalsVariant),
       //ApiEndpointVariantChoice("lifetime/stats", "User's Fitbit lifetime statistics", active = true, lifetimeVariant),
       ApiEndpointVariantChoice("activity/day/summary", "Summary of user's activity throughout the day", active = true, activitySummaryVariant))
 
