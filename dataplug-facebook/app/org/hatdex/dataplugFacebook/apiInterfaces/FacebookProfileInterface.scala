@@ -107,7 +107,7 @@ object FacebookProfileInterface {
     "/me",
     ApiEndpointMethod.Get("Get"),
     Map(),
-    Map("fields" -> ("id,first_name,last_name,middle_name,name,link,age_range,birthday,email,languages," +
+    Map("fields" -> ("id,first_name,last_name,middle_name,name,link,age_range,email,languages," +
       "public_key,relationship_status,religion,significant_other,sports,friends")),
     Map(),
     Some(Map()))
