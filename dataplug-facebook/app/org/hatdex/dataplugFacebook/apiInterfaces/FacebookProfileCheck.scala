@@ -53,10 +53,10 @@ class FacebookProfileCheck @Inject() (
       Some(""), Some(""),
       Some(FacebookFeedInterface.defaultApiEndpoint))
 
-    //    val userLikesVariant = ApiEndpointVariant(
-    //      ApiEndpoint("likes/pages", "User's likes on Facebook", None),
-    //      Some(""), Some(""),
-    //      Some(FacebookUserLikesInterface.defaultApiEndpoint))
+    val userLikesVariant = ApiEndpointVariant(
+      ApiEndpoint("likes/pages", "User's likes on Facebook", None),
+      Some(""), Some(""),
+      Some(FacebookUserLikesInterface.defaultApiEndpoint))
 
     val eventsVariant = ApiEndpointVariant(
       ApiEndpoint("events", "Facebook events the user has been invited to", None),
@@ -67,7 +67,7 @@ class FacebookProfileCheck @Inject() (
       ApiEndpointVariantChoice("profile", "User's Facebook profile information", active = true, profileVariant),
       ApiEndpointVariantChoice("profile/picture", "User's Facebook profile picture", active = true, profilePictureVariant),
       ApiEndpointVariantChoice("feed", "User's Facebook posts feed", active = true, feedVariant),
-      //      ApiEndpointVariantChoice("likes/pages", "User's likes on Facebook", active = true, userLikesVariant),
+      ApiEndpointVariantChoice("likes/pages", "User's likes on Facebook", active = true, userLikesVariant),
       ApiEndpointVariantChoice("events", "Facebook events the user has been invited to", active = true, eventsVariant))
 
     choices
