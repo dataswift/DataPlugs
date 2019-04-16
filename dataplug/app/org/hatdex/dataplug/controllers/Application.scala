@@ -107,19 +107,20 @@ class Application @Inject() (
     apiEndpointStatuses: Seq[ApiEndpointStatus])(implicit request: RequestHeader, user: User): Future[Result] = {
     logger.debug(s"Process endpoint choices automatically: $variantChoices")
 
-    request.session.get("redirect").map { r =>
-      Future.successful(Redirect(r))
-    } getOrElse {
-      if (apiEndpointStatuses.isEmpty || variantChoices.forall(!_.active)) {
-        logger.debug(s"Got choices to sign up for $variantChoices")
-        syncerActorManager.updateApiVariantChoices(user, variantChoices.map(_.copy(active = true))) map { _ =>
-          // Automatically redirect the user if there is a redirect registered in the session
-          Ok(dataPlugViewSet.signupComplete(socialProviderRegistry, Option(variantChoices)))
-        }
+    val maybeRedirect = request.session.get("redirect")
+    val requiresSetup = apiEndpointStatuses.isEmpty || variantChoices.forall(!_.active)
+    (maybeRedirect, requiresSetup) match {
+      case (Some(redirect), true) => syncerActorManager.updateApiVariantChoices(user, variantChoices.map(_.copy(active = true))) map { _ =>
+        Redirect(redirect)
       }
-      else {
-        Future.successful(Ok(dataPlugViewSet.disconnect(socialProviderRegistry, Some(variantChoices), chooseVariants)))
+
+      case (Some(redirect), false) => Future.successful(Redirect(redirect))
+
+      case (None, true) => syncerActorManager.updateApiVariantChoices(user, variantChoices.map(_.copy(active = true))) map { _ =>
+        Ok(dataPlugViewSet.signupComplete(socialProviderRegistry, Option(variantChoices)))
       }
+
+      case (None, false) => Future.successful(Ok(dataPlugViewSet.disconnect(socialProviderRegistry, Some(variantChoices), chooseVariants)))
     }
   }
 
