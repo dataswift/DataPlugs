@@ -50,5 +50,5 @@ class DataPlugViewSetDefault extends DataPlugViewSet {
       chooseVariants)
   }
 
-  protected def defaultRedirect(implicit user: User) = s"https://${user.userId}/#/dashboard"
+  protected def defaultRedirect(implicit user: User) = s"https://${user.userId}/#/feed"
 }

@@ -66,12 +66,14 @@ class PhataDataPlugVariantSyncer(
       self ! PoisonPill
 
     case SyncingFailed(error, exception) =>
-      logger.warn(s"FAILED Received by $phata-${apiEndpointVariant.endpoint.name}-${apiEndpointVariant.variant}: $error")
+
+      logger.error(s"FAILED Received by $phata-${apiEndpointVariant.endpoint.name}-${apiEndpointVariant.variant}: $error")
       mailer.serverExceptionNotifyInternal(
         s"FAILED Received by $phata-${apiEndpointVariant.endpoint.name}-${apiEndpointVariant.variant}: $error", exception)
 
-      context.parent ! Failed(apiEndpointVariant, phata, error)
+      context.parent ! Failed(apiEndpointVariant, phata, exception)
       self ! PoisonPill
+
     case message =>
       logger.debug(s"UNKNOWN Received by $phata-${apiEndpointVariant.endpoint.name}-${apiEndpointVariant.variant}: $message")
   }

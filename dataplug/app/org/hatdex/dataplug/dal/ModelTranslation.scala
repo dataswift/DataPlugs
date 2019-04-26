@@ -38,8 +38,8 @@ trait ModelTranslation {
       user.endpointConfiguration.map(_.as[ApiEndpointCall]))
   }
 
-  implicit def toDbModel(phata: String, plugName: String, variant: Option[String], configuration: Option[ApiEndpointCall]): Tables.DataplugUserRow = {
-    Tables.DataplugUserRow(0, phata, plugName, configuration.map(c => Json.toJson(c)), variant, None, true, DateTime.now().toLocalDateTime)
+  implicit def toDbModel(phata: String, plugName: String, variant: Option[String], configuration: Option[ApiEndpointCall], active: Boolean): Tables.DataplugUserRow = {
+    Tables.DataplugUserRow(0, phata, plugName, configuration.map(c => Json.toJson(c)), variant, None, active, DateTime.now().toLocalDateTime)
   }
 
   implicit def fromDbModel(notable: Tables.SharedNotablesRow): DataPlugSharedNotable = {
