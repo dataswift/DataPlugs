@@ -120,6 +120,7 @@ object Errors {
   case class HATAuthenticationException(message: String = "", cause: Throwable = None.orNull) extends HATApiError(message, cause)
   case class HATDataProcessingException(message: String = "", cause: Throwable = None.orNull) extends HATApiError(message, cause)
   case class HATApiCommunicationException(message: String = "", cause: Throwable = None.orNull) extends HATApiError(message, cause)
+  case class HATApiForbiddenException(message: String = "", cause: Throwable = None.orNull) extends HATApiError(message, cause)
 
   class SourceApiError(message: String = "", cause: Throwable = None.orNull) extends DataPlugError(message, cause)
 

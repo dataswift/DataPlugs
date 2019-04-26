@@ -15,7 +15,7 @@ import org.hatdex.dataplug.actors.Errors.{ DataPlugError, SourceApiError, _ }
 import org.hatdex.dataplug.apiInterfaces.authProviders.RequestAuthenticator
 import org.hatdex.dataplug.apiInterfaces.models._
 import org.hatdex.dataplug.utils.{ AuthenticatedHatClient, FutureRetries }
-import org.hatdex.hat.api.services.Errors.{ ApiException, DuplicateDataException }
+import org.hatdex.hat.api.services.Errors.{ ApiException, DuplicateDataException, UnauthorizedActionException }
 import org.joda.time.DateTime
 import play.api.http.Status._
 import play.api.libs.json.{ JsArray, JsValue, Json }
@@ -140,8 +140,9 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
         .map(_ => Done)
         .recoverWith {
           case _: DuplicateDataException => Future.successful(Done)
-          case e: ApiException           => Future.failed(HATApiCommunicationException(e.getMessage, e))
-          case e                         => Future.failed(HATApiCommunicationException("Unknown error", e))
+          case e: UnauthorizedActionException => Future.failed(HATApiForbiddenException(e.getMessage, e))
+          case e: ApiException => Future.failed(HATApiCommunicationException(e.getMessage, e))
+          case e               => Future.failed(HATApiCommunicationException("Unknown error", e))
         }
     }
     else {

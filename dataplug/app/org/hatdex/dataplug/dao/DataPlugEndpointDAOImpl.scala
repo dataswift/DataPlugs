@@ -94,7 +94,7 @@ class DataPlugEndpointDAOImpl @Inject() (protected val dbConfigProvider: Databas
         .map(user => (user.endpointConfiguration, user.active))
         .update(configuration.map(c => Json.toJson(c)), true)
       result <- rowsAffected match {
-        case 0 => Tables.DataplugUser += toDbModel(phata, plugName, variant, configuration)
+        case 0 => Tables.DataplugUser += toDbModel(phata, plugName, variant, configuration, true)
         case 1 => DBIO.successful(1)
         case n => DBIO.failed(new RuntimeException(s"Expected 0 or 1 change, not $n for user $phata"))
       }
