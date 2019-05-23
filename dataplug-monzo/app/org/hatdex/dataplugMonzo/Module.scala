@@ -23,7 +23,7 @@ import org.hatdex.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl }
 import org.hatdex.dataplug.services._
 import org.hatdex.libs.dal.SchemaMigration
 import org.hatdex.dataplugMonzo.apiInterfaces.authProviders.MonzoProvider
-import org.hatdex.dataplugMonzo.apiInterfaces.{ MonzoAccountList, MonzoTransactionsInterface }
+import org.hatdex.dataplugMonzo.apiInterfaces.{ MonzoAccountList, MonzoAccountsInterface, MonzoTransactionsInterface }
 import play.api.Configuration
 import play.api.libs.concurrent.AkkaGuiceSupport
 
@@ -56,10 +56,12 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
    */
   @Provides
   def provideDataPlugCollection(
-    monzoTransactionsInterface: MonzoTransactionsInterface): DataPlugRegistry = {
+    monzoTransactionsInterface: MonzoTransactionsInterface,
+    monzoAccountsInterface: MonzoAccountsInterface): DataPlugRegistry = {
 
     DataPlugRegistry(Seq(
-      monzoTransactionsInterface))
+      monzoTransactionsInterface,
+      monzoAccountsInterface))
   }
 
   @Provides

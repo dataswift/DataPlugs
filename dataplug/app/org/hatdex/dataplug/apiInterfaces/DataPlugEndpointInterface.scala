@@ -139,10 +139,10 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
       hatClient.postData(namespace, endpoint, batchdata)
         .map(_ => Done)
         .recoverWith {
-          case _: DuplicateDataException => Future.successful(Done)
+          case _: DuplicateDataException      => Future.successful(Done)
           case e: UnauthorizedActionException => Future.failed(HATApiForbiddenException(e.getMessage, e))
-          case e: ApiException => Future.failed(HATApiCommunicationException(e.getMessage, e))
-          case e               => Future.failed(HATApiCommunicationException("Unknown error", e))
+          case e: ApiException                => Future.failed(HATApiCommunicationException(e.getMessage, e))
+          case e                              => Future.failed(HATApiCommunicationException("Unknown error", e))
         }
     }
     else {

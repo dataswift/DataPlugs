@@ -34,6 +34,20 @@ class MonzoAccountList @Inject() (
     Some(Map()))
 
   def generateEndpointChoices(maybeResponseBody: Option[JsValue]): Seq[ApiEndpointVariantChoice] = {
+    staticEndpointChoices ++ generateAccountsEndpointChoices(maybeResponseBody)
+  }
+
+  def staticEndpointChoices: Seq[ApiEndpointVariantChoice] = {
+    val accountsVariant = ApiEndpointVariant(
+      ApiEndpoint("accounts", "User's monzo accounts", None),
+      Some(""), Some(""),
+      Some(defaultApiEndpoint))
+
+    Seq(
+      ApiEndpointVariantChoice("accounts", "User's monzo accounts", active = true, accountsVariant))
+  }
+
+  def generateAccountsEndpointChoices(maybeResponseBody: Option[JsValue]): Seq[ApiEndpointVariantChoice] = {
     maybeResponseBody.map { responseBody =>
       (responseBody \ "accounts").as[Seq[JsValue]] map { account =>
         val accountId = (account \ "id").as[String]
