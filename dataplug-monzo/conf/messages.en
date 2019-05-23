@@ -23,4 +23,6 @@ setup.goto.rumpel=Go back to Rumpel™
 
 setup.message.delay=It may take a few minutes for the new data to appear on Rumpel™.
 
+complete.instructions=Success! Your Monzo accounts and transactions synchronisation has been activated. You can close this window now.
+
 setup.link=Link your bank accounts from:
