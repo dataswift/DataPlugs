@@ -28,29 +28,49 @@ class StarlingProfileCheck @Inject() (
 
   val defaultApiEndpoint = ApiEndpointCall(
     "https://api-sandbox.starlingbank.com",
-    "/api/v2/account-holder/individual",
+    "/api/v2/accounts",
     ApiEndpointMethod.Get("Get"),
     Map(),
     Map(),
     Map(),
     Some(Map()))
 
-  def generateEndpointChoices(responseBody: Option[JsValue]): Seq[ApiEndpointVariantChoice] = staticEndpointChoices
+  def generateEndpointChoices(responseBody: Option[JsValue]): Seq[ApiEndpointVariantChoice] = staticEndpointChoices ++ generateStarlingAccountTransactionsEndpoints(responseBody)
 
   def staticEndpointChoices: Seq[ApiEndpointVariantChoice] = {
     val profileVariant = ApiEndpointVariant(
-      ApiEndpoint("account-holder", "Starling account holder's profile information", None),
+      ApiEndpoint("profile", "Starling account holder's profile information", None),
       Some(""), Some(""),
       Some(StarlingProfileInterface.defaultApiEndpoint))
 
     val transactionsVariant = ApiEndpointVariant(
-      ApiEndpoint("transactions", "A list of transactions associated with the account holder", None),
+      ApiEndpoint("accounts", "Starling Accounts", None),
       Some(""), Some(""),
-      Some(StarlingTransactionsInterface.defaultApiEndpoint))
+      Some(StarlingAccountInterface.defaultApiEndpoint))
 
     Seq(
-      ApiEndpointVariantChoice("account-holder", "Starling account holder's profile information", active = true, profileVariant),
-      ApiEndpointVariantChoice("transactions", "A list of transactions associated with the account holder", active = true, transactionsVariant))
+      ApiEndpointVariantChoice("profile", "Starling account holder's profile information", active = true, profileVariant),
+      ApiEndpointVariantChoice("accounts", "A list of accounts associated with the account holder", active = true, transactionsVariant))
+  }
+
+  private def generateStarlingAccountTransactionsEndpoints(maybeResponseBody: Option[JsValue]): Seq[ApiEndpointVariantChoice] = {
+    import org.hatdex.dataplugStarling.models._
+
+    maybeResponseBody.flatMap { responseBody =>
+      (responseBody \ "accounts").asOpt[Seq[StarlingAccount]].map { accounts =>
+        accounts.map { account =>
+          val pathParameters = StarlingTransactionsInterface.defaultApiEndpoint.pathParameters + ("accountUid" -> account.accountUid) + ("categoryUid" -> account.defaultCategory)
+          val variant = ApiEndpointVariant(
+            ApiEndpoint("transactions", "A list of transactions associated with the account holder", None),
+            Some(account.accountUid), Some(account.createdAt),
+            Some(StarlingTransactionsInterface.defaultApiEndpoint.copy(
+              pathParameters = pathParameters,
+              storageParameters = None)))
+
+          ApiEndpointVariantChoice(account.accountUid, account.createdAt, active = true, variant)
+        }
+      }
+    }.getOrElse(Seq())
   }
 
 }

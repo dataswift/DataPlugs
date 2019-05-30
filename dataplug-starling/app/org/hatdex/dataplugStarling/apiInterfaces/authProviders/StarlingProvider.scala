@@ -12,7 +12,7 @@ import play.api.libs.json.{ JsArray, JsValue }
 import scala.concurrent.Future
 
 /**
- * Base Fitbit OAuth2 Provider.
+ * Base Starling OAuth2 Provider.
  *
  * @see https://dev.fitbit.com/docs/oauth2/
  */
@@ -63,7 +63,6 @@ trait BaseStarlingProvider extends OAuth2Provider {
  * The profile parser for the common social profile.
  */
 class StarlingProfileParser extends SocialProfileParser[JsValue, CommonSocialProfile, OAuth2Info] {
-
   /**
    * Parses the social profile.
    *
@@ -73,19 +72,20 @@ class StarlingProfileParser extends SocialProfileParser[JsValue, CommonSocialPro
    */
   override def parse(json: JsValue, authInfo: OAuth2Info) = Future.successful {
     // https://developer.spotify.com/web-api/get-current-users-profile/
-    val userID = (json \ "id").as[String]
-    val fullName = (json \ "display_name").asOpt[String]
-    val email = (json \ "email").asOpt[String]
+    val firstName = (json \ "firstName").as[String]
+    val lastName = (json \ "lastName").as[String]
+    val fullName = firstName + " " + lastName
+    val email = (json \ "email").as[String]
 
     CommonSocialProfile(
-      loginInfo = LoginInfo(ID, userID),
-      fullName = fullName,
-      email = email)
+      loginInfo = LoginInfo(ID, email),
+      fullName = Some(fullName),
+      email = Some(email))
   }
 }
 
 /**
- * The Google OAuth2 Provider.
+ * The Starling OAuth2 Provider.
  *
  * @param httpLayer     The HTTP layer implementation.
  * @param stateHandler  The state provider implementation.
@@ -127,8 +127,8 @@ object StarlingProvider {
   val SpecifiedProfileError = "[Silhouette][%s] Error retrieving profile information. Error type: %s, message: %s"
 
   /**
-   * The Google constants.
+   * The Starling constants.
    */
   val ID = "starling"
-  val API = "https://api.spotify.com/v1/me"
+  val API = "https://api-sandbox.starlingbank.com/api/v2/account-holder/individual"
 }

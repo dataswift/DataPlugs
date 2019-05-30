@@ -59,9 +59,10 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   @Provides
   def provideDataPlugCollection(
     starlingProfileInterface: StarlingProfileInterface,
-    starlingTransactionsInterface: StarlingTransactionsInterface): DataPlugRegistry = {
+    starlingTransactionsInterface: StarlingTransactionsInterface,
+    starlingAccountInterface: StarlingAccountInterface): DataPlugRegistry = {
 
-    DataPlugRegistry(Seq(starlingProfileInterface, starlingTransactionsInterface))
+    DataPlugRegistry(Seq(starlingProfileInterface, starlingTransactionsInterface, starlingAccountInterface))
   }
 
   @Provides

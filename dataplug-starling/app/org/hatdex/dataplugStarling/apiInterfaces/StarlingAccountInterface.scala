@@ -5,25 +5,24 @@ import akka.actor.Scheduler
 import akka.util.Timeout
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import org.hatdex.dataplug.utils.{ AuthenticatedHatClient, FutureTransformations, Mailer }
 import org.hatdex.dataplug.actors.Errors.SourceDataProcessingException
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
 import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
 import org.hatdex.dataplug.services.UserService
+import org.hatdex.dataplug.utils.{ AuthenticatedHatClient, FutureTransformations, Mailer }
 import org.hatdex.dataplugStarling.apiInterfaces.authProviders.StarlingProvider
-import org.hatdex.dataplugStarling.models.StarlingTransaction
-import org.joda.time.{ DateTime, DateTimeZone }
-import org.joda.time.format.{ DateTimeFormat, DateTimeFormatter }
+import org.hatdex.dataplugStarling.models.{ StarlingAccount }
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.{ JsArray, JsObject, JsValue }
 import play.api.libs.ws.WSClient
 
-import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.duration._
+import scala.concurrent.duration.FiniteDuration
 import scala.util.{ Failure, Success, Try }
 
-class StarlingTransactionsInterface @Inject() (
+class StarlingAccountInterface @Inject() (
     val wsClient: WSClient,
     val userService: UserService,
     val authInfoRepository: AuthInfoRepository,
@@ -33,60 +32,18 @@ class StarlingTransactionsInterface @Inject() (
     val provider: StarlingProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
 
   val namespace: String = "starling"
-  val endpoint: String = "transactions"
+  val endpoint: String = "accounts"
   protected val logger: Logger = Logger(this.getClass)
 
-  val defaultApiEndpoint: ApiEndpointCall = StarlingTransactionsInterface.defaultApiEndpoint
-  val defaultApiDateFormat: DateTimeFormatter = StarlingTransactionsInterface.defaultApiDateFormat
-
+  val defaultApiEndpoint: ApiEndpointCall = StarlingAccountInterface.defaultApiEndpoint
   val refreshInterval: FiniteDuration = 1.hour
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
-    logger.debug("Building continuation...")
-
-    params.queryParameters.get("changesSince") match {
-      case None =>
-        val fromDate = "2017-01-01T00:00:00.000Z"
-
-        logger.debug(s"Initial transactions fetch from $fromDate")
-        val updatedParams = params.copy(queryParameters = params.queryParameters +
-          ("changesSince" -> fromDate))
-
-        Some(updatedParams)
-
-      case Some(value) =>
-        val transactionList = Try((content \ "feedItems").as[JsArray])
-        logger.debug(s"Value is: $value")
-        logger.debug(s"first item transactionTime: ${(content \ "feedItems").asOpt[Seq[StarlingTransaction]].getOrElse(Seq.empty[StarlingTransaction]).head.transactionTime}")
-
-        if (transactionList.isSuccess && transactionList.get.value.nonEmpty) {
-
-          val firstItem = (content \ "feedItems").asOpt[Seq[StarlingTransaction]].getOrElse(Seq.empty[StarlingTransaction])
-          if (firstItem.isEmpty || (value == firstItem.head.transactionTime)) {
-            logger.debug(s"No more data available - stopping continuation")
-            None
-          }
-          else {
-            logger.debug(s"Continuing transactions fetching from ${firstItem.head.transactionTime}")
-            val updatedParams = params.copy(queryParameters = params.queryParameters + ("changesSince" -> firstItem.head.transactionTime))
-
-            Some(updatedParams)
-          }
-        }
-        else {
-          logger.debug(s"No more data available - stopping continuation")
-          None
-        }
-    }
+    None
   }
 
   def buildNextSync(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
-    logger.debug(s"Building next sync...")
-
-    val fromDate = DateTime.now(DateTimeZone.forID("Europe/London"))
-
-    params.copy(queryParameters = params.queryParameters +
-      ("changesSince" -> fromDate.toString(defaultApiDateFormat)))
+    params
   }
 
   override protected def processResults(
@@ -105,15 +62,17 @@ class StarlingTransactionsInterface @Inject() (
   }
 
   override def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
-    (rawData \ "feedItems").toOption.map {
-      case data: JsArray if data.validate[List[StarlingTransaction]].isSuccess =>
+    (rawData \ "accounts").toOption.map {
+      case data: JsArray if data.validate[List[StarlingAccount]].isSuccess =>
         logger.info(s"Validated JSON array of ${data.value.length} items.")
         Success(data)
+
       case data: JsObject =>
         logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")
         Failure(SourceDataProcessingException(s"Error validating data, some of the required fields missing."))
+
       case data =>
-        logger.error(s"Error parsing JSON object: ${data.validate[List[StarlingTransaction]]}")
+        logger.error(s"Error parsing JSON object: ${data}")
         Failure(SourceDataProcessingException(s"Error parsing JSON object."))
     }.getOrElse {
       logger.error(s"Error obtaining 'items' list: ${rawData.toString}")
@@ -122,14 +81,12 @@ class StarlingTransactionsInterface @Inject() (
   }
 }
 
-object StarlingTransactionsInterface {
-  val defaultApiDateFormat: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSSz")
-
+object StarlingAccountInterface {
   val defaultApiEndpoint = ApiEndpointCall(
     "https://api-sandbox.starlingbank.com",
-    s"/api/v2/feed/account/[accountUid]/category/[categoryUid]",
+    "/api/v2/accounts",
     ApiEndpointMethod.Get("Get"),
-    Map("accountUid" -> "primary", "categoryUid" -> "primary"),
+    Map(),
     Map(),
     Map(),
     Some(Map()))
