@@ -83,13 +83,13 @@ class FitbitProfileInterface @Inject() (
         logger.info(s"Validated JSON fitbit profile object for $hatAddress")
         Success(JsArray(Seq(data)))
       case data: JsObject =>
-        logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}} for $hatAddress")
+        logger.error(s"Error validating data, some of the required fields missing:\n${data}} for $hatAddress")
         Failure(SourceDataProcessingException(s"Error validating data, some of the required fields missing."))
       case _ =>
-        logger.error(s"Error parsing JSON object: ${rawData.toString} for $hatAddress")
+        logger.error(s"Error parsing JSON object: ${rawData} for $hatAddress")
         Failure(SourceDataProcessingException(s"Error parsing JSON object."))
     }.getOrElse {
-      logger.error(s"Error parsing JSON object: ${rawData.toString} for $hatAddress}")
+      logger.error(s"Error parsing JSON object: ${rawData} for $hatAddress}")
       Failure(SourceDataProcessingException(s"Error parsing JSON object."))
     }
   }
