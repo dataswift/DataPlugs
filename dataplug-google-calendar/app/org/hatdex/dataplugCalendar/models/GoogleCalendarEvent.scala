@@ -29,8 +29,13 @@ case class GoogleCalendarGadget(
 )
 
 case class GoogleCalendarReminders(
-    overrides: Option[String], // If the event doesn't use the default reminders, this lists the reminders specific to the event, or, if not set, indicates that no reminders are set for this event. The maximum number of override reminders is 5. JSON object with 'method'	(The method used by this reminder, "email" - reminders are sent via email, "sms" - reminders are sent via SMS or "popup" - reminders are sent via a UI popup) and "minutes" (Number of minutes before the start of the event when the reminder should trigger)
-    useDefault: Option[String] // Whether the default reminders of the calendar apply to the event.
+    overrides: Option[List[GoogleCalendarReminderMethod]], // If the event doesn't use the default reminders, this lists the reminders specific to the event, or, if not set, indicates that no reminders are set for this event. The maximum number of override reminders is 5. JSON object with 'method'	(The method used by this reminder, "email" - reminders are sent via email, "sms" - reminders are sent via SMS or "popup" - reminders are sent via a UI popup) and "minutes" (Number of minutes before the start of the event when the reminder should trigger)
+    useDefault: Option[Boolean] // Whether the default reminders of the calendar apply to the event.
+)
+
+case class GoogleCalendarReminderMethod(
+    method: Option[String], // The method used by this reminder. Possible values are: "email". "sms" and"popup". Required when adding a reminder.
+    minutes: Option[Int] // Number of minutes before the start of the event when the reminder should trigger. Valid values are between 0 and 40320 (4 weeks in minutes). Required when adding a reminder.
 )
 
 case class GoogleCalendarSource(
@@ -85,7 +90,7 @@ object GoogleCalendarEvent extends ApiEndpointTableStructure {
     Some(GoogleCalendarDate(Some("date"), Some("dateTime"), Some("timeZone"), Some(false))),
     Some(false),
     Some("recurringEventId"),
-    Some(GoogleCalendarReminders(Some(""), Some("useDefault"))),
+    Some(GoogleCalendarReminders(Some(List(GoogleCalendarReminderMethod(Some("test"), Some(5)))), Some(true))),
     Some(GoogleCalendarSource("title", "url")),
     Some(GoogleCalendarDate(Some("date"), Some("dateTime"), Some("timeZone"), Some(false))),
     Some("status"),
@@ -139,11 +144,10 @@ object GoogleCalendarEventJsonProtocol {
 
   implicit val eventCreatorFormat = Json.format[GoogleCalendarEventCreator]
 
-  implicit val remindersReads: Reads[GoogleCalendarReminders] = (
-    (JsPath \ "overrides").readNullable[JsValue].map(v => v.map(_.toString)) and
-    (JsPath \ "useDefaults").readNullable[Boolean].map(v => v.map(_.toString)))(GoogleCalendarReminders.apply _)
-
+  implicit val remindersReads: Reads[GoogleCalendarReminders] = Json.reads[GoogleCalendarReminders]
+  implicit val reminderMethodReads: Reads[GoogleCalendarReminderMethod] = Json.reads[GoogleCalendarReminderMethod]
   implicit val remindersWrites: Writes[GoogleCalendarReminders] = Json.writes[GoogleCalendarReminders]
+  implicit val reminderMethodWrites: Writes[GoogleCalendarReminderMethod] = Json.writes[GoogleCalendarReminderMethod]
 
   implicit val remindersFormat = Format(remindersReads, remindersWrites)
 
