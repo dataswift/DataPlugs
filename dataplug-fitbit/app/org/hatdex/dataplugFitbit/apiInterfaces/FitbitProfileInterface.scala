@@ -56,7 +56,7 @@ class FitbitProfileInterface @Inject() (
 
     val dataValidation =
       transformData(content)
-        .map(validateMinDataStructure)
+        .map(data => validateMinDataStructure(data, hatAddress))
         .getOrElse(Failure(SourceDataProcessingException("Source data malformed, could not insert date in to the structure")))
 
     for {
@@ -77,23 +77,22 @@ class FitbitProfileInterface @Inject() (
     rawData.transform(transformation)
   }
 
-  override def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
+  override def validateMinDataStructure(rawData: JsValue, hatAddress: String): Try[JsArray] = {
     (rawData \ "user").toOption.map {
       case data: JsObject if data.validate[FitbitProfile].isSuccess =>
-        logger.info(s"Validated JSON fitbit profile object.")
+        logger.info(s"Validated JSON fitbit profile object for $hatAddress")
         Success(JsArray(Seq(data)))
       case data: JsObject =>
-        logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")
+        logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}} for $hatAddress")
         Failure(SourceDataProcessingException(s"Error validating data, some of the required fields missing."))
       case _ =>
-        logger.error(s"Error parsing JSON object: ${rawData.toString}")
+        logger.error(s"Error parsing JSON object: ${rawData.toString} for $hatAddress")
         Failure(SourceDataProcessingException(s"Error parsing JSON object."))
     }.getOrElse {
-      logger.error(s"Error parsing JSON object: ${rawData.toString}")
+      logger.error(s"Error parsing JSON object: ${rawData.toString} for $hatAddress}")
       Failure(SourceDataProcessingException(s"Error parsing JSON object."))
     }
   }
-
 }
 
 object FitbitProfileInterface {
