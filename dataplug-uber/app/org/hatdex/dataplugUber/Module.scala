@@ -5,14 +5,13 @@
  * Written by Andrius Aucinas <andrius.aucinas@hatdex.org>, 10 2016
  */
 
-package org.hatdex.dataplugCalendar
+package org.hatdex.dataplugUber
 
 import akka.actor.{ ActorSystem, Scheduler }
 import com.google.inject.{ AbstractModule, Provides }
 import com.mohiva.play.silhouette.api.Provider
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.providers._
-import com.mohiva.play.silhouette.impl.providers.oauth2.GoogleProvider
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.codingwell.scalaguice.ScalaModule
@@ -23,7 +22,8 @@ import org.hatdex.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl }
 import org.hatdex.dataplug.services._
 import org.hatdex.libs.dal.SchemaMigration
 import org.hatdex.dataplug.dal.SchemaMigrationImpl
-import org.hatdex.dataplugCalendar.apiInterfaces.{ GoogleCalendarEventsInterface, GoogleCalendarList, GoogleCalendarsInterface }
+import org.hatdex.dataplugUber.apiInterfaces.{ UberList, UberProfileInterface, UberRidesHistoryInterface }
+import org.hatdex.dataplugUber.apiInterfaces.authProviders.UberProvider
 import play.api.Configuration
 import play.api.libs.concurrent.AkkaGuiceSupport
 
@@ -51,55 +51,52 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   /**
    * Provides the social provider registry.
    *
-   * @param googleCalendarEventsInterface The google calendar api endpoint implementation, injected
+   * @param uberProfileInterface The uber profile api endpoint implementation, injected
    * @return The DataPlugRegistry.
    */
   @Provides
-  def provideDataPlugCollection(
-    googleCalendarEventsInterface: GoogleCalendarEventsInterface,
-    googleCalendarsInterface: GoogleCalendarsInterface): DataPlugRegistry = {
+  def provideDataPlugCollection(uberProfileInterface: UberProfileInterface, uberRidesHistoryInterface: UberRidesHistoryInterface): DataPlugRegistry = {
 
-    DataPlugRegistry(Seq(
-      googleCalendarEventsInterface, googleCalendarsInterface))
+    DataPlugRegistry(Seq(uberProfileInterface, uberRidesHistoryInterface))
   }
 
   @Provides
   def provideDataPlugEndpointChoiceCollection(
-    googleProvider: GoogleProvider,
-    googleCalendarList: GoogleCalendarList): DataPlugOptionsCollectorRegistry = {
+    uberProvider: UberProvider,
+    uberList: UberList): DataPlugOptionsCollectorRegistry = {
 
-    val variants: Seq[(Provider, DataPlugOptionsCollector)] = Seq((googleProvider, googleCalendarList))
+    val variants: Seq[(Provider, DataPlugOptionsCollector)] = Seq((uberProvider, uberList))
     DataPlugOptionsCollectorRegistry(variants)
   }
 
   /**
    * Provides the social provider registry.
    *
-   * @param googleProvider The Google provider implementation.
+   * @param uberProvider The Uber provider implementation.
    * @return The Silhouette environment.
    */
   @Provides
   def provideSocialProviderRegistry(
-    googleProvider: GoogleProvider): SocialProviderRegistry = {
+    uberProvider: UberProvider): SocialProviderRegistry = {
 
     SocialProviderRegistry(Seq(
-      googleProvider))
+      uberProvider))
   }
 
   /**
-   * Provides the Google provider.
+   * Provides the Uber provider.
    *
    * @param httpLayer The HTTP layer implementation.
    * @param stateProvider The OAuth2 state provider implementation.
    * @param configuration The Play configuration.
-   * @return The Google provider.
+   * @return The Uber provider.
    */
   @Provides
-  def provideGoogleProvider(
+  def provideUberProvider(
     httpLayer: HTTPLayer,
     stateProvider: SocialStateHandler,
-    configuration: Configuration): GoogleProvider = {
-    new GoogleProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.google"))
+    configuration: Configuration): UberProvider = {
+    new UberProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.uber"))
   }
 
   @Provides

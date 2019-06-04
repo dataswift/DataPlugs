@@ -4,6 +4,25 @@ import org.hatdex.dataplug.apiInterfaces.models.ApiEndpointTableStructure
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 
+object GoogleCalendarEventJsonProtocol {
+
+  implicit val eventCreatorFormat = Json.format[GoogleCalendarEventCreator]
+
+  implicit val remindersReads: Reads[GoogleCalendarReminders] = (
+    (JsPath \ "overrides").readNullable[JsValue].map(v => v.map(_.toString)) and
+      (JsPath \ "useDefaults").readNullable[Boolean].map(v => v.map(_.toString)))(GoogleCalendarReminders.apply _)
+
+  implicit val remindersWrites: Writes[GoogleCalendarReminders] = Json.writes[GoogleCalendarReminders]
+
+  implicit val remindersFormat = Format(remindersReads, remindersWrites)
+
+  implicit val eventDateFormat = Json.format[GoogleCalendarDate]
+  implicit val gadgetFormat = Json.format[GoogleCalendarGadget]
+  implicit val sourceFormat = Json.format[GoogleCalendarSource]
+  implicit val attendeeFormat = Json.format[GoogleCalendarAttendee]
+  implicit val eventFormat = Json.format[GoogleCalendarEvent]
+}
+
 case class GoogleCalendarEventCreator(
     displayName: Option[String], // The creator's name, if available.
     email: Option[String], // The creator's email address, if available.
@@ -133,23 +152,4 @@ object GoogleCalendarAttendee extends ApiEndpointTableStructure {
 
   import GoogleCalendarEventJsonProtocol.attendeeFormat
   def toJson: JsValue = Json.toJson(dummyEntity)
-}
-
-object GoogleCalendarEventJsonProtocol {
-
-  implicit val eventCreatorFormat = Json.format[GoogleCalendarEventCreator]
-
-  implicit val remindersReads: Reads[GoogleCalendarReminders] = (
-    (JsPath \ "overrides").readNullable[JsValue].map(v => v.map(_.toString)) and
-    (JsPath \ "useDefaults").readNullable[Boolean].map(v => v.map(_.toString)))(GoogleCalendarReminders.apply _)
-
-  implicit val remindersWrites: Writes[GoogleCalendarReminders] = Json.writes[GoogleCalendarReminders]
-
-  implicit val remindersFormat = Format(remindersReads, remindersWrites)
-
-  implicit val eventDateFormat = Json.format[GoogleCalendarDate]
-  implicit val gadgetFormat = Json.format[GoogleCalendarGadget]
-  implicit val sourceFormat = Json.format[GoogleCalendarSource]
-  implicit val attendeeFormat = Json.format[GoogleCalendarAttendee]
-  implicit val eventFormat = Json.format[GoogleCalendarEvent]
 }

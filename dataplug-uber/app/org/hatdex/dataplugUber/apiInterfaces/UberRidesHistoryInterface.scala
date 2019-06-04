@@ -1,18 +1,18 @@
-package org.hatdex.dataplugCalendar.apiInterfaces
+package org.hatdex.dataplugUber.apiInterfaces
 
 import akka.Done
 import akka.actor.Scheduler
 import akka.util.Timeout
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import com.mohiva.play.silhouette.impl.providers.oauth2.GoogleProvider
 import org.hatdex.dataplug.utils.{ AuthenticatedHatClient, FutureTransformations, Mailer }
 import org.hatdex.dataplug.actors.Errors.SourceDataProcessingException
 import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
 import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
 import org.hatdex.dataplug.services.UserService
-import org.hatdex.dataplugCalendar.models.GoogleCalendarEvent
+import org.hatdex.dataplugUber.apiInterfaces.authProviders.UberProvider
+import org.hatdex.dataplugUber.models.UberRide
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
@@ -21,39 +21,55 @@ import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
 
-class GoogleCalendarEventsInterface @Inject() (
+class UberRidesHistoryInterface @Inject() (
     val wsClient: WSClient,
     val userService: UserService,
     val authInfoRepository: AuthInfoRepository,
     val tokenHelper: OAuth2TokenHelper,
     val mailer: Mailer,
     val scheduler: Scheduler,
-    val provider: GoogleProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
+    val provider: UberProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
 
   // JSON type formatters
-  import org.hatdex.dataplugCalendar.models.GoogleCalendarEventJsonProtocol.eventFormat
 
-  val namespace: String = "calendar"
-  val endpoint: String = "google/events"
+  val namespace: String = "monzo"
+  val endpoint: String = "history"
   protected val logger: Logger = Logger(this.getClass)
 
-  val defaultApiEndpoint: ApiEndpointCall = GoogleCalendarEventsInterface.defaultApiEndpoint
+  val defaultApiEndpoint: ApiEndpointCall = UberRidesHistoryInterface.defaultApiEndpoint
 
-  val refreshInterval: FiniteDuration = 60.minutes
+  val refreshInterval: FiniteDuration = 1.day
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
-    (content \ "nextPageToken").asOpt[String] map { nextPageToken =>
-      params.copy(queryParameters = params.queryParameters + ("pageToken" -> nextPageToken))
+    val maybeCount = (content \ "count").asOpt[Int]
+    val maybeLastRideSynced = params.storage.get("lastSyncedRide")
+
+    (content \ "history").asOpt[Seq[UberRide]] flatMap { rides =>
+      maybeCount.flatMap { count =>
+        if (count > 50) {
+          val previousOffset = params.queryParameters.get("offset").getOrElse("0").toInt
+          maybeLastRideSynced.map { lastSyncedRequestId =>
+
+            val test = rides.find(_.request_id == lastSyncedRequestId).isDefined
+            Some(params.copy(queryParameters = params.queryParameters + ("offset" -> (previousOffset + rides.length).toString)))
+          }.getOrElse(Some(params.copy(queryParameters = params.queryParameters + ("offset" -> (previousOffset + rides.length).toString))))
+        }
+        else {
+          None
+        }
+      }
     }
   }
 
   def buildNextSync(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
-    val maybeNextSyncToken = (content \ "nextSyncToken").asOpt[String]
+    val count = (content \ "count").asOpt[Int].getOrElse(0)
+    val offset = (content \ "offset").asOpt[Int].getOrElse(0)
 
-    maybeNextSyncToken map { nextSyncToken =>
-      val updatedParams = params.queryParameters + ("syncToken" -> nextSyncToken) - "pageToken"
+    if (offset != count) {
+      val updatedParams = params.queryParameters - "offset"
       params.copy(queryParameters = updatedParams)
-    } getOrElse {
+    }
+    else {
       params
     }
   }
@@ -64,9 +80,7 @@ class GoogleCalendarEventsInterface @Inject() (
     hatClient: AuthenticatedHatClient,
     fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
-    val validatedData = transformData(content, fetchParameters.pathParameters("calendarId"), fetchParameters.storage("calendarName"))
-      .map(validateMinDataStructure)
-      .getOrElse(Failure(SourceDataProcessingException("Source data malformed, could not insert calendar ID in the structure")))
+    val validatedData: Try[JsArray] = validateMinDataStructure(content)
 
     // Shape results into HAT data records
     val resultsPosted = for {
@@ -80,33 +94,16 @@ class GoogleCalendarEventsInterface @Inject() (
     resultsPosted
   }
 
-  def transformData(rawData: JsValue, calendarId: String, calendarName: String): JsResult[JsObject] = {
-    import play.api.libs.json.Reads._
-    import play.api.libs.json._
-
-    val transformation = (__ \ "items").json.update(
-      of[JsArray].map {
-        case JsArray(arr) => JsArray(
-          arr.map { item =>
-            item.transform(__.read[JsObject].map(o => o ++ Json.obj("calendarId" -> calendarId, "calendarName" -> calendarName)))
-          }.collect {
-            case JsSuccess(v, _) => v
-          })
-      })
-
-    rawData.transform(transformation)
-  }
-
   override def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
-    (rawData \ "items").toOption.map {
-      case data: JsArray if data.validate[List[GoogleCalendarEvent]].isSuccess =>
+    (rawData \ "history").toOption.map {
+      case data: JsArray if data.validate[List[UberRide]].isSuccess =>
         logger.debug(s"Validated JSON object: ${data.value.length}")
         Success(data)
       case data: JsObject =>
         logger.error(s"Error validating data, some of the required fields missing: ${data.toString}")
         Failure(SourceDataProcessingException(s"Error validating data, some of the required fields missing."))
       case data =>
-        logger.error(s"Error parsing JSON object: ${data.toString} ${data.validate[List[GoogleCalendarEvent]]}")
+        logger.error(s"Error parsing JSON object: ${data.toString} ${data.validate[List[UberRide]]}")
         Failure(SourceDataProcessingException(s"Error parsing JSON object."))
     }.getOrElse {
       logger.error(s"Error parsing JSON object: ${rawData.toString}")
@@ -116,13 +113,13 @@ class GoogleCalendarEventsInterface @Inject() (
 
 }
 
-object GoogleCalendarEventsInterface {
+object UberRidesHistoryInterface {
   val defaultApiEndpoint = ApiEndpointCall(
-    "https://www.googleapis.com",
-    "/calendar/v3/calendars/[calendarId]/events",
+    "https://api.uber.com",
+    "/v1.2/history",
     ApiEndpointMethod.Get("Get"),
-    Map("calendarId" -> "primary"),
-    Map("singleEvents" -> "true"),
+    Map(),
+    Map("limit" -> "50"),
     Map(),
     Some(Map()))
 }
