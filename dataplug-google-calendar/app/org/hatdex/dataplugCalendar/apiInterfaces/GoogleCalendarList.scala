@@ -52,18 +52,20 @@ class GoogleCalendarList @Inject() (
     import org.hatdex.dataplugCalendar.models.GoogleCalendarJsonProtocol._
 
     maybeResponseBody.flatMap { responseBody =>
-      (responseBody \ "items").asOpt[Seq[GoogleCalendar]].map{calendars => calendars.map { calendar =>
-        val pathParameters = GoogleCalendarEventsInterface.defaultApiEndpoint.pathParameters + ("calendarId" -> calendar.id)
-        val variant = ApiEndpointVariant(
-          ApiEndpoint("google/events", "Google Calendars", None),
-          Some(calendar.id), Some(calendar.summary),
-          Some(GoogleCalendarEventsInterface.defaultApiEndpoint.copy(
-            pathParameters = pathParameters,
-            storageParameters = Some(Map("calendarName" -> calendar.summary)))))
+      (responseBody \ "items").asOpt[Seq[GoogleCalendar]].map { calendars =>
+        calendars.map { calendar =>
+          val pathParameters = GoogleCalendarEventsInterface.defaultApiEndpoint.pathParameters + ("calendarId" -> calendar.id)
+          val variant = ApiEndpointVariant(
+            ApiEndpoint("google/events", "Google Calendars", None),
+            Some(calendar.id), Some(calendar.summary),
+            Some(GoogleCalendarEventsInterface.defaultApiEndpoint.copy(
+              pathParameters = pathParameters,
+              storageParameters = Some(Map("calendarName" -> calendar.summary)))))
 
-        ApiEndpointVariantChoice(calendar.id, calendar.summary, active = false, variant)
+          ApiEndpointVariantChoice(calendar.id, calendar.summary, active = false, variant)
+        }
       }
-    }}.getOrElse(Seq())
+    }.getOrElse(Seq())
   }
 
 }
