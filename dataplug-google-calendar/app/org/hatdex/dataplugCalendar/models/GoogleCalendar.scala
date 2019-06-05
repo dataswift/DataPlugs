@@ -7,7 +7,7 @@ case class GoogleCalendar(
   id: String, // The calendar's ID.
 )
 
-object GoogleCalendarJsonProtocol {
+object GoogleCalendar{
 
   implicit val calendarsReads: Reads[GoogleCalendar] = Json.reads[GoogleCalendar]
   implicit val calendarsWrites: Writes[GoogleCalendar] = Json.writes[GoogleCalendar]
