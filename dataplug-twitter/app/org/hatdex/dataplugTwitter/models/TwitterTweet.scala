@@ -37,17 +37,6 @@ case class TwitterPlace(
 case class TwitterCoordinates(
     `type`: String)
 
-case class TwitterUserShort(
-    id: Long,
-    name: String,
-    screen_name: String,
-    followers_count: Int,
-    friends_count: Int,
-    listed_count: Int,
-    favourites_count: Int,
-    statuses_count: Int,
-    lang: String)
-
 case class TwitterTweet(
     lastUpdated: String, // Field inserted by the plug and derived from 'created_at' value; here only for backwards compatibility
     coordinates: Option[TwitterCoordinates], // Represents the geographic location of this Tweet as reported by the user or client application. The inner coordinates array is formatted as geoJSON (longitude first, then latitude).
@@ -67,14 +56,13 @@ case class TwitterTweet(
     source: String,
     text: String,
     truncated: Boolean,
-    user: TwitterUserShort)
+    user: TwitterUser)
 
 object TwitterTweet {
   implicit val placeAttributesFormat = Json.format[TwitterPlaceAttributes]
   implicit val boundingBoxFormat = Json.format[TwitterBoundingBox]
   implicit val placeFormat = Json.format[TwitterPlace]
   implicit val coordinatesFormat = Json.format[TwitterCoordinates]
-  implicit val userShortFormat = Json.format[TwitterUserShort]
 
   implicit val tweetFormat = Json.format[TwitterTweet]
 }
