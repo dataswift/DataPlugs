@@ -49,7 +49,6 @@ class GoogleCalendarList @Inject() (
   }
 
   private def generateCalendarEventsEndpoints(maybeResponseBody: Option[JsValue]): Seq[ApiEndpointVariantChoice] = {
-    import org.hatdex.dataplugCalendar.models.GoogleCalendarJsonProtocol._
 
     maybeResponseBody.flatMap { responseBody =>
       (responseBody \ "items").asOpt[Seq[GoogleCalendar]].map { calendars =>

@@ -1,4 +1,4 @@
-package org.hatdex.dataplugCalendar
+package org.hatdex.dataplugUber
 
 import akka.util.Timeout
 import com.mohiva.play.silhouette.api.LoginInfo
@@ -8,6 +8,7 @@ import org.hatdex.dataplug.apiInterfaces.models.{ DataPlugFetchContinuation, Dat
 import org.hatdex.dataplug.models.User
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.testkit.{ DataPlugEndpointInterfaceTestHelper, TestModule }
+import org.hatdex.dataplugCalendar.apiInterfaces.GoogleCalendarEventsInterface
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
 import org.specs2.specification.BeforeAfterAll

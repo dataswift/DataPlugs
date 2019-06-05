@@ -12,7 +12,7 @@ import org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface
 import org.hatdex.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
 import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
 import org.hatdex.dataplug.services.UserService
-import org.hatdex.dataplugCalendar.models._
+import org.hatdex.dataplugCalendar.models.GoogleCalendarEvent
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
@@ -31,7 +31,7 @@ class GoogleCalendarEventsInterface @Inject() (
     val provider: GoogleProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
 
   // JSON type formatters
-  import GoogleCalendarEventJsonProtocol.eventFormat
+  import org.hatdex.dataplugCalendar.models.GoogleCalendarEventJsonProtocol.eventFormat
 
   val namespace: String = "calendar"
   val endpoint: String = "google/events"

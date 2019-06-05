@@ -31,7 +31,7 @@ trait DataPlugManagerOperations {
 
   import DataPlugManagerActor._
 
-  def fetchData(
+  private def fetchData(
     endpointInterface: DataPlugEndpointInterface,
     variant: ApiEndpointVariant, phata: String,
     fetchEndpoint: ApiEndpointCall, retries: Int,
