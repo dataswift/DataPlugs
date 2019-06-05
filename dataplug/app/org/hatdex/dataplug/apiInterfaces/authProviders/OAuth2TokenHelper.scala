@@ -92,7 +92,7 @@ class OAuth2TokenHelper @Inject() (
     logger.debug(s"Validate OAuth2Info: ${response.json}")
     response.json.validate[OAuth2Info].asEither match {
       case Left(error) =>
-        logger.error(s"Response body is: ${response.json}")
+        logger.error(s"OAuth2 response body validation failed for object ${response.body}")
         Failure(SourceAuthenticationException(s"Cannot build OAuth2Info for ${provider.id} token refresh because of invalid response format: $error"))
       case Right(info) => Success(info)}
   }
