@@ -32,8 +32,8 @@ class UberRidesHistoryInterface @Inject() (
 
   // JSON type formatters
 
-  val namespace: String = "monzo"
-  val endpoint: String = "history"
+  val namespace: String = "uber"
+  val endpoint: String = "rides"
   protected val logger: Logger = Logger(this.getClass)
 
   val defaultApiEndpoint: ApiEndpointCall = UberRidesHistoryInterface.defaultApiEndpoint
@@ -41,36 +41,62 @@ class UberRidesHistoryInterface @Inject() (
   val refreshInterval: FiniteDuration = 1.day
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
+    import UberRidesHistoryInterface._
+
     val maybeCount = (content \ "count").asOpt[Int]
-    val maybeLastRideSynced = params.storage.get("lastSyncedRide")
+    val offset = (content \ "offset").asOpt[Int].getOrElse(0)
+    val totalOffset = offset + (content \ "history").asOpt[Seq[UberRide]].map(rides => rides.length).getOrElse(0)
+    val maybeFirstHeadRide = (content \ "history").asOpt[Seq[UberRide]].getOrElse(Seq.empty[UberRide]).headOption
+    val maybeLastRideSynced = params.storage.get("lastSyncedRequestId")
+    val maybeCurrentFirstRequestId = params.storage.get("currentFirstRequestId")
 
-    (content \ "history").asOpt[Seq[UberRide]] flatMap { rides =>
-      maybeCount.flatMap { count =>
-        if (count > 50) {
-          val previousOffset = params.queryParameters.get("offset").getOrElse("0").toInt
-          maybeLastRideSynced.map { lastSyncedRequestId =>
-
-            val test = rides.find(_.request_id == lastSyncedRequestId).isDefined
-            Some(params.copy(queryParameters = params.queryParameters + ("offset" -> (previousOffset + rides.length).toString)))
-          }.getOrElse(Some(params.copy(queryParameters = params.queryParameters + ("offset" -> (previousOffset + rides.length).toString))))
-        }
-        else {
-          None
+    maybeFirstHeadRide.map { firstRide =>
+      (content \ "history").asOpt[Seq[UberRide]] flatMap { rides =>
+        maybeCount.flatMap { count =>
+          if (count > requestLimit && totalOffset < count) {
+            val previousOffset = params.queryParameters.get("offset").getOrElse("0").toInt
+            maybeLastRideSynced.map { lastSyncedRequestId =>
+              Some(checkForPreviouslySyncedRide(rides.find(_.request_id == lastSyncedRequestId), firstRide, maybeCurrentFirstRequestId, params, (previousOffset + rides.length)))
+            }.getOrElse {
+              val mostRecentRideRequestId = firstRide.request_id
+              Some(params.copy(
+                queryParameters = params.queryParameters + ("offset" -> (previousOffset + rides.length).toString),
+                storageParameters = Some(params.storage + ("lastSyncedRequestId" -> mostRecentRideRequestId))))
+            }
+          }
+          else {
+            None
+          }
         }
       }
+    }.getOrElse(None)
+  }
+
+  private def checkForPreviouslySyncedRide(maybeRide: Option[UberRide], headRide: UberRide, maybeCurrentFirstRequestId: Option[String], params: ApiEndpointCall, offset: Int): ApiEndpointCall = {
+    maybeRide.map { _ =>
+      params.copy(
+        queryParameters = params.queryParameters + ("offset" -> offset.toString),
+        storageParameters = Some(params.storage + ("lastSyncedRequestId" -> maybeCurrentFirstRequestId.getOrElse(headRide.request_id))))
+    }.getOrElse {
+      params.copy(
+        queryParameters = params.queryParameters + ("offset" -> offset.toString),
+        storageParameters = Some(params.storage + ("lastSyncedRequestId" -> headRide.request_id)))
     }
   }
 
   def buildNextSync(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
     val count = (content \ "count").asOpt[Int].getOrElse(0)
     val offset = (content \ "offset").asOpt[Int].getOrElse(0)
+    val totalOffset = offset + content.asOpt[Seq[UberRide]].map(rides => rides.length).getOrElse(0)
 
-    if (offset != count) {
+    if (totalOffset >= count) {
       val updatedParams = params.queryParameters - "offset"
-      params.copy(queryParameters = updatedParams)
+      params.copy(queryParameters = updatedParams, storageParameters = Some(params.storage - "currentFirstRequestId"))
     }
     else {
-      params
+      content.asOpt[Seq[UberRide]].getOrElse(Seq.empty[UberRide]).headOption.map { firstRide =>
+        params.copy(storageParameters = Some(params.storage + ("currentFirstRequestId" -> firstRide.request_id)))
+      }.getOrElse(params.copy(queryParameters = params.queryParameters - "offset"))
     }
   }
 
@@ -110,16 +136,16 @@ class UberRidesHistoryInterface @Inject() (
       Failure(SourceDataProcessingException(s"Error parsing JSON object."))
     }
   }
-
 }
 
 object UberRidesHistoryInterface {
+  val requestLimit = 5
   val defaultApiEndpoint = ApiEndpointCall(
     "https://api.uber.com",
     "/v1.2/history",
     ApiEndpointMethod.Get("Get"),
     Map(),
-    Map("limit" -> "50"),
+    Map("limit" -> requestLimit.toString),
     Map(),
     Some(Map()))
 }

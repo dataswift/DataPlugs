@@ -22,7 +22,7 @@ import org.hatdex.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl }
 import org.hatdex.dataplug.services._
 import org.hatdex.libs.dal.SchemaMigration
 import org.hatdex.dataplug.dal.SchemaMigrationImpl
-import org.hatdex.dataplugUber.apiInterfaces.{ UberList, UberProfileInterface, UberRidesHistoryInterface }
+import org.hatdex.dataplugUber.apiInterfaces.{ UberList, UberProfileInterface, UberRidesHistoryInterface, UberSavedPlacesInterface }
 import org.hatdex.dataplugUber.apiInterfaces.authProviders.UberProvider
 import play.api.Configuration
 import play.api.libs.concurrent.AkkaGuiceSupport
@@ -55,9 +55,12 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
    * @return The DataPlugRegistry.
    */
   @Provides
-  def provideDataPlugCollection(uberProfileInterface: UberProfileInterface, uberRidesHistoryInterface: UberRidesHistoryInterface): DataPlugRegistry = {
+  def provideDataPlugCollection(
+    uberProfileInterface: UberProfileInterface,
+    uberRidesHistoryInterface: UberRidesHistoryInterface,
+    uberSavedPlacesInterface: UberSavedPlacesInterface): DataPlugRegistry = {
 
-    DataPlugRegistry(Seq(uberProfileInterface, uberRidesHistoryInterface))
+    DataPlugRegistry(Seq(uberProfileInterface, uberRidesHistoryInterface, uberSavedPlacesInterface))
   }
 
   @Provides

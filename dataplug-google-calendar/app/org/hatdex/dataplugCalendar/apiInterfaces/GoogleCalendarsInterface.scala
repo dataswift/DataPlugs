@@ -13,9 +13,8 @@ import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMe
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.{ AuthenticatedHatClient, FutureTransformations, Mailer }
 import org.hatdex.dataplugCalendar.models.GoogleCalendar
-import org.hatdex.dataplugCalendar.models.GoogleCalendarJsonProtocol._
 import play.api.Logger
-import play.api.libs.json.{ JsArray, JsObject, JsResult, JsValue }
+import play.api.libs.json.{ JsArray, JsObject, JsValue }
 import play.api.libs.ws.WSClient
 
 import scala.concurrent.{ ExecutionContext, Future }

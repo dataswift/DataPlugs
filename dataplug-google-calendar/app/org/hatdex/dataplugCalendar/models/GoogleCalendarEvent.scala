@@ -10,7 +10,7 @@ object GoogleCalendarEventJsonProtocol {
 
   implicit val remindersReads: Reads[GoogleCalendarReminders] = (
     (JsPath \ "overrides").readNullable[JsValue].map(v => v.map(_.toString)) and
-      (JsPath \ "useDefaults").readNullable[Boolean].map(v => v.map(_.toString)))(GoogleCalendarReminders.apply _)
+    (JsPath \ "useDefaults").readNullable[Boolean].map(v => v.map(_.toString)))(GoogleCalendarReminders.apply _)
 
   implicit val remindersWrites: Writes[GoogleCalendarReminders] = Json.writes[GoogleCalendarReminders]
 

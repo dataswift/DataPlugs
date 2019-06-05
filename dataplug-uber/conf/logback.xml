@@ -26,18 +26,20 @@
   <logger name="application" level="INFO" />
 
   <!-- PLUG-SPECIFIC LOGGERS -->
-  <logger name="org.hatdex.dataplugCalendar" level="INFO" />
-  <logger name="org.hatdex.dataplugCalendar.apiInterfaces.*" level="INFO" />
-  <logger name="org.hatdex.dataplugUber.apiInterfaces.GoogleCalendarsInterface" level="INFO" />
-  <logger name="org.hatdex.dataplugCalendar.apiInterfaces.GoogleCalendarEventsInterface" level="INFO" />
-  <logger name="org.hatdex.dataplugUber.apiInterfaces.GoogleCalendarList" level="INFO" />
-  <logger name="org.hatdex.dataplugCalendar.controllers.Api" level="INFO" />
+  <logger name="org.hatdex.dataplugUber" level="INFO" />
+  <logger name="org.hatdex.dataplugUber.apiInterfaces.*" level="INFO" />
+  <logger name="org.hatdex.dataplugUber.apiInterfaces.UberRidesHistoryInterface" level="INFO" />
+  <logger name="org.hatdex.dataplugUber.apiInterfaces.UberProfileInterface" level="INFO" />
+  <logger name="org.hatdex.dataplugUber.apiInterfaces.UberSavedPlacesInterface" level="INFO" />
+  <logger name="org.hatdex.dataplugUber.controllers.Api" level="INFO" />
 
   <!-- CORE PLUG LOGGERS -->
   <logger name="org.hatdex.dataplug.*" level="INFO" />
   <logger name="org.hatdex.dataplug.actors.PhataDataPlugVariantSyncer" level="ERROR" />
   <logger name="org.hatdex.dataplug.services.*" level="INFO" />
   <logger name="org.hatdex.dataplug.controllers.*" level="INFO"/>
+  <logger name="org.hatdex.dataplug.apiInterfaces.DataPlugEndpointInterface" level="INFO"/>
+  <logger name="org.hatdex.dataplug.apiInterfaces.DataPlugApiEndpointClient" level="INFO"/>
   <logger name="org.hatdex.dataplug.utils.JwtPhataAuthenticatedAction" level="INFO" />
   <logger name="org.hatdex.dataplug.utils.JwtPhataAwareAction" level="INFO" />
 

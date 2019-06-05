@@ -12,17 +12,17 @@ import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMe
 import org.hatdex.dataplug.services.UserService
 import org.hatdex.dataplug.utils.{ AuthenticatedHatClient, FutureTransformations, Mailer }
 import org.hatdex.dataplugUber.apiInterfaces.authProviders.UberProvider
-import org.hatdex.dataplugUber.models.UberProfile
+import org.hatdex.dataplugUber.models.UberSavedPlace
 import org.joda.time.DateTime
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.{ JsArray, JsObject, JsResult, JsValue }
 import play.api.libs.ws.WSClient
 
-import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.duration._
 import scala.util.{ Failure, Success, Try }
 
-class UberProfileInterface @Inject() (
+class UberSavedPlacesInterface @Inject() (
     val wsClient: WSClient,
     val userService: UserService,
     val authInfoRepository: AuthInfoRepository,
@@ -32,12 +32,12 @@ class UberProfileInterface @Inject() (
     val provider: UberProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
 
   val namespace: String = "uber"
-  val endpoint: String = "profile"
+  val endpoint: String = "places"
   protected val logger: Logger = Logger(this.getClass)
 
-  val defaultApiEndpoint: ApiEndpointCall = UberProfileInterface.defaultApiEndpoint
+  val defaultApiEndpoint: ApiEndpointCall = UberSavedPlacesInterface.defaultApiEndpoint
 
-  val refreshInterval: FiniteDuration = 7.days
+  val refreshInterval: FiniteDuration = 30.days
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     None
@@ -74,14 +74,14 @@ class UberProfileInterface @Inject() (
 
   override def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
     rawData match {
-      case data: JsObject if data.validate[UberProfile].isSuccess =>
-        logger.debug(s"Validated JSON profile object")
+      case data: JsObject if data.validate[UberSavedPlace].isSuccess =>
+        logger.debug(s"Validated JSON place object")
         Success(JsArray(Seq(data)))
       case data: JsObject =>
         logger.error(s"Error validating data, some of the required fields missing: ${data.toString}")
         Failure(SourceDataProcessingException(s"Error validating data, some of the required fields missing."))
       case data =>
-        logger.error(s"Error parsing JSON object: ${data.toString} ${data.validate[UberProfile]}")
+        logger.error(s"Error parsing JSON object: ${data.toString} ${data.validate[UberSavedPlace]}")
         Failure(SourceDataProcessingException(s"Error parsing JSON object."))
     }
   }
@@ -96,10 +96,10 @@ class UberProfileInterface @Inject() (
   }
 }
 
-object UberProfileInterface {
+object UberSavedPlacesInterface {
   val defaultApiEndpoint = ApiEndpointCall(
     "https://api.uber.com",
-    "/v1.2/me",
+    s"/v1.2/places/[placeId]",
     ApiEndpointMethod.Get("Get"),
     Map(),
     Map(),
