@@ -36,7 +36,7 @@ class StarlingAccountInterface @Inject() (
   protected val logger: Logger = Logger(this.getClass)
 
   val defaultApiEndpoint: ApiEndpointCall = StarlingAccountInterface.defaultApiEndpoint
-  val refreshInterval: FiniteDuration = 1.hour
+  val refreshInterval: FiniteDuration = 7.days
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     None
