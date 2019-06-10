@@ -90,9 +90,11 @@ class OAuth2TokenHelper @Inject() (
    */
   protected def buildInfo(response: WSResponse)(implicit provider: OAuth2Provider): Try[OAuth2Info] = {
     logger.debug(s"Validate OAuth2Info: ${response.json}")
-    response.json.validate[OAuth2Info].asEither.fold(
-      error => Failure(SourceAuthenticationException(s"Cannot build OAuth2Info for ${provider.id} token refresh because of invalid response format: $error")),
-      info => Success(info))
+    response.json.validate[OAuth2Info].asEither match {
+      case Left(error) =>
+        logger.error(s"OAuth2 response body validation failed for object ${response.body}")
+        Failure(SourceAuthenticationException(s"Cannot build OAuth2Info for ${provider.id} token refresh because of invalid response format: $error"))
+      case Right(info) => Success(info)}
   }
 
   /**
