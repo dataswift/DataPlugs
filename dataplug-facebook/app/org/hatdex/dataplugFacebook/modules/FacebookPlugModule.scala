@@ -5,7 +5,7 @@
  * Written by Andrius Aucinas <andrius.aucinas@hatdex.org>, 10 2016
  */
 
-package org.hatdex.dataplugFacebook
+package org.hatdex.dataplugFacebook.modules
 
 import akka.actor.{ ActorSystem, Scheduler }
 import com.google.inject.{ AbstractModule, Provides }
@@ -19,18 +19,18 @@ import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.dataplug.actors.DataPlugManagerActor
 import org.hatdex.dataplug.apiInterfaces.{ DataPlugOptionsCollector, DataPlugOptionsCollectorRegistry, DataPlugRegistry }
 import org.hatdex.dataplug.controllers.{ DataPlugViewSet, DataPlugViewSetDefault }
-import org.hatdex.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl, DataPlugSharedNotableDAO, DataPlugSharedNotableDAOImpl }
-import org.hatdex.dataplug.services._
-import org.hatdex.libs.dal.SchemaMigration
 import org.hatdex.dataplug.dal.SchemaMigrationImpl
+import org.hatdex.dataplug.dao._
+import org.hatdex.dataplug.services._
 import org.hatdex.dataplugFacebook.apiInterfaces._
+import org.hatdex.libs.dal.SchemaMigration
 import play.api.Configuration
 import play.api.libs.concurrent.AkkaGuiceSupport
 
 /**
  * The Guice module which wires all Silhouette dependencies.
  */
-class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
+class FacebookPlugModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
 
   /**
    * Configures the module.
