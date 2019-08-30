@@ -12,10 +12,11 @@ import javax.inject.{ Inject, Named }
 import akka.actor.{ Actor, ActorRef, Cancellable, PoisonPill, Props, Scheduler }
 import akka.pattern.pipe
 import akka.stream.ActorMaterializer
-import org.hatdex.dataplug.actors.Errors.DataPlugError
+import org.hatdex.dataplug.actors.Errors.{ DataPlugError, HATApiForbiddenException }
 import org.hatdex.dataplug.apiInterfaces._
-import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointVariant }
-import org.hatdex.dataplug.services.{ DataPlugEndpointService, HatTokenService }
+import org.hatdex.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointVariant, ApiEndpointVariantChoice }
+import org.hatdex.dataplug.models.User
+import org.hatdex.dataplug.services.{ DataPlugEndpointService, DataplugSyncerActorManager, HatTokenService }
 import org.hatdex.dataplug.utils.{ AuthenticatedHatClient, Mailer }
 import play.api.cache.AsyncCacheApi
 import play.api.libs.ws.WSClient
@@ -28,7 +29,7 @@ import scala.util.Try
 object DataPlugManagerActor {
 
   val failureRetryInterval: FiniteDuration = 30.seconds
-  val maxFetchRetries: Int = 10
+  val maxFetchRetries: Int = 5
 
   sealed trait DataPlugManagerActorMessage
 
@@ -48,7 +49,7 @@ object DataPlugManagerActor {
   case class Failed(
       endpoint: ApiEndpointVariant,
       phata: String,
-      error: String) extends DataPlugManagerActorMessage
+      error: DataPlugError) extends DataPlugManagerActorMessage
 
   case class CancelSchedule(
       endpoint: ApiEndpointVariant,
@@ -77,6 +78,7 @@ class DataPlugManagerActor @Inject() (
     ws: WSClient,
     configuration: Configuration,
     cacheApi: AsyncCacheApi,
+    dataplugSyncerActorManager: DataplugSyncerActorManager,
     val dataplugEndpointService: DataPlugEndpointService,
     val mailer: Mailer,
     @Named("syncThrottler") throttledSyncActor: ActorRef)(implicit val ec: ExecutionContext) extends Actor
@@ -133,6 +135,27 @@ class DataPlugManagerActor @Inject() (
       logger.warn(s"Stopping actor $actorKey")
       // Kill any actors that are syncing this dataplug variant for phata
       context.actorSelection(actorKey) ! PoisonPill
+
+    case Failed(variant, phata, exception) =>
+
+      val actorKey = s"${syncerActorKey(phata, variant)}-supervisor"
+      val syncJobIdentifier = (phata, variant.endpoint.name, variant.variant.getOrElse(""))
+      // cancel any scheculed actors
+      syncingSchedules.get(syncJobIdentifier).map { priorSchedule =>
+        logger.debug(s"Cancelling previous schedule for $syncJobIdentifier variant")
+        priorSchedule.cancel()
+      }
+      // stop actor
+      context.actorSelection(actorKey) ! PoisonPill
+
+      // update db
+      logger.error(s"Stopping actor $actorKey due to a failed exception: $exception")
+      exception match {
+        // Kill any actors that are syncing this dataplug variant for phata
+        case _: HATApiForbiddenException =>
+          val choice = ApiEndpointVariantChoice(variant.endpoint.name, variant.endpoint.description, false, variant)
+          dataplugSyncerActorManager.updateApiVariantChoices(User("", phata, List()), Seq(choice))
+      }
   }
 
   private def createSyncingSchedule(
@@ -153,7 +176,7 @@ class DataPlugManagerActor @Inject() (
 
           eventualSyncMessage.recover {
             case e =>
-              logger.error(s"Error while trying to start syncing dat for $phata, variant $variant: ${e.getMessage}", e)
+              logger.error(s"Error while trying to start syncing dat for $phata, variant $variant", e)
               DataPlugManagerActor.Nop()
           } pipeTo throttledSyncActor
 
