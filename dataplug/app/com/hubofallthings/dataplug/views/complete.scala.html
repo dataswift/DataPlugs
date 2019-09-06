@@ -1,0 +1,23 @@
+@import com.hubofallthings.dataplug.apiInterfaces.models.ApiEndpointVariantChoice
+@import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+@import com.hubofallthings.dataplug.models.User
+
+@(socialProviders: SocialProviderRegistry, endpointVariants: Option[Seq[ApiEndpointVariantChoice]], redirect: String)(implicit user: User, request: RequestHeader, messages: Messages)
+
+@menubarContent = {
+    <li class="text-lowercase">
+        <a href="@redirect">
+        @user.userId
+        </a>
+    </li>
+}
+
+@com.hubofallthings.dataplug.views.html.templates.main(Messages("sign.in.title"), menubarContent = menubarContent) {
+    <div class="row">
+        <div class="plug-content">
+            <div class="complete-instructions">
+                @Messages("complete.instructions")
+            </div>
+        </div>
+    </div>
+}

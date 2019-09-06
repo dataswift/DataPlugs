@@ -1,8 +1,8 @@
 <!--
-  ~ Copyright (C) HAT Data Exchange Ltd - All Rights Reserved
+  ~ Copyright (C) Dataswift Ltd - All Rights Reserved
   ~  Unauthorized copying of this file, via any medium is strictly prohibited
   ~  Proprietary and confidential
-  ~  Written by Andrius Aucinas <andrius.aucinas@hatdex.org>, 10 2016
+  ~  Written by Andrius Aucinas <andrius.aucinas@dataswift.io>, 10 2016
   -->
 
 <configuration>
@@ -33,10 +33,10 @@
   <logger name="JwtPhataAuthentication" level="INFO"/>
   <logger name="HatLoginController" level="INFO"/>
   <logger name="SchemaMigration" level="INFO" />
-  <logger name="org.hatdex.dataplug" level="INFO" />
-  <logger name="org.hatdex.dataplug.*" level="INFO" />
-  <logger name="org.hatdex.dataplugMonzo.*" level="INFO"/>
-  <logger name="org.hatdex.dataplugMonzo" level="INFO" />
+  <logger name="com.hubofallthings.dataplug" level="INFO" />
+  <logger name="com.hubofallthings.dataplug.*" level="INFO" />
+  <logger name="com.hubofallthings.dataplugMonzo.*" level="INFO"/>
+  <logger name="com.hubofallthings.dataplugMonzo" level="INFO" />
   <logger name="com.mohiva.play.silhouette.*" level="INFO" />
 
 

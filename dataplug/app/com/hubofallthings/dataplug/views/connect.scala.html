@@ -1,0 +1,81 @@
+@import com.hubofallthings.dataplug.apiInterfaces.models.ApiEndpointVariantChoice
+@import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+@import views.html.b3.vertical.fieldConstructor
+@import com.hubofallthings.dataplug.models.User
+
+@(socialProviders: SocialProviderRegistry,
+    endpointvariants: Option[Seq[ApiEndpointVariantChoice]],
+    redirect: String,
+    signupForm: Form[List[String]])(implicit user: User, request: RequestHeader, messages: Messages)
+
+@menubarContent = {
+    <li class="text-lowercase">
+        <a href="@redirect">
+        @user.userId
+        </a>
+    </li>
+}
+
+@com.hubofallthings.dataplug.views.html.templates.main(Messages("sign.in.title"), menubarContent = menubarContent) {
+    @if(socialProviders.providers.nonEmpty) {
+        <div class="row">
+            <div class="plug-content">
+                <div class="plug-content">
+
+                    @request.flash.get("success").map { message =>
+                        <div class="plug-feedback">
+                            <div class="alert alert-success alert-dismissible" role="alert">
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                @message <br />
+                                @Messages("setup.message.delay")
+                                </div>
+
+                            <a role="button" href="@redirect" class="btn btn-dataplug btn-rumpel">
+                            @Messages("setup.goto.rumpel")</a>
+                        </div>
+                    }
+
+                    @endpointvariants.map { variants =>
+                        @views.html.b3.form(com.hubofallthings.dataplug.controllers.routes.Application.connectVariants(), 'class -> "synchronisation-options") {
+                            <legend><h3>@Messages("setup.choices.info")</h3></legend>
+                            <fieldset>
+                                @helper.CSRF.formField
+
+                                @for((variant, index) <- variants.zipWithIndex) {
+                                    <div class="form-group" id="endpointVariants_@(index)_field">
+                                        <div class="checkbox checkbox-circle checkbox-rump">
+                                            <input type="checkbox" name="endpointVariants[@index]"
+                                            id="endpointVariants_@index"
+                                            value="@variant.key"
+                                                @("checked".when(variant.active))>
+                                            <label for="endpointVariants_@index">@variant.description</label>
+                                        </div>
+                                    </div>
+                                }
+                            </fieldset>
+                            @views.html.b3.submit('class -> "btn btn-dataplug") {
+                                @Messages("connect")
+                            }
+                        }
+                    }
+
+                    @if(socialProviders.providers.filterNot(p => user.linkedUsers.map(_.providerId).contains(p.id)).nonEmpty) {
+                        <section class="available-networks">
+                            <h3>@Messages("setup.link")</h3>
+                            <div class="social-providers">
+                            @for(p <- socialProviders.providers if !user.linkedUsers.map(_.providerId).contains(p.id)) {
+                                <a href="@com.hubofallthings.dataplug.controllers.routes.SocialAuthController.authenticate(p.id)" class="provider @p.id" title="@Messages(p.id)">
+                                    <div class="social-link @p.id.toLowerCase">
+                                        <i class="fa fa-@p.id.toLowerCase"></i>
+                                    </div>
+                                </a>
+                            }
+                            </div>
+                        </section>
+                    }
+
+                </div>
+            </div>
+        </div>
+    }
+}
