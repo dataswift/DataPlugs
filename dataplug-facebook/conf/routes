@@ -1,20 +1,20 @@
 # Routes
 # This file defines all application routes (Higher priority routes first)
 
-GET         /dataplug/assets/*file         org.hatdex.dataplug.controllers.Assets.versioned(path="/public/lib/dataplug", file)
-GET         /assets/*file                  org.hatdex.dataplug.controllers.Assets.versioned(path="/public/", file)
+GET         /dataplug/assets/*file         com.hubofallthings.dataplug.controllers.Assets.versioned(path="/public/lib/dataplug", file)
+GET         /assets/*file                  com.hubofallthings.dataplug.controllers.Assets.versioned(path="/public/", file)
 
-GET         /                              org.hatdex.dataplug.controllers.Application.index
-GET         /signin                        org.hatdex.dataplug.controllers.Application.signIn
-POST        /connect                       org.hatdex.dataplug.controllers.Application.connectVariants()
-GET         /disconnect                    org.hatdex.dataplug.controllers.Application.disconnect()
-GET         /authenticate/hat              org.hatdex.dataplug.controllers.HatLoginController.authHat(redirect: Option[String])
-POST        /signin/hat                    org.hatdex.dataplug.controllers.HatLoginController.signinHat()
-GET         /authenticate/:provider        org.hatdex.dataplug.controllers.SocialAuthController.authenticate(provider)
+GET         /                              com.hubofallthings.dataplug.controllers.Application.index
+GET         /signin                        com.hubofallthings.dataplug.controllers.Application.signIn
+POST        /connect                       com.hubofallthings.dataplug.controllers.Application.connectVariants()
+GET         /disconnect                    com.hubofallthings.dataplug.controllers.Application.disconnect()
+GET         /authenticate/hat              com.hubofallthings.dataplug.controllers.HatLoginController.authHat(redirect: Option[String])
+POST        /signin/hat                    com.hubofallthings.dataplug.controllers.HatLoginController.signinHat()
+GET         /authenticate/:provider        com.hubofallthings.dataplug.controllers.SocialAuthController.authenticate(provider)
 
-GET         /api/tickle                    org.hatdex.dataplug.controllers.Api.tickle
-GET         /api/status                    org.hatdex.dataplug.controllers.Api.status
-GET         /api/permissions               org.hatdex.dataplug.controllers.Api.permissions
+GET         /api/tickle                    com.hubofallthings.dataplug.controllers.Api.tickle
+GET         /api/status                    com.hubofallthings.dataplug.controllers.Api.status
+GET         /api/permissions               com.hubofallthings.dataplug.controllers.Api.permissions
 
-POST        /api/content                   org.hatdex.dataplugFacebook.controllers.Api.create
-DELETE      /api/content/:id               org.hatdex.dataplugFacebook.controllers.Api.delete(id: String)
+POST        /api/content                   com.hubofallthings.dataplugFacebook.controllers.Api.create
+DELETE      /api/content/:id               com.hubofallthings.dataplugFacebook.controllers.Api.delete(id: String)
