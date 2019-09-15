@@ -1,8 +1,9 @@
 <!--
-  ~ Copyright (C) HAT Data Exchange Ltd - All Rights Reserved
-  ~  Unauthorized copying of this file, via any medium is strictly prohibited
-  ~  Proprietary and confidential
-  ~  Written by Andrius Aucinas <andrius.aucinas@hatdex.org>, 10 2016
+  ~ Copyright (C) 2016 - 2019 Dataswift Ltd - All Rights Reserved
+  ~  This Source Code Form is subject to the terms of the Mozilla Public
+  ~  License, v. 2.0. If a copy of the MPL was not distributed with this
+  ~  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+  ~  Written by Andrius Aucinas <andrius.aucinas@dataswift.io>, 10 2016
   -->
 
 <configuration>
@@ -26,19 +27,19 @@
   <logger name="application" level="INFO" />
 
   <!-- PLUG-SPECIFIC LOGGERS -->
-  <logger name="org.hatdex.dataplugFacebook" level="INFO" />
-  <logger name="org.hatdex.dataplugFacebook.apiInterfaces.*" level="INFO" />
-  <logger name="org.hatdex.dataplugFacebook.controllers.Api" level="INFO" />
+  <logger name="com.hubofallthings.dataplugFacebook" level="INFO" />
+  <logger name="com.hubofallthings.dataplugFacebook.apiInterfaces.*" level="INFO" />
+  <logger name="com.hubofallthings.dataplugFacebook.controllers.Api" level="INFO" />
 
   <!-- CORE PLUG LOGGERS -->
-  <logger name="org.hatdex.dataplug.*" level="INFO" />
-  <logger name="org.hatdex.dataplug.actors.PhataDataPlugVariantSyncer" level="ERROR" />
-  <logger name="org.hatdex.dataplug.actors.DataPlugManagerActor" level="INFO" />
-  <logger name="org.hatdex.dataplug.services.*" level="INFO" />
-  <logger name="org.hatdex.dataplug.controllers.*" level="INFO"/>
-  <logger name="org.hatdex.dataplug.controllers.Api" level="INFO"/>
-  <logger name="org.hatdex.dataplug.utils.JwtPhataAuthenticatedAction" level="INFO" />
-  <logger name="org.hatdex.dataplug.utils.JwtPhataAwareAction" level="INFO" />
+  <logger name="com.hubofallthings.dataplug.*" level="INFO" />
+  <logger name="com.hubofallthings.dataplug.actors.PhataDataPlugVariantSyncer" level="ERROR" />
+  <logger name="com.hubofallthings.dataplug.actors.DataPlugManagerActor" level="INFO" />
+  <logger name="com.hubofallthings.dataplug.services.*" level="INFO" />
+  <logger name="com.hubofallthings.dataplug.controllers.*" level="INFO"/>
+  <logger name="com.hubofallthings.dataplug.controllers.Api" level="INFO"/>
+  <logger name="com.hubofallthings.dataplug.utils.JwtPhataAuthenticatedAction" level="INFO" />
+  <logger name="com.hubofallthings.dataplug.utils.JwtPhataAwareAction" level="INFO" />
 
   <!-- LIBRARY LOGGERS -->
   <logger name="org.hatdex.dexter.actors.HatClientActor" level="INFO" />

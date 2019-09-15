@@ -21,7 +21,7 @@ lazy val packageSettings = Seq(
 )
 
 lazy val slickCodegenSettings = Seq(
-  codegenPackageName in gentables := "org.hatdex.dataplug.dal",
+  codegenPackageName in gentables := "com.hubofallthings.dataplug.dal",
   codegenBaseDir in gentables := (baseDirectory.value / "app").getPath,
   codegenClassName in gentables := "Tables",
   codegenExcludedTables in gentables := Seq("databasechangelog", "databasechangeloglock"),
@@ -35,7 +35,7 @@ val dataplug = project
   .enablePlugins(BasicSettings)
   .settings(
     name := "dataplug",
-    sourceDirectory in Assets := file(s"${baseDirectory.value}/app/org/hatdex/dataplug/assets")
+    sourceDirectory in Assets := file(s"${baseDirectory.value}/app/com/hubofallthings/dataplug/assets")
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -80,7 +80,7 @@ lazy val dataplugFacebook = Project(id = "dataplug-facebook", base = file("datap
   .enablePlugins(BasicSettings)
   .settings(
     name := "dataplug-facebook",
-    sourceDirectory in Assets := file(s"${baseDirectory.value}/app/org/hatdex/dataplugFacebook/assets")
+    sourceDirectory in Assets := file(s"${baseDirectory.value}/app/com/hubofallthings/dataplugFacebook/assets")
   )
   .enablePlugins(PlayScala, SbtWeb, SbtSassify)
   .settings(buildSettings)
@@ -92,7 +92,7 @@ lazy val dataplugTwitter = Project(id = "dataplug-twitter", base = file("dataplu
   .enablePlugins(BasicSettings)
   .settings(
     name := "dataplug-twitter",
-    sourceDirectory in Assets := file(s"${baseDirectory.value}/app/org/hatdex/dataplugTwitter/assets")
+    sourceDirectory in Assets := file(s"${baseDirectory.value}/app/com/hubofallthings/dataplugTwitter/assets")
   )
   .enablePlugins(PlayScala, SbtWeb, SbtSassify)
   .settings(buildSettings)
@@ -104,7 +104,7 @@ lazy val dataplugGoogleCalendar = Project(id = "dataplug-google-calendar", base 
   .enablePlugins(BasicSettings)
   .settings(
     name := "dataplug-google-calendar",
-    sourceDirectory in Assets := file(s"${baseDirectory.value}/app/org/hatdex/dataplugCalendar/assets")
+    sourceDirectory in Assets := file(s"${baseDirectory.value}/app/com/hubofallthings/dataplugCalendar/assets")
   )
   .enablePlugins(PlayScala, SbtWeb, SbtSassify)
   .settings(buildSettings)
@@ -116,7 +116,7 @@ lazy val dataplugMonzo = Project(id = "dataplug-monzo", base = file("dataplug-mo
   .enablePlugins(BasicSettings)
   .settings(
     name := "dataplug-monzo",
-    sourceDirectory in Assets := file(s"${baseDirectory.value}/app/org/hatdex/dataplugMonzo/assets")
+    sourceDirectory in Assets := file(s"${baseDirectory.value}/app/com/hubofallthings/dataplugMonzo/assets")
   )
   .enablePlugins(PlayScala, SbtWeb, SbtSassify)
   .settings(buildSettings)
@@ -128,7 +128,7 @@ lazy val dataplugFitbit = Project(id = "dataplug-fitbit", base = file("dataplug-
   .enablePlugins(BasicSettings)
   .settings(
     name := "dataplug-fitbit",
-    sourceDirectory in Assets := file(s"${baseDirectory.value}/app/org/hatdex/dataplugFitbit/assets")
+    sourceDirectory in Assets := file(s"${baseDirectory.value}/app/com/hubofallthings/dataplugFitbit/assets")
   )
   .enablePlugins(PlayScala, SbtWeb, SbtSassify)
   .settings(buildSettings)
@@ -140,7 +140,7 @@ lazy val dataplugSpotify = Project(id = "dataplug-spotify", base = file("dataplu
   .enablePlugins(BasicSettings)
   .settings(
     name := "dataplug-spotify",
-    sourceDirectory in Assets := file(s"${baseDirectory.value}/app/org/hatdex/dataplugSpotify/assets")
+    sourceDirectory in Assets := file(s"${baseDirectory.value}/app/com/hubofallthings/dataplugSpotify/assets")
   )
   .enablePlugins(PlayScala, SbtWeb, SbtSassify)
   .settings(buildSettings)
@@ -152,7 +152,7 @@ lazy val dataplugStarling = Project(id = "dataplug-starling", base = file("datap
   .enablePlugins(BasicSettings)
   .settings(
     name := "dataplug-starling",
-    sourceDirectory in Assets := file(s"${baseDirectory.value}/app/org/hatdex/dataplugStarling/assets")
+    sourceDirectory in Assets := file(s"${baseDirectory.value}/app/com/hubofallthings/dataplugStarling/assets")
   )
   .enablePlugins(PlayScala, SbtWeb, SbtSassify)
   .settings(buildSettings)
@@ -164,7 +164,7 @@ lazy val dataplugInstagram = Project(id = "dataplug-instagram", base = file("dat
   .enablePlugins(BasicSettings)
   .settings(
     name := "dataplug-instagram",
-    sourceDirectory in Assets := file(s"${baseDirectory.value}/app/org/hatdex/dataplugInstagram/assets")
+    sourceDirectory in Assets := file(s"${baseDirectory.value}/app/com/hubofallthings/dataplugInstagram/assets")
   )
   .enablePlugins(PlayScala, SbtWeb, SbtSassify)
   .settings(buildSettings)
@@ -176,7 +176,7 @@ lazy val dataplugUber = Project(id = "dataplug-uber", base = file("dataplug-uber
   .enablePlugins(BasicSettings)
   .settings(
     name := "dataplug-uber",
-    sourceDirectory in Assets := file(s"${baseDirectory.value}/app/org/hatdex/dataplugUber/assets")
+    sourceDirectory in Assets := file(s"${baseDirectory.value}/app/com/hubofallthings/dataplugUber/assets")
   )
   .enablePlugins(PlayScala, SbtWeb, SbtSassify)
   .settings(buildSettings)
