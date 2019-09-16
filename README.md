@@ -13,7 +13,7 @@ contains a universal core component (`dataplug` subproject) for any DataPlug.
 It also relies on convenience API wrappers served as HAT Library Artifacts:
 
 - `hat-client-scala-play` as a Scala wrapper around the HAT HTTP API
-- `dex-client-scala-play` as a Scala wrapper around the HATDeX MarketSquare HTTP API
+- `dex-client-scala-play` as a Scala wrapper around the Dataswift MarketSquare HTTP API
 
 ## DataPlug design
 
@@ -46,7 +46,7 @@ The following configuration parameters need to be provided as environment variab
 - `HAT_PASSWORD` - password of the dedicated dataplug account on HATs
 - `MS_DATAPLUG_ID` - dataplug ID on MarketSquare registry
 - `MS_ACCESS_TOKEN` - access token for MarketSquare
-- `SERVICES_SECRET` - shared secret for HATDeX's HAT services
+- `SERVICES_SECRET` - shared secret for Dataswift's HAT services
 - `DATABASE_URL` - database URL
 - `DATABASE_USER` - database username
 - `DATABASE_PASSWORD` - database password
