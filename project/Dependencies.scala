@@ -1,9 +1,9 @@
 /*
- * Copyright (C) 2016 HAT Data Exchange Ltd - All Rights Reserved
+ * Copyright (C) 2016-2019 Dataswift Ltd - All Rights Reserved
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- * Written by Andrius Aucinas <andrius.aucinas@hatdex.org>, 10 2016
+ * Written by Andrius Aucinas <andrius.aucinas@dataswift.io>, 10 2016
  */
 
 import sbt._
@@ -20,15 +20,16 @@ object Dependencies {
     "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases",
     "Sonatype snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/",
     "HAT Library Artifacts Releases" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com",
-    "HAT Library Artifacts Snapshots" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-snapshots.hubofallthings.com",
+    "HAT Library Artifacts Snapshots" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-snapshots.hubofallthings.com"
   )
 
   object Library {
     object HATDeX {
-      private val version = "2.5.2-SNAPSHOT"
-      val hatClient = "org.hatdex" %% "hat-client-scala-play" % version
+      private val version = "2.6.0-SNAPSHOT"
+      val hatClient = "org.hatdex" %% "hat-client-scala-play" % "2.6.2-SNAPSHOT"
       val dexClient = "org.hatdex" %% "dex-client-scala-play" % version
-      val dexter = "org.hatdex" %% "dexter" % "1.4.1-SNAPSHOT"
+      val dexter = "org.hatdex" %% "dexter" % "1.4.3-SNAPSHOT"
+      val codegen = "org.hatdex" %% "slick-postgres-driver" % "0.0.9"
     }
 
     object Play {
@@ -37,29 +38,18 @@ object Dependencies {
       val cache = "com.typesafe.play" %% "play-cache" % version
       val test = "com.typesafe.play" %% "play-test" % version
       val specs2 = "com.typesafe.play" %% "play-specs2" % version
-      val json = "com.typesafe.play" %% "play-json" % version
-      val jsonJoda = "com.typesafe.play" %% "play-json-joda" % version
+      val json = "com.typesafe.play" %% "play-json" % "2.6.9"
+      val jsonJoda = "com.typesafe.play" %% "play-json-joda" % "2.6.9"
       val mailer = "com.typesafe.play" %% "play-mailer" % "6.0.1"
       val mailerGuice = "com.typesafe.play" %% "play-mailer-guice" % "6.0.1"
-      val jsonDerivedCodecs = "org.julienrf" % "play-json-derived-codecs_2.11" % "3.3"
-      val typesafeConfigExtras = "com.iheart" %% "ficus" % "1.3.4"
+      val typesafeConfigExtras = "com.iheart" %% "ficus" % "1.4.3"
+      val playSlick = "com.typesafe.play" %% "play-slick" % "3.0.3"
 
-      object Specs2 {
-        private val version = "3.8.9"
-        val matcherExtra = "org.specs2" %% "specs2-matcher-extra" % version
-        val mock = "org.specs2" %% "specs2-mock" % version
-      }
       object Jwt {
-        private val bouncyCastleVersion = "1.58"
+        private val bouncyCastleVersion = "1.59"
         val bouncyCastle = "org.bouncycastle" % "bcprov-jdk15on" % bouncyCastleVersion
         val bouncyCastlePkix = "org.bouncycastle" % "bcpkix-jdk15on" % bouncyCastleVersion
-        val nimbusDsJwt = "com.nimbusds" % "nimbus-jose-jwt" % "4.22"
-      }
-      object Db {
-        val jdbc = "com.typesafe.play" %% "play-jdbc" % version
-        val postgres = "org.postgresql" % "postgresql" % "9.4-1206-jdbc4"
-        val anorm = "com.typesafe.play" %% "anorm" % "2.5.3"
-        val liquibase = "org.liquibase" % "liquibase-maven-plugin" % "3.5.1"
+        val nimbusDsJwt = "com.nimbusds" % "nimbus-jose-jwt" % "4.41.2"
       }
 
       object Utils {
@@ -69,7 +59,7 @@ object Dependencies {
       }
 
       object Silhouette {
-        val version = "5.0.3"
+        val version = "5.0.4"
         val passwordBcrypt = "com.mohiva" %% "play-silhouette-password-bcrypt" % version
         val persistence = "com.mohiva" %% "play-silhouette-persistence" % version
         val cryptoJca = "com.mohiva" %% "play-silhouette-crypto-jca" % version
@@ -78,14 +68,13 @@ object Dependencies {
     }
 
     object Specs2 {
-      private val version = "3.6.6"
+      private val version = "3.9.5"
       val core = "org.specs2" %% "specs2-core" % version
       val matcherExtra = "org.specs2" %% "specs2-matcher-extra" % version
       val mock = "org.specs2" %% "specs2-mock" % version
     }
 
     object Utils {
-      val pegdown = "org.pegdown" % "pegdown" % "1.6.0"
       val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.0.9"
     }
 

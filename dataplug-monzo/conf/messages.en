@@ -17,10 +17,12 @@ signin.hat.info=Please enter your Personal HAT Address (PHATA). You will then be
 
 signin.hat.hint=You will be taken to your personal HAT page. For security reasons, your HAT password can only be entered at that page.
 
-setup.monzo.info=Choose your Monzo accounts to be synchronized to your HAT.
+setup.choices.info=Choose your Monzo accounts to be synchronized to your HAT.
 
 setup.goto.rumpel=Go back to Rumpel™
 
 setup.message.delay=It may take a few minutes for the new data to appear on Rumpel™.
+
+complete.instructions=Success! Your Monzo accounts and transactions synchronisation has been activated. You can close this window now.
 
 setup.link=Link your bank accounts from:

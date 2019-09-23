@@ -1,15 +1,17 @@
 <!--
-  ~ Copyright (C) HAT Data Exchange Ltd - All Rights Reserved
+  ~ Copyright (C) Dataswift Ltd - All Rights Reserved
   ~  Unauthorized copying of this file, via any medium is strictly prohibited
   ~  Proprietary and confidential
-  ~  Written by Andrius Aucinas <andrius.aucinas@hatdex.org>, 10 2016
+  ~  Written by Andrius Aucinas <andrius.aucinas@dataswift.io>, 10 2016
   -->
 
 <configuration>
+  <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel" />
+
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <target>System.out</target>
     <encoder>
-      <pattern>[%-5level] [%date{MM/dd/YYYY HH:mm:ss}] %logger{1} - %msg%n</pattern>
+      <pattern>[%level] [%date{YYYY-MM-dd HH:mm:ss}] %logger{1} - %msg%n</pattern>
     </encoder>
   </appender>
 
@@ -17,26 +19,31 @@
     <appender-ref ref="STDOUT" />
   </appender>
 
+  <!-- GENERAL APP LOGGERS -->
   <logger name="ch.qos.logback" level="WARN" />
   <logger name="play" level="INFO" />
+  <logger name="http" level="INFO" />
   <logger name="application" level="INFO" />
-  <logger name="DatabaseNotableStore" level="INFO" />
-  <logger name="BulletinService" level="INFO" />
-  <logger name="JwtPhataAuthenticatedAction" level="INFO" />
-  <logger name="JwtPhataAwareAction" level="INFO" />
 
+  <!-- PLUG-SPECIFIC LOGGERS -->
+  <logger name="com.hubofallthings.dataplugCalendar" level="INFO" />
+  <logger name="com.hubofallthings.dataplugCalendar.apiInterfaces.*" level="INFO" />
+  <logger name="com.hubofallthings.dataplugCalendar.apiInterfaces.GoogleCalendarsInterface" level="INFO" />
+  <logger name="com.hubofallthings.dataplugCalendar.apiInterfaces.GoogleCalendarEventsInterface" level="INFO" />
+  <logger name="com.hubofallthings.dataplugCalendar.apiInterfaces.GoogleCalendarList" level="INFO" />
+  <logger name="com.hubofallthings.dataplugCalendar.controllers.Api" level="INFO" />
+
+  <!-- CORE PLUG LOGGERS -->
+  <logger name="com.hubofallthings.dataplug.*" level="INFO" />
+  <logger name="com.hubofallthings.dataplug.actors.PhataDataPlugVariantSyncer" level="ERROR" />
+  <logger name="com.hubofallthings.dataplug.services.*" level="INFO" />
+  <logger name="com.hubofallthings.dataplug.controllers.*" level="INFO"/>
+  <logger name="com.hubofallthings.dataplug.utils.JwtPhataAuthenticatedAction" level="INFO" />
+  <logger name="com.hubofallthings.dataplug.utils.JwtPhataAwareAction" level="INFO" />
+
+  <!-- LIBRARY LOGGERS -->
+  <logger name="org.hatdex.dexter.actors.HatClientActor" level="INFO" />
   <logger name="org.hatdex.hat.api.services.HatClient" level="INFO" />
-  <logger name="NetworkUpdateService" level="INFO"/>
-  <logger name="HatClientActor" level="INFO" />
-
-  <logger name="JwtPhataAuthentication" level="INFO"/>
-  <logger name="HatLoginController" level="INFO"/>
-  <logger name="org.hatdex.dataplug.*" level="DEBUG"/>
-  <logger name="org.hatdex.dataplug.controllers" level="DEBUG"/>
-  <logger name="SchemaMigration" level="INFO" />
-
-  <logger name="org.hatdex.dataplugCalendar" level="DEBUG" />
-  <logger name="org.hatdex.dataplug.*" level="INFO" />
 
   <root level="WARN">
     <appender-ref ref="ASYNCSTDOUT" />

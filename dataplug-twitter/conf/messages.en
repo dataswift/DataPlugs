@@ -1,0 +1,28 @@
+################################################################################################
+# TITLES
+
+dataplug.name=Twitter Data Plug
+
+title.about=About Twitter HAT Plug
+
+sign.in.title=Link your Twitter Accounts to HAT
+
+field.hataddress=Personal HAT Address
+
+signin.hat.header=HAT Login
+
+signin.hat.hint=You will be taken to your personal HAT page. For security reasons, your HAT password can only be entered at that page.
+
+setup.twitter.info=Choose Twitter data to be synchronized to your HAT.
+
+setup.link=Link your bank accounts from:
+
+complete.instructions=Success! Twitter data synchronisation has been activated. You can close this window now.
+
+disconnect.instructions=Your Plug is currently set up and running successfully. Manage all your Data Plugs in Web Rumpel, or return to Rumpel Lite.
+
+disconnect.note=(Having problems? Try to disconnect the plug and reconnect to Twitter again.)
+
+disconnect.button=Disconnect Plug
+
+button.rumpel=Close this window

@@ -113,3 +113,34 @@ CREATE TABLE shared_notables (
 --rollback DROP TABLE dataplug_endpoint;
 --rollback DROP SEQUENCE dataplug_endpoint_seq;
 --rollback DROP TABLE shared_notables;
+
+
+--changeset dataplug:hatTokens context:structures
+
+CREATE TABLE hat_token (
+  hat           VARCHAR   NOT NULL  PRIMARY KEY,
+  access_token  VARCHAR   NOT NULL,
+  date_created  TIMESTAMP NOT NULL DEFAULT (now())
+);
+
+--rollback DROP TABLE hat_token;
+
+--changeset dataplug:log_dataplug_user_status context:structures
+
+CREATE SEQUENCE dataplug_user_status_seq_id START WITH 1;
+
+CREATE TABLE dataplug_user_status (
+  id                     INT8      NOT NULL DEFAULT nextval('dataplug_user_status_seq_id') PRIMARY KEY,
+  phata                  VARCHAR   NOT NULL,
+  dataplug_endpoint      VARCHAR   NOT NULL REFERENCES dataplug_endpoint (name),
+  endpoint_configuration JSONB     NOT NULL,
+  endpoint_variant       VARCHAR,
+  created                TIMESTAMP NOT NULL DEFAULT now(),
+  updated                TIMESTAMP NOT NULL DEFAULT now(),
+  successful             BOOLEAN   NOT NULL,
+  message                VARCHAR
+);
+
+--rollback DROP TABLE dataplug_user_status;
+--rollback DROP SEQUENCE dataplug_user_status_seq_id;
+

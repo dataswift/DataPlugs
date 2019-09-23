@@ -1,8 +1,9 @@
+---
 language: scala
 dist: trusty
 sudo: required
 scala:
-  - 2.11.8
+  - 2.12.4
 
 jdk:
   - openjdk8
@@ -18,30 +19,32 @@ env:
     - secure: Ldsemzw3IcsjUfiy6Bk19rHsJCKrSCoE40GJ9zjcildckZis2I21YyTLYcOagAoI4UP6LdWTORgb1duJn6/+KYnj9SRmMcmqr3HSO85Rj179WR4HfrIErIi1UE5qrnk6l37UWACZhWDqfif1kYQ8zbq69na2I8uiFYGjFgrUAy0yLjFz0KwV9AAKXhUrz+2fuaZwLROfrNXRPQCrPmHGQwJd36ZcsfCARMq40g5kqkkEkmFintuXlAWeYlxYZvA+rMuPXUx0I9Z+3wf4Yn7NmG5RDSn9aAv3rafrdd7lZQVxw9WzexcWxCYox0NUYYKtRFMsXMh9WmfGH13jBP/oSMXtcJm0MfFY1t8m4nHEVBwfVqOR0L5ayebpln0yEPTCm7NUCvMEo3pcCiTD69MQFw7Z9MxVvPJJNOO6Xy/87mj2MUlldTy7xD3xNuMpUb+7rIzAKqYgPPDqMH5hnagKiD+a/+QK1tfhbqox4+/Wo05jByXibrIkiESKszlxgz53Xnx7zotn2NWTGhwW1ZcHHnIaGjV5onOaawv+Z/ykR1qsCqVIjLWltQtORP+bGr5v+129J4oxu/ErD7YHw+TbaaDUtXE+Kcc5Xx5C0S7ivvbe0NXXyJZ1Tq0/99yfwJ7eMShiHwQTApMtvtBiI4gs5WeM0iX58ZIpwWMaJD/eBoI=
     - secure: Ref8bl7EDS+EMaqNLGD3MRahYHOEE8s5WXw0uOVXMioqqRjVLTpFfJItcXH7QRzeSnweRyyo65CmlA76MXm318VDV/IztzoyeYytOMneJQoSwp8jxvzbj4NluecaOxQV2K2ckDSKi5UouNKK/E6dCt+KqODxcvIfNT8122DkpAjzKCYAmrzmw0bQ6gFi2K0zsjRupJjO7UUIgaCQ7KOvjk8BigydC+ssDWVohHInw0UakDehLPW9w8r67FLPUaO8DTFbBVMpWdH0Gh1PELinXIcLn6xiGIMGtvM6Oe4gDc38cO4oXOrdtUIh6ctBVUAEwWqybMJf5hodI46FSHzlsNej4AZsI7rB6/Vcy+hpKhh1MPSvmOhZjYnBl+Y2CcRSn1pf+auDZigfLEMy9/Vr3yapeMqHr+ORByyqh3wp33h5vkawhu0f0wjxwNDPC1Xv+AVX7AlYYAMwDWcv/lgXv6AloSb32BUVxvKC/1O2LSxvvwerIog27QEDwl1ceV2iCUxlEwVPN65Cx+v/SRR0BCjrcXBEfHqhn9zDDMCp2R02rtul+Rwhd7ZAtGkOTJu517dXgrJL3Kp2SLp731gg9tXPxjT6u7CFbE7xsTbBVt2HRWH+Y29cFL3FJSwIPLG33EYxI227WmT6mHtYxPIL7Haco//yYzwSNAKPegja1lM=
 
-branches:
-  only:
-    - master
+if: tag IS present
 
-matrix:
+jobs:
   include:
-    - env:
-      - DATAPLUG=dataplug-facebook-v2
-    - env:
-      - DATAPLUG=dataplug-twitter-v2
-    - env:
-      - DATAPLUG=dataplug-fitbit
-    - env:
-      - DATAPLUG=dataplug-google-calendar
-    - env:
-      - DATAPLUG=dataplug-monzo
-    - env:
-      - DATAPLUG=dataplug-spotify
+    - env: DATAPLUG=dataplug-facebook
+      if: tag =~ /(facebook)/
+    - env: DATAPLUG=dataplug-twitter
+      if: tag =~ /(twitter)/
+    - env: DATAPLUG=dataplug-google-calendar
+      if: tag =~ /(google-calendar)/
+    - env: DATAPLUG=dataplug-monzo
+      if: tag =~ /(monzo)/
+    - env: DATAPLUG=dataplug-spotify
+      if: tag =~ /(spotify)/
+    - env: DATAPLUG=dataplug-fitbit
+      if: tag =~ /(fitbit)/
+    - env: DATAPLUG=dataplug-starling
+      if: tag =~ /(starling)/
+    - env: DATAPLUG=dataplug-instagram
+      if: tag =~ /(instagram)/
+    - env: DATAPLUG=dataplug-uber
+      if: tag =~ /(uber)/
 
 script:
-  - |
-    if [ $(git rev-list -1 HEAD -- $DATAPLUG) != $(git rev-list -1 HEAD~1 -- $DATAPLUG) ] || [ $(git rev-list -1 HEAD -- dataplug) != $(git rev-list -1 HEAD~1 -- dataplug) ] ; then
-      sbt "project $DATAPLUG" "docker:stage"
-      docker build -t hubofallthings/$DATAPLUG $DATAPLUG/target/docker/stage/
-      docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
-      docker push hubofallthings/$DATAPLUG
-    fi
+  - sbt "project $DATAPLUG" "docker:stage"
+  - docker build -t hubofallthings/$DATAPLUG $DATAPLUG/target/docker/stage/
+  - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
+  - docker push hubofallthings/$DATAPLUG
+

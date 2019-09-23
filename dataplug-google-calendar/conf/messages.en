@@ -11,8 +11,20 @@ field.hataddress=Personal HAT Address
 
 signin.hat.header=HAT Login
 
+signin.hat.signin=Login with HAT
+
 signin.hat.hint=You will be taken to your personal HAT page. For security reasons, your HAT password can only be entered at that page.
 
-setup.calendar.info=Choose calendars to be synchronized to your HAT.
+setup.choices.info=Choose calendars to be synchronized to your HAT.
 
 setup.link=Link your calendars from:
+
+disconnect.instructions=Your Plug is currently set up and running successfully. Manage all your Data Plugs in Web Rumpel, or return to Rumpel Lite.
+
+disconnect.note=(Having problems? Try to disconnect the plug and reconnect to Twitter again.)
+
+complete.instructions=Success! Google calendar data synchronisation has been activated. You can close this window now.
+
+button.rumpel=Close this window
+
+button.disconnect=Disconnect Plug
