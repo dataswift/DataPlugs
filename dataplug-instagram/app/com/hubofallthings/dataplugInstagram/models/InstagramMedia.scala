@@ -20,8 +20,7 @@ case class InstagramMedia(
     `type`: String,
     filter: String,
     tags: List[String],
-    id: String,
-    location: Option[InstagramLocation])
+    id: String)
 
 case class InstagramCount(count: Long)
 
