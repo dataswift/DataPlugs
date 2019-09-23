@@ -13,7 +13,7 @@ contains a universal core component (`dataplug` subproject) for any DataPlug.
 It also relies on convenience API wrappers served as HAT Library Artifacts:
 
 - `hat-client-scala-play` as a Scala wrapper around the HAT HTTP API
-- `dex-client-scala-play` as a Scala wrapper around the HATDeX DEX HTTP API
+- `dex-client-scala-play` as a Scala wrapper around the Dataswift's Dex HTTP API
 
 ## DataPlug design
 
@@ -22,7 +22,7 @@ DataPlug Core implementation takes care of:
 2. Social login (via "Silhouette") with common OAuth1/OAuth2 implementations provided and customisable
 3. Source Endpoint API subscription management
 4. Synchronisation scheduling and management using Akka Actors
-5. Basic UI views 
+5. Basic UI views
 
 ## How to build a new DataPlug
 
@@ -49,7 +49,7 @@ The following configuration parameters need to be provided as environment variab
 - `HAT_PASSWORD` - password of the dedicated dataplug account on HATs
 - `DEX_DATAPLUG_ID` - dataplug ID on DEX registry
 - `DEX_ACCESS_TOKEN` - access token for DEX API requests
-- `SERVICES_SECRET` - shared secret for HATDeX's HAT services
+- `SERVICES_SECRET` - shared secret for Dataswift's HAT services
 - `DATABASE_URL` - database URL
 - `DATABASE_USER` - database username
 - `DATABASE_PASSWORD` - database password
@@ -59,7 +59,7 @@ The following configuration parameters need to be provided as environment variab
 * marked environment variables can be left unspecified in the development setup
 
 Server configuration can be customised by adjusting parameters in `conf/application.conf` file. To run the project
- locally in the development mode the following settings might need changing: 
+ locally in the development mode the following settings might need changing:
 - `auth.allowedResources` - include server's domain name in the list
 - `dexter.secure` - boolean value to indicate if the connection to the HAT should be made securely over HTTPS
 - `service.secure` - boolean value to indicate if the server content is being served over secure connection (HTTPS)
@@ -79,7 +79,7 @@ Server configuration can be customised by adjusting parameters in `conf/applicat
 The dataplug can be run locally by executing
 
     sbt "project dataplug-{providerName}" "run -Dconfig.resource=application.dev.conf"
-    
+
 Facebook and Instagram plugs require the use of `https`. To run those plugs locally you have to execute
 
     sbt "project dataplug-(providenName)" "run -Dconfig.resource=application.dev.conf -Dhttps.port=9443"
