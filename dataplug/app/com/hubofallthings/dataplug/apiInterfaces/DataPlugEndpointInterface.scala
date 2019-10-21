@@ -94,6 +94,10 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
         case NOT_FOUND =>
           logger.warn(s"Not found for request $fetchParams - ${result.status}: ${result.body}")
           Future.successful(DataPlugFetchNextSync(fetchParams))
+        case GONE =>
+          logger.warn(s"If the following error is for google, it's expected ${fetchParams.url}")
+          logger.warn(s"Gone for request $fetchParams - ${result.status}: ${result.body}")
+          Future.successful(DataPlugFetchNextSync(fetchParams.copy(queryParameters = fetchParams.queryParameters - "syncToken")))
         case TOO_MANY_REQUESTS =>
           val exception = new SourceApiError(s"Too many requests for request $fetchParams for $hatAddress. Response: ${result.status} - ${result.body}")
           mailer.serverExceptionNotifyInternal(s"""
