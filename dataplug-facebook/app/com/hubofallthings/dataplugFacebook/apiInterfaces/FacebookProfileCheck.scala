@@ -35,7 +35,7 @@ class FacebookProfileCheck @Inject() (
   protected val logger: Logger = Logger(this.getClass)
 
   val defaultApiEndpoint = ApiEndpointCall(
-    "https://graph.facebook.com/v2.10",
+    "https://graph.facebook.com/v4.0",
     "/me",
     ApiEndpointMethod.Get("Get"),
     Map(),

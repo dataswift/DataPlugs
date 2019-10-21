@@ -152,7 +152,7 @@ class FacebookFeedInterface @Inject() (
 
 object FacebookFeedInterface {
   val defaultApiEndpoint = ApiEndpointCall(
-    "https://graph.facebook.com/v2.10",
+    "https://graph.facebook.com/v4.0",
     "/me/feed",
     ApiEndpointMethod.Get("Get"),
     Map(),
