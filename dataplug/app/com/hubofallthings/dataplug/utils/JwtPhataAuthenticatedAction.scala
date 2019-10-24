@@ -36,7 +36,7 @@ class JwtPhataAuthenticatedAction @Inject() (
   val parser = bodyParsers.default
 
   def invokeBlock[A](request: Request[A], block: (JwtPhataAuthenticatedRequest[A]) => Future[Result]): Future[Result] = {
-    request.headers.get("X-Auth-Token")
+    request.headers.get("x-auth-token")
       .map(validateJwtToken)
       .map { eventualMaybeUser =>
         eventualMaybeUser.flatMap { maybeIdentity =>

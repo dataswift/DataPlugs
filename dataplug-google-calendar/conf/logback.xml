@@ -8,7 +8,7 @@
 <configuration>
   <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel" />
 
-  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+  <appender name="STDOUT" class="ch.qos .logback.core.ConsoleAppender">
     <target>System.out</target>
     <encoder>
       <pattern>[%level] [%date{YYYY-MM-dd HH:mm:ss}] %logger{1} - %msg%n</pattern>
@@ -29,7 +29,7 @@
   <logger name="com.hubofallthings.dataplugCalendar" level="INFO" />
   <logger name="com.hubofallthings.dataplugCalendar.apiInterfaces.*" level="INFO" />
   <logger name="com.hubofallthings.dataplugCalendar.apiInterfaces.GoogleCalendarsInterface" level="INFO" />
-  <logger name="com.hubofallthings.dataplugCalendar.apiInterfaces.GoogleCalendarEventsInterface" level="INFO" />
+  <logger name="com.hubofallthings.dataplugCalendar.apiInterfaces.GoogleCalendarEventsInterface" level="DEBUG" />
   <logger name="com.hubofallthings.dataplugCalendar.apiInterfaces.GoogleCalendarList" level="INFO" />
   <logger name="com.hubofallthings.dataplugCalendar.controllers.Api" level="INFO" />
 
@@ -38,8 +38,8 @@
   <logger name="com.hubofallthings.dataplug.actors.PhataDataPlugVariantSyncer" level="ERROR" />
   <logger name="com.hubofallthings.dataplug.services.*" level="INFO" />
   <logger name="com.hubofallthings.dataplug.controllers.*" level="INFO"/>
-  <logger name="com.hubofallthings.dataplug.utils.JwtPhataAuthenticatedAction" level="INFO" />
-  <logger name="com.hubofallthings.dataplug.utils.JwtPhataAwareAction" level="INFO" />
+  <logger name="com.hubofallthings.dataplug.utils.JwtPhataAuthenticatedAction" level="DEBUG" />
+  <logger name="com.hubofallthings.dataplug.utils.JwtPhataAwareAction" level="DEBUG" />
 
   <!-- LIBRARY LOGGERS -->
   <logger name="org.hatdex.dexter.actors.HatClientActor" level="INFO" />
