@@ -111,11 +111,11 @@ class FacebookProfileInterface @Inject() (
 
 object FacebookProfileInterface {
   val defaultApiEndpoint = ApiEndpointCall(
-    "https://graph.facebook.com/v4.0",
+    "https://graph.facebook.com/v5.0",
     "/me",
     ApiEndpointMethod.Get("Get"),
     Map(),
-    Map("fields" -> ("id,first_name,last_name,middle_name,name,link,age_range,email,languages," +
+    Map("summary" -> "total_count", "fields" -> ("id,first_name,last_name,middle_name,name,link,age_range,email,languages,name_format," +
       "public_key,relationship_status,religion,significant_other,sports,friends")),
     Map(),
     Some(Map()))

@@ -164,7 +164,7 @@ class FacebookUserLikesInterface @Inject() (
 
 object FacebookUserLikesInterface {
   val defaultApiEndpoint = ApiEndpointCall(
-    "https://graph.facebook.com/v4.0",
+    "https://graph.facebook.com/v5.0",
     "/me/likes",
     ApiEndpointMethod.Get("Get"),
     Map(),
