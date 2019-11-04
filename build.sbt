@@ -13,7 +13,7 @@ lazy val packageSettings = Seq(
   javaOptions in Universal ++= Seq(
     "-Dhttp.port=9000",
     "-Dlogger.resource=logback.xml",
-    "-Dconfig.file=/opt/docker/conf/application.staging.conf"),
+    "-Dconfig.file=/opt/docker/conf/application.conf"),
   javaOptions in Test += "-Dconfig.file=conf/application.test.conf",
   packageName in Docker := packageName.value,
   maintainer in Docker := maintainer.value,
