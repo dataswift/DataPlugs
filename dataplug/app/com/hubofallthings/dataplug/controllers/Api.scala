@@ -62,39 +62,43 @@ class Api @Inject() (
   }
 
   def status: Action[AnyContent] = tokenUserAuthenticatedAction.async { implicit request =>
-    val token = request.headers.get("X-Auth-Token").get
+    request.headers.get("X-Auth-Token").map { token =>
+      // Check if the user has the required social profile linked
+      Try(SignedJWT.parse(token)).map { parsedToken =>
+        request.identity.linkedUsers.find(_.providerId == provider) map { _ =>
+          val tokenIssueDate = new DateTime(parsedToken.getJWTClaimsSet.getIssueTime)
+          val eventualTokenInsertOrUpdate = hatTokenService.save(request.identity.userId, token, tokenIssueDate)
 
-    // Check if the user has the required social profile linked
-    Try(SignedJWT.parse(token)).map { parsedToken =>
-      request.identity.linkedUsers.find(_.providerId == provider) map { _ =>
-        val tokenIssueDate = new DateTime(parsedToken.getJWTClaimsSet.getIssueTime)
-        val eventualTokenInsertOrUpdate = hatTokenService.save(request.identity.userId, token, tokenIssueDate)
-
-        eventualTokenInsertOrUpdate.flatMap {
-          case Left(_) =>
-            logger.info(s"Registered new HAT token for ${request.identity.userId}")
-            Future.successful(Ok(Json.toJson(JsArray())))
-          case Right(_) =>
-            for {
-              choices <- syncerActorManager.currentProviderApiVariantChoices(request.identity, provider)(ioEC) if choices.exists(_.active)
-              apiEndpointStatuses <- dataPlugEndpointService.listCurrentEndpointStatuses(request.identity.userId)
-              _ <- syncerActorManager.runPhataActiveVariantChoices(request.identity.userId, token)
-            } yield {
-              logger.info(s"Refreshed HAT token for ${request.identity.userId}")
-              Ok(Json.toJson(apiEndpointStatuses))
-            }
-        }.recover {
-          // In case fetching current endpoint statuses failed, assume the issue came from refreshing data from the provider
-          // Also catches any failures related to HAT token saving
-          case _ => Forbidden(
-            Json.toJson(ErrorMessage(
-              "Forbidden",
-              "The user is not authorized to access remote data - has Access Token been revoked?")))
+          eventualTokenInsertOrUpdate.flatMap {
+            case Left(_) =>
+              logger.info(s"Registered new HAT token for ${request.identity.userId}")
+              Future.successful(Ok(Json.toJson(JsArray())))
+            case Right(_) =>
+              for {
+                choices <- syncerActorManager.currentProviderApiVariantChoices(request.identity, provider)(ioEC) if choices.exists(_.active)
+                apiEndpointStatuses <- dataPlugEndpointService.listCurrentEndpointStatuses(request.identity.userId)
+                _ <- syncerActorManager.runPhataActiveVariantChoices(request.identity.userId, token)
+              } yield {
+                logger.info(s"Refreshed HAT token for ${request.identity.userId}")
+                Ok(Json.toJson(apiEndpointStatuses))
+              }
+          }.recover {
+            // In case fetching current endpoint statuses failed, assume the issue came from refreshing data from the provider
+            // Also catches any failures related to HAT token saving
+            case _ => Forbidden(
+              Json.toJson(ErrorMessage(
+                "Forbidden",
+                "The user is not authorized to access remote data - has Access Token been revoked?")))
+          }
+        } getOrElse {
+          Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Required social profile ($provider) not connected"))))
         }
-      } getOrElse {
-        Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Required social profile ($provider) not connected"))))
+      }.getOrElse {
+        Future.successful(BadRequest(Json.toJson(ErrorMessage("Bad request", s"Token could not get parsed. Token is: $token"))))
       }
-    }.get
+    }.getOrElse {
+      Future.successful(BadRequest(Json.toJson(ErrorMessage("Bad request", s"Could not find token in headers"))))
+    }
   }
 
   def permissions: Action[AnyContent] = tokenUserAuthenticatedAction.async { implicit request =>
