@@ -147,7 +147,6 @@ class FacebookFeedInterface @Inject() (
       Failure(SourceDataProcessingException(s"Error parsing JSON object, necessary property not found."))
     }
   }
-
 }
 
 object FacebookFeedInterface {
