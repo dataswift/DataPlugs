@@ -11,22 +11,22 @@ package com.hubofallthings.dataplug.controllers
 import com.hubofallthings.dataplug.actors.IoExecutionContext
 import com.hubofallthings.dataplug.models.User
 import com.hubofallthings.dataplug.apiInterfaces.models.JsonProtocol.endpointStatusFormat
-import com.hubofallthings.dataplug.services.{ DataPlugEndpointService, DataplugSyncerActorManager, HatTokenService }
-import com.hubofallthings.dataplug.utils.{ JwtPhataAuthenticatedAction, JwtPhataAwareAction }
+import com.hubofallthings.dataplug.services.{DataPlugEndpointService, DataplugSyncerActorManager, HatTokenService}
+import com.hubofallthings.dataplug.utils.{JwtPhataAuthenticatedAction, JwtPhataAwareAction, Mailer}
 import javax.inject.Inject
 import com.nimbusds.jwt.SignedJWT
 import org.hatdex.hat.api.models.ErrorMessage
 import play.api.cache.AsyncCacheApi
 import play.api.i18n.MessagesApi
-import play.api.libs.json.{ JsArray, JsValue, Json }
-import play.api.{ Configuration, Logger }
+import play.api.libs.json.{JsArray, JsValue, Json}
+import play.api.{Configuration, Logger}
 import play.api.mvc._
 import org.hatdex.hat.api.json.HatJsonFormats.errorMessage
 import org.joda.time.DateTime
 
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 class Api @Inject() (
@@ -38,6 +38,7 @@ class Api @Inject() (
     tokenUserAuthenticatedAction: JwtPhataAuthenticatedAction,
     dataPlugEndpointService: DataPlugEndpointService,
     hatTokenService: HatTokenService,
+    mailer: Mailer,
     syncerActorManager: DataplugSyncerActorManager) extends AbstractController(components) {
 
   protected val ioEC: ExecutionContext = IoExecutionContext.ioThreadPool
@@ -85,7 +86,9 @@ class Api @Inject() (
           }.recover {
             // In case fetching current endpoint statuses failed, assume the issue came from refreshing data from the provider
             // Also catches any failures related to HAT token saving
-            case _ => Forbidden(
+            case _ =>
+              logger.warn(s"The user is not authorized to access remote data - has Access Token been revoked?. Token:\n$token")
+              Forbidden(
               Json.toJson(ErrorMessage(
                 "Forbidden",
                 "The user is not authorized to access remote data - has Access Token been revoked?")))
@@ -94,9 +97,13 @@ class Api @Inject() (
           Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Required social profile ($provider) not connected"))))
         }
       }.getOrElse {
+        mailer.serverExceptionNotifyInternal(s"Token could not get parsed", new Exception("Token could not get parsed"))
+        logger.warn(s"Token could not get parsed. Token is: $token")
         Future.successful(BadRequest(Json.toJson(ErrorMessage("Bad request", s"Token could not get parsed. Token is: $token"))))
       }
     }.getOrElse {
+      mailer.serverExceptionNotifyInternal(s"No token present in headers. ${request.headers}", new NoSuchFieldException("Token not found"))
+      logger.error(s"No token present in headers. ${request.headers}")
       Future.successful(BadRequest(Json.toJson(ErrorMessage("Bad request", s"Could not find token in headers"))))
     }
   }
