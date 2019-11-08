@@ -23,28 +23,54 @@ if: tag IS present
 
 jobs:
   include:
-    - env: DATAPLUG=dataplug-facebook
-      if: tag =~ /(facebook)/
-    - env: DATAPLUG=dataplug-twitter
-      if: tag =~ /(twitter)/
-    - env: DATAPLUG=dataplug-google-calendar
-      if: tag =~ /(google-calendar)/
-    - env: DATAPLUG=dataplug-monzo
-      if: tag =~ /(monzo)/
-    - env: DATAPLUG=dataplug-spotify
-      if: tag =~ /(spotify)/
-    - env: DATAPLUG=dataplug-fitbit
-      if: tag =~ /(fitbit)/
-    - env: DATAPLUG=dataplug-starling
-      if: tag =~ /(starling)/
-    - env: DATAPLUG=dataplug-instagram
-      if: tag =~ /(instagram)/
-    - env: DATAPLUG=dataplug-uber
-      if: tag =~ /(uber)/
+    - env:
+      - DATAPLUG=dataplug-facebook
+      - REPOSITORY=dataplug-facebook
+      if: tag =~ /^(facebook)/
+    - env:
+      - DATAPLUG=dataplug-facebook
+      - REPOSITORY=dataplug-facebook-dev
+      if: tag =~ /^(dev-facebook)/
+    - env:
+      - DATAPLUG=dataplug-twitter
+      - REPOSITORY=dataplug-TWITTER
+      if: tag =~ /^(twitter)/
+    - env:
+      - DATAPLUG=dataplug-google-calendar
+      - REPOSITORY=dataplug-google-calendar-dev
+      if: tag =~ /^(dev-google-calendar)/
+    - env:
+      - DATAPLUG=dataplug-google-calendar
+      - REPOSITORY=dataplug-google-calendar
+      if: tag =~ /^(google-calendar)/
+    - env:
+      - DATAPLUG=dataplug-monzo
+      - REPOSITORY=dataplug-monzo
+      if: tag =~ /^(monzo)/
+    - env:
+      - DATAPLUG=dataplug-spotify
+      - REPOSITORY=dataplug-spotify
+      if: tag =~ /^(spotify)/
+    - env:
+      - DATAPLUG=dataplug-fitbit
+      - REPOSITORY=dataplug-fitbit
+      if: tag =~ /^(fitbit)/
+    - env:
+      - DATAPLUG=dataplug-starling
+      - REPOSITORY=dataplug-starling
+      if: tag =~ /^(starling)/
+    - env:
+      - DATAPLUG=dataplug-instagram
+      - REPOSITORY=dataplug-instagram
+      if: tag =~ /^(instagram)/
+    - env:
+      - DATAPLUG=dataplug-uber
+      - REPOSITORY=dataplug-uber
+      if: tag =~ /^(uber)/
 
 script:
   - sbt "project $DATAPLUG" "docker:stage"
-  - docker build -t hubofallthings/$DATAPLUG $DATAPLUG/target/docker/stage/
+  - docker build -t hubofallthings/$REPOSITORY $DATAPLUG/target/docker/stage/
   - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
-  - docker push hubofallthings/$DATAPLUG
+  - docker push hubofallthings/$REPOSITORY
 
