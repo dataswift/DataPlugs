@@ -55,6 +55,7 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
       logger.debug(s"fetch returned: ${result}")
       result.status match {
         case OK =>
+          logger.debug(s"Is it null?: ${result.json}")
           processResults(result.json, hatAddress, hatClient, fetchParams) map { _ =>
             logger.debug(s"Successfully processed request for $hatAddress to save data from ${fetchParams.url}${fetchParams.path}")
             buildContinuation(result.json, fetchParams)
@@ -116,7 +117,7 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
         logger.warn(message)
         Future.failed(e)
       case e =>
-        val message = s"${e.getClass.getSimpleName} Error when querying api endpoint $fetchParams for $hatAddress - ${e.getMessage}"
+        val message = s"${e.getClass.getSimpleName} Error when querying api endpoint $fetchParams for $hatAddress - $e"
         logger.warn(message)
         Future.failed(new DataPlugError(message, e))
     }

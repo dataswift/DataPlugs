@@ -26,18 +26,20 @@
   <logger name="application" level="INFO" />
 
   <!-- PLUG-SPECIFIC LOGGERS -->
-  <logger name="com.hubofallthings.dataplugCalendar" level="INFO" />
-  <logger name="com.hubofallthings.dataplugCalendar.apiInterfaces.*" level="INFO" />
-  <logger name="com.hubofallthings.dataplugCalendar.apiInterfaces.GoogleCalendarsInterface" level="INFO" />
-  <logger name="com.hubofallthings.dataplugCalendar.apiInterfaces.GoogleCalendarEventsInterface" level="INFO" />
-  <logger name="com.hubofallthings.dataplugCalendar.apiInterfaces.GoogleCalendarList" level="INFO" />
-  <logger name="com.hubofallthings.dataplugCalendar.controllers.Api" level="INFO" />
+  <logger name="com.hubofallthings.dataplugCalendar" level="DEBUG" />
+  <logger name="com.hubofallthings.dataplugCalendar.apiInterfaces.*" level="DEBUG" />
+  <logger name="com.hubofallthings.dataplugCalendar.apiInterfaces.GoogleCalendarsInterface" level="DEBUG" />
+  <logger name="com.hubofallthings.dataplugCalendar.apiInterfaces.GoogleCalendarEventsInterface" level="DEBUG" />
+  <logger name="com.hubofallthings.dataplugCalendar.apiInterfaces.GoogleCalendarList" level="DEBUG" />
+  <logger name="com.hubofallthings.dataplugCalendar.controllers.Api" level="DEBUG" />
 
   <!-- CORE PLUG LOGGERS -->
   <logger name="com.hubofallthings.dataplug.*" level="INFO" />
   <logger name="com.hubofallthings.dataplug.actors.PhataDataPlugVariantSyncer" level="ERROR" />
   <logger name="com.hubofallthings.dataplug.services.*" level="INFO" />
   <logger name="com.hubofallthings.dataplug.controllers.*" level="INFO"/>
+  <logger name="com.hubofallthings.dataplug.controllers.Api" level="DEBUG"/>
+  <logger name="com.hubofallthings.dataplug.apiInterfaces.DataPlugEndpointInterface" level="DEBUG"/>
   <logger name="com.hubofallthings.dataplug.utils.JwtPhataAuthenticatedAction" level="INFO" />
   <logger name="com.hubofallthings.dataplug.utils.JwtPhataAwareAction" level="INFO" />
 
