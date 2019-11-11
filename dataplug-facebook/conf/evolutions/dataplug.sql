@@ -47,4 +47,15 @@ UPDATE dataplug_user
 SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters,fields}', '"id,first_name,last_name,middle_name,name,link,age_range,birthday,email,languages,public_key,relationship_status,religion,significant_other,sports,friends"')
 WHERE dataplug_user.dataplug_endpoint = 'profile';
 
+--changeset dataplugFacebook:addMoreProfileFieldsDueToRequirements
+
+UPDATE dataplug_user
+SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters}', '{"fields":"id,first_name,last_name,middle_name,name,link,age_range,email,languages,name_format,public_key,relationship_status,religion,significant_other,sports,friends","summary":"total_count"}')
+WHERE dataplug_user.dataplug_endpoint = 'profile';
+
+--changeset dataplugFacebook:updateConfigurationToV5
+
+UPDATE dataplug_user
+SET endpoint_configuration = jsonb_set(endpoint_configuration, '{url}', '"https://graph.facebook.com/v5.0"')
+WHERE dataplug_user.endpoint_configuration -> 'url' = '"https://graph.facebook.com/v2.10"'
 
