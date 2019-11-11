@@ -59,3 +59,14 @@ UPDATE dataplug_user
 SET endpoint_configuration = jsonb_set(endpoint_configuration, '{url}', '"https://graph.facebook.com/v5.0"')
 WHERE dataplug_user.endpoint_configuration -> 'url' = '"https://graph.facebook.com/v2.10"'
 
+
+--changeset dataplugFacebook:endpointsInsertUserPosts context:data
+
+INSERT INTO dataplug_endpoint (name, description, details)
+VALUES
+  ('posts', 'User''s own Facebook posts', 'sequence')
+ON CONFLICT (name) DO NOTHING;
+
+
+
+Z

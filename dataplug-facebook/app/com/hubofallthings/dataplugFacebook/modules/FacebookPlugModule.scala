@@ -16,7 +16,7 @@ import com.hubofallthings.dataplug.controllers.{ DataPlugViewSet, DataPlugViewSe
 import com.hubofallthings.dataplug.dal.SchemaMigrationImpl
 import com.hubofallthings.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl, DataPlugSharedNotableDAO, DataPlugSharedNotableDAOImpl }
 import com.hubofallthings.dataplug.services.{ DataPlugEndpointService, DataPlugEndpointServiceImpl, DataPlugNotablesService, DataPlugNotablesServiceImpl, StartupService, StartupServiceImpl }
-import com.hubofallthings.dataplugFacebook.apiInterfaces.{ FacebookEventInterface, FacebookFeedInterface, FacebookProfileCheck, FacebookProfileInterface, FacebookProfilePictureInterface, FacebookUserLikesInterface }
+import com.hubofallthings.dataplugFacebook.apiInterfaces.{ FacebookEventInterface, FacebookFeedInterface, FacebookPostsInterface, FacebookProfileCheck, FacebookProfileInterface, FacebookProfilePictureInterface, FacebookUserLikesInterface }
 import com.mohiva.play.silhouette.api.Provider
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.providers._
@@ -66,6 +66,7 @@ class FacebookPlugModule extends AbstractModule with ScalaModule with AkkaGuiceS
     facebookProfilePictureInterface: FacebookProfilePictureInterface,
     facebookEventInterface: FacebookEventInterface,
     facebookFeedInterface: FacebookFeedInterface,
+    facebookPostsInterface: FacebookPostsInterface,
     facebookUserLikesInterface: FacebookUserLikesInterface): DataPlugRegistry = {
 
     DataPlugRegistry(Seq(
@@ -73,6 +74,7 @@ class FacebookPlugModule extends AbstractModule with ScalaModule with AkkaGuiceS
       facebookProfilePictureInterface,
       facebookEventInterface,
       facebookFeedInterface,
+      facebookPostsInterface,
       facebookUserLikesInterface))
   }
 

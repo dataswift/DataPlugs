@@ -11,22 +11,22 @@ package com.hubofallthings.dataplug.controllers
 import com.hubofallthings.dataplug.actors.IoExecutionContext
 import com.hubofallthings.dataplug.models.User
 import com.hubofallthings.dataplug.apiInterfaces.models.JsonProtocol.endpointStatusFormat
-import com.hubofallthings.dataplug.services.{DataPlugEndpointService, DataplugSyncerActorManager, HatTokenService}
-import com.hubofallthings.dataplug.utils.{JwtPhataAuthenticatedAction, JwtPhataAwareAction, Mailer}
+import com.hubofallthings.dataplug.services.{ DataPlugEndpointService, DataplugSyncerActorManager, HatTokenService }
+import com.hubofallthings.dataplug.utils.{ JwtPhataAuthenticatedAction, JwtPhataAwareAction, Mailer }
 import javax.inject.Inject
 import com.nimbusds.jwt.SignedJWT
 import org.hatdex.hat.api.models.ErrorMessage
 import play.api.cache.AsyncCacheApi
 import play.api.i18n.MessagesApi
-import play.api.libs.json.{JsArray, JsValue, Json}
-import play.api.{Configuration, Logger}
+import play.api.libs.json.{ JsArray, JsValue, Json }
+import play.api.{ Configuration, Logger }
 import play.api.mvc._
 import org.hatdex.hat.api.json.HatJsonFormats.errorMessage
 import org.joda.time.DateTime
 
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Try
 
 class Api @Inject() (
@@ -89,9 +89,9 @@ class Api @Inject() (
             case _ =>
               logger.warn(s"The user is not authorized to access remote data - has Access Token been revoked?. Token:\n$token")
               Forbidden(
-              Json.toJson(ErrorMessage(
-                "Forbidden",
-                "The user is not authorized to access remote data - has Access Token been revoked?")))
+                Json.toJson(ErrorMessage(
+                  "Forbidden",
+                  "The user is not authorized to access remote data - has Access Token been revoked?")))
           }
         } getOrElse {
           Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Required social profile ($provider) not connected"))))
