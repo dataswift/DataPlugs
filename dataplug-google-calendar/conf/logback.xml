@@ -40,12 +40,14 @@
   <logger name="com.hubofallthings.dataplug.controllers.*" level="INFO"/>
   <logger name="com.hubofallthings.dataplug.controllers.Api" level="DEBUG"/>
   <logger name="com.hubofallthings.dataplug.apiInterfaces.DataPlugEndpointInterface" level="DEBUG"/>
+  <logger name="com.hubofallthings.dataplug.apiInterfaces.authProviders.RequestAuthenticatorOAuth1" level="DEBUG"/>
   <logger name="com.hubofallthings.dataplug.utils.JwtPhataAuthenticatedAction" level="INFO" />
   <logger name="com.hubofallthings.dataplug.utils.JwtPhataAwareAction" level="INFO" />
 
   <!-- LIBRARY LOGGERS -->
   <logger name="org.hatdex.dexter.actors.HatClientActor" level="INFO" />
   <logger name="org.hatdex.hat.api.services.HatClient" level="INFO" />
+  <logger name="org.hatdex.hat.api.services.HatRichData" level="DEBUG" />
 
   <root level="WARN">
     <appender-ref ref="ASYNCSTDOUT" />

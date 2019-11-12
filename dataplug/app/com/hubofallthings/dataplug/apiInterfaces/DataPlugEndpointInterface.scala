@@ -52,10 +52,10 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
       logger.debug(s"The parameters are: $requestParameters")
       buildRequest(requestParameters)
     } flatMap { result =>
-      logger.debug(s"fetch returned: ${result}")
+      logger.debug(s"fetch returned: $result")
       result.status match {
         case OK =>
-          logger.debug(s"Is it null?: ${result.json}")
+          logger.debug(s"Calendar name: ${result.json \ "summary"}")
           processResults(result.json, hatAddress, hatClient, fetchParams) map { _ =>
             logger.debug(s"Successfully processed request for $hatAddress to save data from ${fetchParams.url}${fetchParams.path}")
             buildContinuation(result.json, fetchParams)
