@@ -59,7 +59,6 @@ UPDATE dataplug_user
 SET endpoint_configuration = jsonb_set(endpoint_configuration, '{url}', '"https://graph.facebook.com/v5.0"')
 WHERE dataplug_user.endpoint_configuration -> 'url' = '"https://graph.facebook.com/v2.10"'
 
-
 --changeset dataplugFacebook:endpointsInsertUserPosts context:data
 
 INSERT INTO dataplug_endpoint (name, description, details)
@@ -67,5 +66,16 @@ VALUES
   ('posts', 'User''s own Facebook posts', 'sequence')
 ON CONFLICT (name) DO NOTHING;
 
+--changeset dataplugFacebook:addMoreIsSphericalToPosts
+
+UPDATE dataplug_user
+SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters}', '{"fields":"id,attachments,caption,created_time,description,from,full_picture,icon,link,is_instagram_eligible,is_spherical,message,message_tags,name,object_id,permalink_url,place,shares,status_type,type,updated_time,with_tags","limit":"250"}')
+WHERE dataplug_user.dataplug_endpoint = 'posts';
+
+--changeset dataplugFacebook:changeLimitToFeed
+
+UPDATE dataplug_user
+SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters}', '{"fields":"id,attachments,caption,created_time,description,from,full_picture,icon,link,is_instagram_eligible,message,message_tags,name,object_id,permalink_url,place,shares,status_type,type,updated_time,with_tags","limit":"250"}')
+WHERE dataplug_user.dataplug_endpoint = 'feed';
 
 
