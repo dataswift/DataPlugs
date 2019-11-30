@@ -75,7 +75,13 @@ WHERE dataplug_user.dataplug_endpoint = 'posts';
 --changeset dataplugFacebook:changeLimitToFeed
 
 UPDATE dataplug_user
-SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters}', '{"fields":"id,attachments,caption,created_time,description,from,full_picture,icon,link,is_instagram_eligible,message,message_tags,name,object_id,permalink_url,place,shares,status_type,type,updated_time,with_tags","limit":"250"}')
+SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters,limit}', '"250"')
 WHERE dataplug_user.dataplug_endpoint = 'feed';
+
+--changeset dataplugFacebook:ResetFeedEndpoint
+
+UPDATE dataplug_user
+SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters}', '{"fields":"id,attachments,caption,created_time,description,from,full_picture,icon,link,is_instagram_eligible,is_spherical,message,message_tags,name,object_id,permalink_url,place,shares,status_type,type,updated_time,with_tags","limit":"250"}')
+WHERE dataplug_user.phata = (SELECT phata FROM dataplug_user as U WHERE U.dataplug_endpoint = 'posts' AND U.active = true AND dataplug_user.phata = U.phata) AND dataplug_user.dataplug_endpoint = 'feed';
 
 
