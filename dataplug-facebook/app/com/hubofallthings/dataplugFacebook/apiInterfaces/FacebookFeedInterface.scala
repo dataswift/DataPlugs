@@ -155,7 +155,7 @@ object FacebookFeedInterface {
     "/me/feed",
     ApiEndpointMethod.Get("Get"),
     Map(),
-    Map("limit" -> "500", "fields" -> ("id,attachments,caption,created_time,description,from,full_picture,icon,link," +
+    Map("limit" -> "250", "fields" -> ("id,attachments,caption,created_time,description,from,full_picture,icon,link," +
       "is_instagram_eligible,message,message_tags,name,object_id,permalink_url,place,shares,status_type,type,updated_time,with_tags")),
     Map(),
     Some(Map()))
