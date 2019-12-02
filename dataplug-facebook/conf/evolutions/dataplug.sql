@@ -85,4 +85,7 @@ SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters
 FROM dataplug_user u2
 WHERE u1.dataplug_endpoint = 'feed' AND u2.dataplug_endpoint = 'posts' AND u1.phata = u2.phata;
 
+--changeset dataplugFacebook:endpointsRemoveUserLikes context:data
+
+DELETE FROM dataplug_endpoint WHERE name = 'likes/pages';
 
