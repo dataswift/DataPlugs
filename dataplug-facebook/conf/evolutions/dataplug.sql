@@ -81,7 +81,7 @@ WHERE dataplug_user.dataplug_endpoint = 'feed';
 --changeset dataplugFacebook:ResetFeedEndpoint
 
 UPDATE dataplug_user u1
-SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters}', '{"fields":"id,attachments,caption,created_time,description,from,full_picture,icon,link,is_instagram_eligible,is_spherical,message,message_tags,name,object_id,permalink_url,place,shares,status_type,type,updated_time,with_tags","limit":"250"}')
+SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters}', '{"fields":"id,attachments,caption,created_time,description,from,full_picture,icon,link,is_instagram_eligible,message,message_tags,name,object_id,permalink_url,place,shares,status_type,type,updated_time,with_tags","limit":"250"}')
 FROM dataplug_user u2
 WHERE u1.dataplug_endpoint = 'feed' AND u2.dataplug_endpoint = 'posts' AND u1.phata = u2.phata;
 
