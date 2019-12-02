@@ -80,12 +80,14 @@ WHERE dataplug_user.dataplug_endpoint = 'feed';
 
 --changeset dataplugFacebook:resetFeedEndpoint
 
-UPDATE dataplug_user u1
-SET u1.endpoint_configuration = jsonb_set(u1.endpoint_configuration, '{queryParameters}', '{"fields":"id,attachments,caption,created_time,description,from,full_picture,icon,link,is_instagram_eligible,message,message_tags,name,object_id,permalink_url,place,shares,status_type,type,updated_time,with_tags","limit":"250"}')
-FROM dataplug_user u2
-WHERE u1.dataplug_endpoint = 'feed' AND u2.dataplug_endpoint = 'posts' AND u1.phata = u2.phata;
+UPDATE dataplug_user
+SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters}', '{"fields":"id,attachments,caption,created_time,description,from,full_picture,icon,link,is_instagram_eligible,message,message_tags,name,object_id,permalink_url,place,shares,status_type,type,updated_time,with_tags","limit":"250"}')
+WHERE dataplug_user.phata = (SELECT phata FROM dataplug_user AS u WHERE u.dataplug_endpoint = 'posts' AND dataplug_user.phata = u.phata) AND dataplug_user.dataplug_endpoint = 'feed';
 
---changeset dataplugFacebook:endpointsRemoveUserLikes context:data
+--changeset dataplugFacebook:removeUserLikesEndpoint context:data
 
+ALTER TABLE log_dataplug_user DROP CONSTRAINT log_dataplug_user_dataplug_endpoint_fkey;
+DELETE FROM dataplug_user_status WHERE dataplug_endpoint = 'likes/pages';
+DELETE FROM dataplug_user WHERE dataplug_endpoint = 'likes/pages';
 DELETE FROM dataplug_endpoint WHERE name = 'likes/pages';
 
