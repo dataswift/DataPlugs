@@ -30,7 +30,7 @@ class FacebookActorsModule extends AbstractModule with ScalaModule with AkkaGuic
   @Provides @Named("syncThrottler")
   def provideDataPlugCollection(@Named("syncDispatcher") syncDispatcher: ActorRef)(implicit materializer: Materializer): ActorRef = {
     Source.actorRef[DataPlugManagerActor.DataPlugSyncDispatcherActorMessage](bufferSize = 1000, OverflowStrategy.dropNew)
-      .throttle(elements = 4, per = 1.second, maximumBurst = 10, ThrottleMode.Shaping)
+      .throttle(elements = 20, per = 1.second, maximumBurst = 5, ThrottleMode.Shaping)
       .to(Sink.actorRef(syncDispatcher, NotUsed))
       .run()
   }

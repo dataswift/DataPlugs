@@ -141,8 +141,10 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
 
     if (batchdata.value.nonEmpty) { // set the predicate to false to prevent posting to HAT
       hatClient.postData(namespace, endpoint, batchdata)
-        .map(_ => Done)
-        .recoverWith {
+        .map { _ =>
+          logger.info(s"[trace:datasync] [$hatAddress] [$namespace:$endpoint] [${batchdata.value.length}:entities]")
+          Done
+        }.recoverWith {
           case _: DuplicateDataException      => Future.successful(Done)
           case e: UnauthorizedActionException => Future.failed(HATApiForbiddenException(e.getMessage, e))
           case e: ApiException                => Future.failed(HATApiCommunicationException(e.getMessage, e))
@@ -150,6 +152,7 @@ trait DataPlugEndpointInterface extends DataPlugApiEndpointClient with RequestAu
         }
     }
     else {
+      logger.info(s"[trace:nosync] [$hatAddress] [$namespace:$endpoint] [0:entities]")
       Future.successful(Done)
     }
   }

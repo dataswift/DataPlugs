@@ -23,7 +23,7 @@
   <!-- GENERAL APP LOGGERS -->
   <logger name="ch.qos.logback" level="WARN" />
   <logger name="play" level="INFO" />
-  <logger name="http" level="INFO" />
+  <logger name="api" level="INFO" />
   <logger name="application" level="INFO" />
 
   <!-- PLUG-SPECIFIC LOGGERS -->
