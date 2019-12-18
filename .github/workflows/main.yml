@@ -3,7 +3,7 @@ name: Build live package
 on:
   push:
     tags:
-      - /github-test/
+      - 'github-test-v*.*.**'
 
 jobs:
   deploy-dev:
