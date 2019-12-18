@@ -1,8 +1,9 @@
 name: Build live package
 
 on:
-  tag:
-    - /github-test/
+  push:
+    tags:
+      - /github-test/
 
 jobs:
   deploy-dev:
