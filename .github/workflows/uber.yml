@@ -1,12 +1,12 @@
-name: Build live package
+name: Build Uber plug
 
 on:
   push:
     tags:
-      - 'github-test-v*.*.**'
+      - 'uber-v*.*.**'
 
 jobs:
-  deploy-dev:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
@@ -21,5 +21,5 @@ jobs:
           docker login -u "${{secrets.DOCKER_USERNAME}}" -p "${{secrets.DOCKER_PASSWORD}}"
           docker push hubofallthings/$REPOSITORY
         env:
-          DATAPLUG: dataplug-facebook
-          REPOSITORY: dataplug-facebook-dev
+          DATAPLUG: dataplug-uber
+          REPOSITORY: dataplug-uber
