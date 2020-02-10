@@ -22,4 +22,4 @@ jobs:
           docker push hubofallthings/$REPOSITORY
         env:
           DATAPLUG: dataplug-twitter
-          REPOSITORY: dataplug-TWITTTER
+          REPOSITORY: dataplug-twitter
