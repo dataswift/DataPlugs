@@ -1,0 +1,25 @@
+name: Build Google Calendar DEV plug
+
+on:
+  push:
+    tags:
+      - 'dev-google-calendar-v*.*.**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Setup NodeJs environment
+        uses: actions/setup-node@v1
+        with:
+          node-version: '10.x'
+      - name: Build plug
+        run: |
+          sbt "project $DATAPLUG" "docker:stage"
+          docker build -t hubofallthings/$REPOSITORY $DATAPLUG/target/docker/stage/
+          docker login -u "${{secrets.DOCKER_USERNAME}}" -p "${{secrets.DOCKER_PASSWORD}}"
+          docker push hubofallthings/$REPOSITORY
+        env:
+          DATAPLUG: dataplug-google-calendar
+          REPOSITORY: dataplug-google-calendar-dev
