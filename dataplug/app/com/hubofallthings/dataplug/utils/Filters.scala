@@ -66,7 +66,7 @@ class LoggingFilter @Inject() (configuration: Configuration)(implicit val mat: M
     }
   }
 
-  private val authTokenFieldName: String = configuration.get[String]("silhouette.authenticator.fieldName")
+  private val authTokenFieldName: String = configuration.getOptional[String]("silhouette.authenticator.fieldName").getOrElse("X-Auth-Token")
 
   private def processQueryParameters(requestHeader: RequestHeader): String = {
     requestHeader.queryString.toList.map { case (k, v) => s"[$k:${v.mkString("")}]" }.mkString(" ")
