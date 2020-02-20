@@ -103,10 +103,10 @@ lazy val dataplugTwitter = Project(id = "dataplug-twitter", base = file("dataplu
   .settings(packageSettings)
   .dependsOn(dataplug)
 
-lazy val dataplugGoogleCalendar = Project(id = "dataplug-google-calendar", base = file("dataplug-google-calendar"))
+lazy val dataplugGcalendar = Project(id = "dataplug-gcalendar", base = file("dataplug-gcalendar"))
   .enablePlugins(BasicSettings)
   .settings(
-    name := "dataplug-google-calendar",
+    name := "dataplug-gcalendar",
     sourceDirectory in Assets := file(s"${baseDirectory.value}/app/com/hubofallthings/dataplugCalendar/assets")
   )
   .enablePlugins(PlayScala, SbtWeb, SbtSassify)
@@ -199,7 +199,7 @@ lazy val root = project
     .aggregate(
       dataplugFacebook,
       dataplugTwitter,
-      dataplugGoogleCalendar,
+      dataplugGcalendar,
       dataplugMonzo,
       dataplugFitbit,
       dataplugSpotify,
