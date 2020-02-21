@@ -91,3 +91,13 @@ DELETE FROM dataplug_user_status WHERE dataplug_endpoint = 'likes/pages';
 DELETE FROM dataplug_user WHERE dataplug_endpoint = 'likes/pages';
 DELETE FROM dataplug_endpoint WHERE name = 'likes/pages';
 
+--changeset dataplugFacebook:changeLimitToFeed2
+
+UPDATE dataplug_user
+SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters,limit}', '"100"')
+WHERE dataplug_user.dataplug_endpoint = 'feed';
+
+UPDATE dataplug_user
+SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters,limit}', '"100"')
+WHERE dataplug_user.dataplug_endpoint = 'posts';
+
