@@ -15,9 +15,10 @@ import com.hubofallthings.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelp
 import com.hubofallthings.dataplug.apiInterfaces.models.{ ApiEndpoint, ApiEndpointCall, ApiEndpointMethod, ApiEndpointVariant, ApiEndpointVariantChoice }
 import com.hubofallthings.dataplug.services.UserService
 import com.hubofallthings.dataplug.utils.Mailer
+import com.hubofallthings.dataplugInstagram.apiInterfaces.authProviders.InstagramProvider
+import com.hubofallthings.dataplugInstagram.models.InstagramProfile
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
-import com.mohiva.play.silhouette.impl.providers.oauth2.InstagramProvider
 import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.libs.ws.WSClient
@@ -36,34 +37,45 @@ class InstagramProfileCheck @Inject() (
   protected val logger: Logger = Logger(this.getClass)
 
   val defaultApiEndpoint = ApiEndpointCall(
-    "https://api.instagram.com/v1",
-    "/users/self",
+    "https://graph.instagram.com",
+    "/me",
     ApiEndpointMethod.Get("Get"),
     Map(),
-    Map(),
+    Map("fields" -> "username,account_type,media_count"),
     Map(),
     Some(Map()))
 
-  def generateEndpointChoices(responseBody: Option[JsValue]): Seq[ApiEndpointVariantChoice] = staticEndpointChoices
+  def generateEndpointChoices(responseBody: Option[JsValue]): Seq[ApiEndpointVariantChoice] = {
+    val test = staticEndpointChoices ++ generateMediaEndpoints(responseBody)
+    logger.debug(s"endpoints are $test")
+    test
+  }
 
   def staticEndpointChoices: Seq[ApiEndpointVariantChoice] = {
     val profileVariant = ApiEndpointVariant(
       ApiEndpoint("profile", "User's Instagram profile information", None),
-      Some(""), Some(""),
+      Some(""),
+      Some(""),
       Some(InstagramProfileInterface.defaultApiEndpoint))
 
-    val feedVariant = ApiEndpointVariant(
-      ApiEndpoint("feed", "User's Instagram posts feed", None),
-      Some(""), Some(""),
-      Some(InstagramFeedInterface.defaultApiEndpoint))
-
-    val choices = Seq(
-      ApiEndpointVariantChoice("profile", "User's Instagram profile information", active = true, profileVariant),
-      ApiEndpointVariantChoice("feed", "User's Instagram posts feed", active = true, feedVariant))
-
-    choices
+    Seq(ApiEndpointVariantChoice("profile", "User's Instagram profile information", active = true, profileVariant))
   }
 
   override def attachAccessToken(params: ApiEndpointCall, authInfo: OAuth2Info): ApiEndpointCall =
     params.copy(queryParameters = params.queryParameters + ("access_token" -> authInfo.accessToken))
+
+  private def generateMediaEndpoints(maybeResponseBody: Option[JsValue]): Seq[ApiEndpointVariantChoice] = {
+    maybeResponseBody.map { responseBody =>
+      responseBody.asOpt[InstagramProfile].map { profile =>
+        val pathParameters = InstagramFeedInterface.defaultApiEndpoint.pathParameters + ("userId" -> profile.id)
+        val variant = ApiEndpointVariant(
+          ApiEndpoint("feed", "User's Instagram media", None),
+          Some(profile.id),
+          None,
+          Some(InstagramFeedInterface.defaultApiEndpoint.copy(pathParameters = pathParameters)))
+
+        Seq(ApiEndpointVariantChoice(profile.id, "User's Instagram profile information", active = true, variant))
+      }.getOrElse(Seq())
+    }.getOrElse(Seq())
+  }
 }

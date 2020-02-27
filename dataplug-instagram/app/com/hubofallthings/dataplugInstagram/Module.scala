@@ -14,13 +14,13 @@ import com.hubofallthings.dataplug.actors.DataPlugManagerActor
 import com.hubofallthings.dataplug.apiInterfaces.{ DataPlugOptionsCollector, DataPlugOptionsCollectorRegistry, DataPlugRegistry }
 import com.hubofallthings.dataplug.controllers.{ DataPlugViewSet, DataPlugViewSetDefault }
 import com.hubofallthings.dataplug.dal.SchemaMigrationImpl
-import com.hubofallthings.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl, DataPlugSharedNotableDAO, DataPlugSharedNotableDAOImpl }
-import com.hubofallthings.dataplug.services.{ DataPlugEndpointService, DataPlugEndpointServiceImpl, DataPlugNotablesService, DataPlugNotablesServiceImpl, StartupService, StartupServiceImpl }
+import com.hubofallthings.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl }
+import com.hubofallthings.dataplug.services.{ DataPlugEndpointService, DataPlugEndpointServiceImpl, StartupService, StartupServiceImpl }
 import com.hubofallthings.dataplugInstagram.apiInterfaces.{ InstagramFeedInterface, InstagramProfileCheck, InstagramProfileInterface }
+import com.hubofallthings.dataplugInstagram.apiInterfaces.authProviders.InstagramProvider
 import com.mohiva.play.silhouette.api.Provider
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.providers._
-import com.mohiva.play.silhouette.impl.providers.oauth2.InstagramProvider
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.codingwell.scalaguice.ScalaModule
@@ -42,9 +42,7 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
     bind[StartupService].to[StartupServiceImpl].asEagerSingleton()
 
     bind[DataPlugEndpointDAO].to[DataPlugEndpointDAOImpl]
-    bind[DataPlugSharedNotableDAO].to[DataPlugSharedNotableDAOImpl]
     bind[DataPlugEndpointService].to[DataPlugEndpointServiceImpl]
-    bind[DataPlugNotablesService].to[DataPlugNotablesServiceImpl]
 
     bind[DataPlugViewSet].to[DataPlugViewSetDefault]
 

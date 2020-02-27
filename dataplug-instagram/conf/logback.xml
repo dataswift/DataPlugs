@@ -30,6 +30,10 @@
   <logger name="com.hubofallthings.dataplugInstagram.apiInterfaces.*" level="INFO" />
   <logger name="com.hubofallthings.dataplugInstagram.controllers.Api" level="INFO" />
   <logger name="com.hubofallthings.dataplugInstagram.apiInterfaces.InstagramFeedInterface" level="DEBUG" />
+  <logger name="com.hubofallthings.dataplugInstagram.apiInterfaces.InstagramProfileCheck" level="DEBUG" />
+  <logger name="com.hubofallthings.dataplugInstagram.apiInterfaces.authProviders.BaseInstagramProvider" level="DEBUG" />
+  <logger name="com.hubofallthings.dataplugInstagram.apiInterfaces.authProviders.BaseInstagramProvider$class" level="DEBUG" />
+  <logger name="com.hubofallthings.dataplugInstagram.apiInterfaces.authProviders.InstagramProvider" level="DEBUG" />
 
   <!-- CORE PLUG LOGGERS -->
   <logger name="com.hubofallthings.dataplug.*" level="INFO" />
@@ -37,9 +41,11 @@
   <logger name="com.hubofallthings.dataplug.services.*" level="INFO" />
   <logger name="com.hubofallthings.dataplug.controllers.*" level="INFO"/>
   <logger name="com.hubofallthings.dataplug.controllers.Api" level="INFO"/>
+  <logger name="com.hubofallthings.dataplug.controllers.SocialAuthController" level="DEBUG"/>
   <logger name="com.hubofallthings.dataplug.controllers.Application" level="INFO"/>
   <logger name="com.hubofallthings.dataplug.utils.JwtPhataAuthenticatedAction" level="INFO" />
   <logger name="com.hubofallthings.dataplug.utils.JwtPhataAwareAction" level="INFO" />
+  <logger name="com.mohiva.play.silhouette.impl.providers.OAuth2Provider" level="DEBUG" />
 
   <!-- LIBRARY LOGGERS -->
   <logger name="org.hatdex.dexter.actors.HatClientActor" level="INFO" />
