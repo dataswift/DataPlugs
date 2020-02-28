@@ -90,9 +90,7 @@ class InstagramProfileParser extends SocialProfileParser[JsValue, CommonSocialPr
    */
   override def parse(json: JsValue, authInfo: OAuth2Info) = Future.successful {
     val userID = (json \ "id").as[String]
-
-    CommonSocialProfile(
-      loginInfo = LoginInfo(ID, userID))
+    CommonSocialProfile(loginInfo = LoginInfo(ID, userID))
   }
 }
 
