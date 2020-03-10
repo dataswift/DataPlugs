@@ -1,0 +1,17 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+
+GET         /dataplug/assets/*file         com.hubofallthings.dataplug.controllers.Assets.versioned(path="/public/lib/dataplug", file)
+GET         /assets/*file                  com.hubofallthings.dataplug.controllers.Assets.versioned(path="/public/", file)
+
+GET         /                              com.hubofallthings.dataplugYapily.controllers.YapilyApplication.index
+GET         /signin                        com.hubofallthings.dataplug.controllers.Application.signIn
+POST        /connect                       com.hubofallthings.dataplug.controllers.Application.connectVariants()
+GET         /disconnect                    com.hubofallthings.dataplug.controllers.Application.disconnect()
+GET         /authenticate/hat              com.hubofallthings.dataplug.controllers.HatLoginController.authHat(redirect: Option[String])
+POST        /signin/hat                    com.hubofallthings.dataplug.controllers.HatLoginController.signinHat()
+GET         /authenticate/:provider        com.hubofallthings.dataplug.controllers.SocialAuthController.authenticate(provider)
+
+GET         /api/tickle                    com.hubofallthings.dataplug.controllers.Api.tickle
+GET         /api/status                    com.hubofallthings.dataplug.controllers.Api.status
+GET         /api/permissions               com.hubofallthings.dataplug.controllers.Api.permissions

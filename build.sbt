@@ -187,6 +187,18 @@ lazy val dataplugUber = Project(id = "dataplug-uber", base = file("dataplug-uber
   .settings(packageSettings)
   .dependsOn(dataplug)
 
+lazy val dataplugYapily = Project(id = "dataplug-yapily", base = file("dataplug-yapily"))
+  .enablePlugins(BasicSettings)
+  .settings(
+    name := "dataplug-yapily",
+    sourceDirectory in Assets := file(s"${baseDirectory.value}/app/com/hubofallthings/dataplugYapily/assets")
+  )
+  .enablePlugins(PlayScala, SbtWeb, SbtSassify)
+  .settings(buildSettings)
+  .enablePlugins(AshScriptPlugin)
+  .settings(packageSettings)
+  .dependsOn(dataplug)
+
 lazy val root = project
     .in(file("."))
     .settings(
@@ -205,5 +217,6 @@ lazy val root = project
       dataplugSpotify,
       dataplugStarling,
       dataplugInstagram,
-      dataplugUber
+      dataplugUber,
+      dataplugYapily
     )

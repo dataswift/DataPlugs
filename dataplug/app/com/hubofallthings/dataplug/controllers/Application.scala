@@ -90,7 +90,7 @@ class Application @Inject() (
       }
   }
 
-  private def handleUserWithChoice(
+  protected def handleUserWithChoice(
     variantChoices: Seq[ApiEndpointVariantChoice],
     apiEndpointStatuses: Seq[ApiEndpointStatus])(implicit requestHeader: RequestHeader, user: User): Result = {
     logger.debug(s"Let user choose what to sync: $variantChoices")

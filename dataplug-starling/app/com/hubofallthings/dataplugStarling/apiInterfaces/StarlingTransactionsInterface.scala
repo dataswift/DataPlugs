@@ -14,22 +14,22 @@ import akka.util.Timeout
 import com.google.inject.Inject
 import com.hubofallthings.dataplug.actors.Errors.SourceDataProcessingException
 import com.hubofallthings.dataplug.apiInterfaces.DataPlugEndpointInterface
-import com.hubofallthings.dataplug.apiInterfaces.authProviders.{OAuth2TokenHelper, RequestAuthenticatorOAuth2}
-import com.hubofallthings.dataplug.apiInterfaces.models.{ApiEndpointCall, ApiEndpointMethod}
+import com.hubofallthings.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
+import com.hubofallthings.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
 import com.hubofallthings.dataplug.services.UserService
-import com.hubofallthings.dataplug.utils.{AuthenticatedHatClient, FutureTransformations, Mailer}
+import com.hubofallthings.dataplug.utils.{ AuthenticatedHatClient, FutureTransformations, Mailer }
 import com.hubofallthings.dataplugStarling.apiInterfaces.authProviders.StarlingProvider
 import com.hubofallthings.dataplugStarling.models.StarlingTransaction
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import org.joda.time.{DateTime, DateTimeZone}
-import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
+import org.joda.time.{ DateTime, DateTimeZone }
+import org.joda.time.format.{ DateTimeFormat, DateTimeFormatter }
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Success, Try }
 
 class StarlingTransactionsInterface @Inject() (
     val wsClient: WSClient,
