@@ -19,7 +19,7 @@ import scala.concurrent.Future
 /**
  * Base Instagram OAuth2 Provider.
  *
- * @see https://monzo.com/docs/#authentication
+ * @see https://docs.yapily.com/?version=latest
  */
 trait BaseInstagramProvider extends OAuth2Provider {
 
@@ -62,7 +62,7 @@ trait BaseInstagramProvider extends OAuth2Provider {
   }
 
   private def getLongLivedToken(authInfo: OAuth2Info): Future[OAuth2Info] = {
-    val clientSecret = sys.env("API_CLIENT_SECRET")
+    val clientSecret = settings.clientSecret
     httpLayer
       .url(s"https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=$clientSecret&access_token=${authInfo.accessToken}")
       .get().flatMap { response =>
