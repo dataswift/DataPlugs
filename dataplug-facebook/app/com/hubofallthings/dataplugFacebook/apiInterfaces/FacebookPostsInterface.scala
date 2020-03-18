@@ -24,7 +24,6 @@ import com.mohiva.play.silhouette.impl.providers.oauth2.FacebookProvider
 import play.api.Logger
 import play.api.libs.json.{ JsArray, JsObject, JsValue }
 import play.api.libs.ws.WSClient
-import slick.util.Logging
 
 import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
@@ -155,7 +154,7 @@ object FacebookPostsInterface {
     "/me/posts",
     ApiEndpointMethod.Get("Get"),
     Map(),
-    Map("limit" -> "250", "fields" -> ("id,attachments,caption,created_time,description,from,full_picture,icon,link," +
+    Map("limit" -> "100", "fields" -> ("id,attachments,caption,created_time,description,from,full_picture,icon,link," +
       "is_instagram_eligible,is_spherical,message,message_tags,name,object_id,permalink_url,place,shares,status_type,type,updated_time,with_tags")),
     Map(),
     Some(Map()))
