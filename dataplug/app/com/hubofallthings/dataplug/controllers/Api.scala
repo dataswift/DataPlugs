@@ -12,7 +12,7 @@ import com.hubofallthings.dataplug.actors.IoExecutionContext
 import com.hubofallthings.dataplug.models.User
 import com.hubofallthings.dataplug.apiInterfaces.models.JsonProtocol.endpointStatusFormat
 import com.hubofallthings.dataplug.services.{ DataPlugEndpointService, DataplugSyncerActorManager, HatTokenService }
-import com.hubofallthings.dataplug.utils.{ JwtPhataAuthenticatedAction, JwtPhataAwareAction }
+import com.hubofallthings.dataplug.utils.{ JwtPhataAuthenticatedAction, JwtPhataAwareAction, Mailer }
 import javax.inject.Inject
 import com.nimbusds.jwt.SignedJWT
 import org.hatdex.hat.api.models.ErrorMessage
@@ -38,6 +38,7 @@ class Api @Inject() (
     tokenUserAuthenticatedAction: JwtPhataAuthenticatedAction,
     dataPlugEndpointService: DataPlugEndpointService,
     hatTokenService: HatTokenService,
+    mailer: Mailer,
     syncerActorManager: DataplugSyncerActorManager) extends AbstractController(components) {
 
   protected val ioEC: ExecutionContext = IoExecutionContext.ioThreadPool
@@ -62,39 +63,49 @@ class Api @Inject() (
   }
 
   def status: Action[AnyContent] = tokenUserAuthenticatedAction.async { implicit request =>
-    val token = request.headers.get("X-Auth-Token").get
+    request.headers.get("X-Auth-Token").map { token =>
+      // Check if the user has the required social profile linked
+      Try(SignedJWT.parse(token)).map { parsedToken =>
+        request.identity.linkedUsers.find(_.providerId == provider) map { _ =>
+          val tokenIssueDate = new DateTime(parsedToken.getJWTClaimsSet.getIssueTime)
+          val eventualTokenInsertOrUpdate = hatTokenService.save(request.identity.userId, token, tokenIssueDate)
 
-    // Check if the user has the required social profile linked
-    Try(SignedJWT.parse(token)).map { parsedToken =>
-      request.identity.linkedUsers.find(_.providerId == provider) map { _ =>
-        val tokenIssueDate = new DateTime(parsedToken.getJWTClaimsSet.getIssueTime)
-        val eventualTokenInsertOrUpdate = hatTokenService.save(request.identity.userId, token, tokenIssueDate)
-
-        eventualTokenInsertOrUpdate.flatMap {
-          case Left(_) =>
-            logger.info(s"Registered new HAT token for ${request.identity.userId}")
-            Future.successful(Ok(Json.toJson(JsArray())))
-          case Right(_) =>
-            for {
-              choices <- syncerActorManager.currentProviderApiVariantChoices(request.identity, provider)(ioEC) if choices.exists(_.active)
-              apiEndpointStatuses <- dataPlugEndpointService.listCurrentEndpointStatuses(request.identity.userId)
-              _ <- syncerActorManager.runPhataActiveVariantChoices(request.identity.userId, token)
-            } yield {
-              logger.info(s"Refreshed HAT token for ${request.identity.userId}")
-              Ok(Json.toJson(apiEndpointStatuses))
-            }
-        }.recover {
-          // In case fetching current endpoint statuses failed, assume the issue came from refreshing data from the provider
-          // Also catches any failures related to HAT token saving
-          case _ => Forbidden(
-            Json.toJson(ErrorMessage(
-              "Forbidden",
-              "The user is not authorized to access remote data - has Access Token been revoked?")))
+          eventualTokenInsertOrUpdate.flatMap {
+            case Left(_) =>
+              logger.info(s"Registered new HAT token for ${request.identity.userId}")
+              Future.successful(Ok(Json.toJson(JsArray())))
+            case Right(_) =>
+              for {
+                choices <- syncerActorManager.currentProviderApiVariantChoices(request.identity, provider)(ioEC) if choices.exists(_.active)
+                apiEndpointStatuses <- dataPlugEndpointService.listCurrentEndpointStatuses(request.identity.userId)
+                _ <- syncerActorManager.runPhataActiveVariantChoices(request.identity.userId, token)
+              } yield {
+                logger.info(s"Refreshed HAT token for ${request.identity.userId}")
+                Ok(Json.toJson(apiEndpointStatuses))
+              }
+          }.recover {
+            // In case fetching current endpoint statuses failed, assume the issue came from refreshing data from the provider
+            // Also catches any failures related to HAT token saving
+            case _ =>
+              logger.warn(s"The user is not authorized to access remote data - has Access Token been revoked?. Token:\n$token")
+              Forbidden(
+                Json.toJson(ErrorMessage(
+                  "Forbidden",
+                  "The user is not authorized to access remote data - has Access Token been revoked?")))
+          }
+        } getOrElse {
+          Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Required social profile ($provider) not connected"))))
         }
-      } getOrElse {
-        Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Required social profile ($provider) not connected"))))
+      }.getOrElse {
+        mailer.serverExceptionNotifyInternal(s"Token could not get parsed", new Exception("Token could not get parsed"))
+        logger.warn(s"Token could not get parsed. Token is: $token")
+        Future.successful(BadRequest(Json.toJson(ErrorMessage("Bad request", s"Token could not get parsed. Token is: $token"))))
       }
-    }.get
+    }.getOrElse {
+      mailer.serverExceptionNotifyInternal(s"No token present in headers. ${request.headers}", new NoSuchFieldException("Token not found"))
+      logger.error(s"No token present in headers. ${request.headers}")
+      Future.successful(BadRequest(Json.toJson(ErrorMessage("Bad request", s"Could not find token in headers"))))
+    }
   }
 
   def permissions: Action[AnyContent] = tokenUserAuthenticatedAction.async { implicit request =>

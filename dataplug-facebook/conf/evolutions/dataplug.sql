@@ -47,4 +47,57 @@ UPDATE dataplug_user
 SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters,fields}', '"id,first_name,last_name,middle_name,name,link,age_range,birthday,email,languages,public_key,relationship_status,religion,significant_other,sports,friends"')
 WHERE dataplug_user.dataplug_endpoint = 'profile';
 
+--changeset dataplugFacebook:addMoreProfileFieldsDueToRequirements
+
+UPDATE dataplug_user
+SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters}', '{"fields":"id,first_name,last_name,middle_name,name,link,age_range,email,languages,name_format,public_key,relationship_status,religion,significant_other,sports,friends","summary":"total_count"}')
+WHERE dataplug_user.dataplug_endpoint = 'profile';
+
+--changeset dataplugFacebook:updateConfigurationToV5
+
+UPDATE dataplug_user
+SET endpoint_configuration = jsonb_set(endpoint_configuration, '{url}', '"https://graph.facebook.com/v5.0"')
+WHERE dataplug_user.endpoint_configuration -> 'url' = '"https://graph.facebook.com/v2.10"'
+
+--changeset dataplugFacebook:endpointsInsertUserPosts context:data
+
+INSERT INTO dataplug_endpoint (name, description, details)
+VALUES
+  ('posts', 'User''s own Facebook posts', 'sequence')
+ON CONFLICT (name) DO NOTHING;
+
+--changeset dataplugFacebook:addMoreIsSphericalToPosts
+
+UPDATE dataplug_user
+SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters}', '{"fields":"id,attachments,caption,created_time,description,from,full_picture,icon,link,is_instagram_eligible,is_spherical,message,message_tags,name,object_id,permalink_url,place,shares,status_type,type,updated_time,with_tags","limit":"250"}')
+WHERE dataplug_user.dataplug_endpoint = 'posts';
+
+--changeset dataplugFacebook:changeLimitToFeed
+
+UPDATE dataplug_user
+SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters,limit}', '"250"')
+WHERE dataplug_user.dataplug_endpoint = 'feed';
+
+--changeset dataplugFacebook:resetFeedEndpoint
+
+UPDATE dataplug_user
+SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters}', '{"fields":"id,attachments,caption,created_time,description,from,full_picture,icon,link,is_instagram_eligible,message,message_tags,name,object_id,permalink_url,place,shares,status_type,type,updated_time,with_tags","limit":"250"}')
+WHERE dataplug_user.phata = (SELECT phata FROM dataplug_user AS u WHERE u.dataplug_endpoint = 'posts' AND dataplug_user.phata = u.phata) AND dataplug_user.dataplug_endpoint = 'feed';
+
+--changeset dataplugFacebook:removeUserLikesEndpoint context:data
+
+ALTER TABLE log_dataplug_user DROP CONSTRAINT log_dataplug_user_dataplug_endpoint_fkey;
+DELETE FROM dataplug_user_status WHERE dataplug_endpoint = 'likes/pages';
+DELETE FROM dataplug_user WHERE dataplug_endpoint = 'likes/pages';
+DELETE FROM dataplug_endpoint WHERE name = 'likes/pages';
+
+--changeset dataplugFacebook:changeLimitToFeed2
+
+UPDATE dataplug_user
+SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters,limit}', '"100"')
+WHERE dataplug_user.dataplug_endpoint = 'feed';
+
+UPDATE dataplug_user
+SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters,limit}', '"100"')
+WHERE dataplug_user.dataplug_endpoint = 'posts';
 

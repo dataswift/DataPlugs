@@ -89,7 +89,7 @@ class FacebookProfilePictureInterface @Inject() (
 
 object FacebookProfilePictureInterface {
   val defaultApiEndpoint = ApiEndpointCall(
-    "https://graph.facebook.com/v2.10",
+    "https://graph.facebook.com/v5.0",
     "/me/picture",
     ApiEndpointMethod.Get("Get"),
     Map(),

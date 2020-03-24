@@ -10,7 +10,10 @@ lazy val buildSettings = Seq(
 )
 
 lazy val packageSettings = Seq(
-  javaOptions in Universal ++= Seq("-Dhttp.port=9000", "-Dlogger.resource=logback.xml"),
+  javaOptions in Universal ++= Seq(
+    "-Dhttp.port=9000",
+    "-Dlogger.resource=logback.xml",
+    "-Dconfig.file=/opt/docker/conf/application.conf"),
   javaOptions in Test += "-Dconfig.file=conf/application.test.conf",
   packageName in Docker := packageName.value,
   maintainer in Docker := maintainer.value,
@@ -100,10 +103,10 @@ lazy val dataplugTwitter = Project(id = "dataplug-twitter", base = file("dataplu
   .settings(packageSettings)
   .dependsOn(dataplug)
 
-lazy val dataplugGoogleCalendar = Project(id = "dataplug-google-calendar", base = file("dataplug-google-calendar"))
+lazy val dataplugGcalendar = Project(id = "dataplug-gcalendar", base = file("dataplug-gcalendar"))
   .enablePlugins(BasicSettings)
   .settings(
-    name := "dataplug-google-calendar",
+    name := "dataplug-gcalendar",
     sourceDirectory in Assets := file(s"${baseDirectory.value}/app/com/hubofallthings/dataplugCalendar/assets")
   )
   .enablePlugins(PlayScala, SbtWeb, SbtSassify)
@@ -196,7 +199,7 @@ lazy val root = project
     .aggregate(
       dataplugFacebook,
       dataplugTwitter,
-      dataplugGoogleCalendar,
+      dataplugGcalendar,
       dataplugMonzo,
       dataplugFitbit,
       dataplugSpotify,

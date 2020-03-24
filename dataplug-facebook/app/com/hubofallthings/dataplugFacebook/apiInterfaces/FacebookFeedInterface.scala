@@ -147,16 +147,15 @@ class FacebookFeedInterface @Inject() (
       Failure(SourceDataProcessingException(s"Error parsing JSON object, necessary property not found."))
     }
   }
-
 }
 
 object FacebookFeedInterface {
   val defaultApiEndpoint = ApiEndpointCall(
-    "https://graph.facebook.com/v2.10",
+    "https://graph.facebook.com/v5.0",
     "/me/feed",
     ApiEndpointMethod.Get("Get"),
     Map(),
-    Map("limit" -> "500", "fields" -> ("id,attachments,caption,created_time,description,from,full_picture,icon,link," +
+    Map("limit" -> "100", "fields" -> ("id,attachments,caption,created_time,description,from,full_picture,icon,link," +
       "is_instagram_eligible,message,message_tags,name,object_id,permalink_url,place,shares,status_type,type,updated_time,with_tags")),
     Map(),
     Some(Map()))

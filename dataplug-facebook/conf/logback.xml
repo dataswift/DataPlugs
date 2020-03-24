@@ -12,7 +12,7 @@
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <target>System.out</target>
     <encoder>
-      <pattern>[%level] [%date{YYYY-MM-dd HH:mm:ss}] %logger{1} - %msg%n</pattern>
+      <pattern>[%level] [%date{YYYY-MM-dd HH:mm:ss}] [%logger{1}] %msg%n</pattern>
     </encoder>
   </appender>
 
@@ -23,7 +23,7 @@
   <!-- GENERAL APP LOGGERS -->
   <logger name="ch.qos.logback" level="WARN" />
   <logger name="play" level="INFO" />
-  <logger name="http" level="INFO" />
+  <logger name="api" level="INFO" />
   <logger name="application" level="INFO" />
 
   <!-- PLUG-SPECIFIC LOGGERS -->

@@ -1,9 +1,8 @@
 /*
  * Copyright (C) 2019 Dataswift Ltd - All Rights Reserved
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- * Written by Marios Tsekis <marios.tsekis@dataswift.io> 3, 2019
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ * Written by Marios Tsekis <marios.tsekis@dataswift.io>, 11 2019
  */
 
 package com.hubofallthings.dataplugFacebook.apiInterfaces
@@ -19,18 +18,18 @@ import com.hubofallthings.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelp
 import com.hubofallthings.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
 import com.hubofallthings.dataplug.services.UserService
 import com.hubofallthings.dataplug.utils.{ AuthenticatedHatClient, FutureTransformations, Mailer }
-import com.hubofallthings.dataplugFacebook.models.{ FacebookPost, FacebookUserLikes }
+import com.hubofallthings.dataplugFacebook.models.FacebookPost
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.oauth2.FacebookProvider
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.{ JsArray, JsObject, JsValue }
 import play.api.libs.ws.WSClient
 
-import scala.concurrent.{ ExecutionContext, Future }
 import scala.concurrent.duration._
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
 
-class FacebookUserLikesInterface @Inject() (
+class FacebookPostsInterface @Inject() (
     val wsClient: WSClient,
     val userService: UserService,
     val authInfoRepository: AuthInfoRepository,
@@ -39,19 +38,24 @@ class FacebookUserLikesInterface @Inject() (
     val scheduler: Scheduler,
     val provider: FacebookProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
 
-  val defaultApiEndpoint = FacebookUserLikesInterface.defaultApiEndpoint
-
   val namespace: String = "facebook"
-  val endpoint: String = "likes/pages"
+  val endpoint: String = "posts"
   protected val logger: Logger = Logger(this.getClass)
 
-  val refreshInterval = 1.day // No idea if this is ideal, might do with longer?
+  val defaultApiEndpoint = FacebookPostsInterface.defaultApiEndpoint
+
+  val refreshInterval = 1.hour
 
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     logger.debug("Building continuation...")
 
+    logger.debug(s"Content is $content")
+
     val maybeNextPage = (content \ "paging" \ "next").asOpt[String]
-    val maybeBeforeParam = params.pathParameters.get("before")
+    val maybeSinceParam = params.pathParameters.get("since")
+
+    logger.debug(s"Found possible next page link: $maybeNextPage")
+    logger.debug(s"Found possible next since parameter: $maybeSinceParam")
 
     maybeNextPage.map { nextPage =>
       logger.debug(s"Found next page link (continuing sync): $nextPage")
@@ -61,20 +65,23 @@ class FacebookUserLikesInterface @Inject() (
 
       logger.debug(s"Updated query parameters: $updatedQueryParams")
 
-      if (maybeBeforeParam.isDefined) {
-        logger.debug("\"Before\" parameter already set, updating query params")
+      if (maybeSinceParam.isDefined) {
+        logger.debug("\"Since\" parameter already set, updating query params")
         params.copy(queryParameters = updatedQueryParams)
       }
       else {
-        (content \ "paging" \ "cursors" \ "before").asOpt[String].map { beforeParameter =>
-          val updatedPathParams = params.pathParameters + ("before" -> beforeParameter)
+        (content \ "paging" \ "previous").asOpt[String].flatMap { previousPage =>
+          val previousPageUri = Uri(previousPage)
+          previousPageUri.query().get("since").map { sinceParam =>
+            val updatedPathParams = params.pathParameters + ("since" -> sinceParam)
 
-          logger.debug(s"Updating query params and setting 'before': $beforeParameter")
-          params.copy(pathParameters = updatedPathParams, queryParameters = updatedQueryParams)
+            logger.debug(s"Updating query params and setting 'since': $sinceParam")
+            params.copy(pathParameters = updatedPathParams, queryParameters = updatedQueryParams)
+          }
+        }.getOrElse {
+          logger.warn("Unexpected API behaviour: 'since' not set and it was not possible to extract it from response body")
+          params.copy(queryParameters = updatedQueryParams)
         }
-      }.getOrElse {
-        logger.warn("Unexpected API behaviour: 'before' not set and it was not possible to extract it from response body")
-        params.copy(queryParameters = updatedQueryParams)
       }
     }
   }
@@ -82,24 +89,24 @@ class FacebookUserLikesInterface @Inject() (
   def buildNextSync(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
     logger.debug(s"Building next sync...")
 
-    val maybeBeforeParam = params.pathParameters.get("before")
-    val updatedQueryParams = params.queryParameters - "after" - "access_token"
+    val maybeSinceParam = params.pathParameters.get("since")
+    val updatedQueryParams = params.queryParameters - "__paging_token" - "until" - "access_token"
 
     logger.debug(s"Updated query parameters: $updatedQueryParams")
 
-    maybeBeforeParam.map { beforeParameter =>
-      logger.debug(s"Building next sync parameters $updatedQueryParams with 'before': $beforeParameter")
-      params.copy(pathParameters = params.pathParameters - "before", queryParameters = updatedQueryParams + ("before" -> beforeParameter))
+    maybeSinceParam.map { sinceParameter =>
+      logger.debug(s"Building next sync parameters $updatedQueryParams with 'since': $sinceParameter")
+      params.copy(pathParameters = params.pathParameters - "since", queryParameters = updatedQueryParams + ("since" -> sinceParameter))
     }.getOrElse {
-      val maybePreviousPage = (content \ "paging" \ "cursors" \ "before").asOpt[String]
+      val maybePreviousPage = (content \ "paging" \ "previous").asOpt[String]
 
-      logger.debug("'Before' parameter not found (likely no continuation runs), setting one now")
+      logger.debug("'Since' parameter not found (likely no continuation runs), setting one now")
       maybePreviousPage.flatMap { previousPage =>
-        Uri(previousPage).query().get("before").map { newBefore =>
-          params.copy(queryParameters = params.queryParameters + ("before" -> newBefore))
+        Uri(previousPage).query().get("since").map { newSinceParam =>
+          params.copy(queryParameters = params.queryParameters + ("since" -> newSinceParam))
         }
       }.getOrElse {
-        logger.warn("Could not extract previous page 'before' parameter so the new value is not set. Was the feed list empty?")
+        logger.warn("Could not extract previous page 'since' parameter so the new value is not set. Was the feed list empty?")
         params
       }
     }
@@ -111,13 +118,8 @@ class FacebookUserLikesInterface @Inject() (
     hatClient: AuthenticatedHatClient,
     fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
-    val dataValidation =
-      transformData(content)
-        .map(validateMinDataStructure(_, hatAddress))
-        .getOrElse(Failure(SourceDataProcessingException(s"[$hatAddress] Source data malformed, could not insert date in to the structure")))
-
     for {
-      validatedData <- FutureTransformations.transform(dataValidation)
+      validatedData <- FutureTransformations.transform(validateMinDataStructure(content, hatAddress))
       _ <- uploadHatData(namespace, endpoint, validatedData, hatAddress, hatClient) // Upload the data
     } yield {
       logger.debug(s"Successfully synced new records for HAT $hatAddress")
@@ -125,30 +127,14 @@ class FacebookUserLikesInterface @Inject() (
     }
   }
 
-  private def transformData(rawData: JsValue): JsResult[JsObject] = {
-
-    val totalPagesLiked = (rawData \ "summary" \ "total_count").asOpt[JsNumber].getOrElse(JsNumber(0))
-    val transformation = (__ \ "data").json.update(
-      __.read[JsArray].map(pagesLikesData => {
-        val updatedLikesData = pagesLikesData.value.map { like =>
-          like.as[JsObject] ++ JsObject(Map("number_of_pages_liked" -> totalPagesLiked))
-        }
-
-        JsArray(updatedLikesData)
-      }))
-
-    rawData.transform(transformation)
-  }
-
   override def validateMinDataStructure(rawData: JsValue, hatAddress: String): Try[JsArray] = {
-
     (rawData \ "data").toOption.map {
-      case data: JsArray if data.validate[List[FacebookUserLikes]].isSuccess =>
+      case data: JsArray if data.validate[List[FacebookPost]].isSuccess =>
         logger.info(s"[$hatAddress] Validated JSON array of ${data.value.length} items.")
         Success(data)
       case data: JsArray =>
         logger.warn(s"[$hatAddress] Could not validate full item list. Parsing ${data.value.length} data items one by one.")
-        Success(JsArray(data.value.filter(_.validate[FacebookUserLikes].isSuccess)))
+        Success(JsArray(data.value.filter(_.validate[FacebookPost].isSuccess)))
       case data: JsObject =>
         logger.error(s"[$hatAddress] Error validating data, some of the required fields missing:\n${data.toString}")
         Failure(SourceDataProcessingException(s"Error validating data, some of the required fields missing."))
@@ -162,15 +148,14 @@ class FacebookUserLikesInterface @Inject() (
   }
 }
 
-object FacebookUserLikesInterface {
+object FacebookPostsInterface {
   val defaultApiEndpoint = ApiEndpointCall(
     "https://graph.facebook.com/v5.0",
-    "/me/likes",
+    "/me/posts",
     ApiEndpointMethod.Get("Get"),
     Map(),
-    Map("summary" -> "total_count", "limit" -> "500", "fields" -> ("id,about,created_time,app_links,awards,can_checkin,can_post,category,category_list,checkins," +
-      "description,description_html,display_subtext,emails,fan_count,has_added_app,has_whatsapp_number,link," +
-      "location,name,overall_star_rating,phone,place_type,rating_count,username,verification_status,website,whatsapp_number")),
+    Map("limit" -> "100", "fields" -> ("id,attachments,caption,created_time,description,from,full_picture,icon,link," +
+      "is_instagram_eligible,is_spherical,message,message_tags,name,object_id,permalink_url,place,shares,status_type,type,updated_time,with_tags")),
     Map(),
     Some(Map()))
 }

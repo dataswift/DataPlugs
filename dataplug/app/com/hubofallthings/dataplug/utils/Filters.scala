@@ -9,16 +9,18 @@
 package com.hubofallthings.dataplug.utils
 
 import javax.inject.Inject
-
 import akka.stream.Materializer
+import com.nimbusds.jose.JWSObject
+import com.nimbusds.jwt.JWTClaimsSet
 import play.api.http.DefaultHttpFilters
 import play.api.mvc._
-import play.api.{ Environment, Logger }
+import play.api.{ Configuration, Environment, Logger }
 import play.filters.cors.CORSFilter
 import play.filters.csrf.CSRFFilter
 import play.filters.headers.SecurityHeadersFilter
 
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.Try
 
 class Filters @Inject() (
     loggingFilter: LoggingFilter,
@@ -44,8 +46,8 @@ class TLSFilter @Inject() (implicit val mat: Materializer, ec: ExecutionContext,
   }
 }
 
-class LoggingFilter @Inject() (implicit val mat: Materializer, ec: ExecutionContext) extends Filter {
-  val logger = Logger("http")
+class LoggingFilter @Inject() (configuration: Configuration)(implicit val mat: Materializer, ec: ExecutionContext) extends Filter {
+  private val logger = Logger("api")
 
   def apply(nextFilter: RequestHeader => Future[Result])(requestHeader: RequestHeader): Future[Result] = {
 
@@ -57,9 +59,29 @@ class LoggingFilter @Inject() (implicit val mat: Materializer, ec: ExecutionCont
       val endTime = System.currentTimeMillis
       val requestTime = endTime - startTime
 
-      logger.info(s"[${requestHeader.remoteAddress}] [${requestHeader.method}:${requestHeader.host}${requestHeader.uri}] [${result.header.status}] TIME [${requestTime}]ms")
+      logger.info(s"[${requestHeader.remoteAddress}] [${requestHeader.method}:${requestHeader.host}:${requestHeader.path}] " +
+        s"[${result.header.status}] [$requestTime:ms] ${tokenInfo(requestHeader)} ${processQueryParameters(requestHeader)}")
 
       result.withHeaders("Request-Time" -> requestTime.toString)
     }
+  }
+
+  private val authTokenFieldName: String = configuration.getOptional[String]("silhouette.authenticator.fieldName").getOrElse("X-Auth-Token")
+
+  private def processQueryParameters(requestHeader: RequestHeader): String = {
+    requestHeader.queryString.toList.map { case (k, v) => s"[$k:${v.mkString("")}]" }.mkString(" ")
+  }
+
+  private def tokenInfo(requestHeader: RequestHeader): String = {
+    requestHeader.queryString.get("token").flatMap(_.headOption)
+      .orElse(requestHeader.headers.get(authTokenFieldName))
+      .flatMap(t ⇒ if (t.isEmpty) { None } else { Some(t) })
+      .flatMap(t ⇒ Try(JWSObject.parse(t)).toOption)
+      .map(o ⇒ JWTClaimsSet.parse(o.getPayload.toJSONObject))
+      .map { claimSet =>
+        s"[${Option(claimSet.getStringClaim("application")).getOrElse("api")}@" +
+          s"${Option(claimSet.getStringClaim("applicationVersion")).getOrElse("_")}]"
+      }
+      .getOrElse("[unauthenticated@_]")
   }
 }
