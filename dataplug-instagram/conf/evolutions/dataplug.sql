@@ -10,7 +10,7 @@ VALUES
 
 --changeset dataplugInstagram:backUpEndpoints context:data
 
-CREATE TABLE dataplug_user_old AS SELECT * FROM dataplug_user;
+CREATE TABLE dataplug_user_archive AS SELECT * FROM dataplug_user;
 
 --changeset dataplugInstagram:deleteEndpoints context:data
 
