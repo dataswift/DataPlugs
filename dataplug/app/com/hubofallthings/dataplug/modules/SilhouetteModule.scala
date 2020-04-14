@@ -13,7 +13,7 @@ import com.google.inject.{ AbstractModule, Provides }
 import com.hubofallthings.dataplug.controllers.ErrorHandler
 import com.hubofallthings.dataplug.dao.{ OAuth1InfoDAOImpl, OAuth2InfoDAOImpl, UserDAO, UserDAOImpl }
 import com.hubofallthings.dataplug.services.{ UserService, UserServiceImpl }
-import com.hubofallthings.dataplug.utils.{ IdentityVerificationCachedImpl, JwtIdentityVerification, PhataAuthenticationEnvironment }
+import com.hubofallthings.dataplug.utils.{ IdentityVerificationCachedImpl, ImprovedJcaSigner, JwtIdentityVerification, PhataAuthenticationEnvironment }
 import com.mohiva.play.silhouette.api.actions.{ SecuredErrorHandler, UnsecuredErrorHandler }
 import com.mohiva.play.silhouette.api.crypto._
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository

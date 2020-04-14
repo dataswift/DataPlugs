@@ -7,12 +7,17 @@
 
 package com.hubofallthings.dataplugInstagram.apiInterfaces.authProviders
 
+import java.net.URLEncoder.encode
+
 import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.api.util.HTTPLayer
+import com.mohiva.play.silhouette.api.util.{ ExtractableRequest, HTTPLayer }
 import com.mohiva.play.silhouette.impl.exceptions.ProfileRetrievalException
-import com.mohiva.play.silhouette.impl.providers._
+import com.mohiva.play.silhouette.impl.providers.{ SocialStateHandler, _ }
 import InstagramProvider._
+import com.mohiva.play.silhouette.api.exceptions.ConfigurationException
+import com.mohiva.play.silhouette.impl.providers.OAuth2Provider.AuthorizationURLUndefined
 import play.api.libs.json._
+import play.api.mvc.{ Result, Results }
 
 import scala.concurrent.Future
 
@@ -47,7 +52,9 @@ trait BaseInstagramProvider extends OAuth2Provider {
   override protected def buildProfile(authInfo: OAuth2Info): Future[Profile] = {
     getLongLivedToken(authInfo).flatMap { refreshedTokenAuthInfo =>
       val url = httpLayer.url(urls("api").format(refreshedTokenAuthInfo.accessToken)).addQueryStringParameters(("access_token", refreshedTokenAuthInfo.accessToken))
+      logger.debug(s"Access token url is: $url")
       url.get().flatMap { response =>
+        logger.debug(s"Response is: $response")
         val json = response.json
         (json \ "code").asOpt[Int] match {
           case Some(code) if code != 200 =>
@@ -73,6 +80,44 @@ trait BaseInstagramProvider extends OAuth2Provider {
           case None                       => throw new ProfileRetrievalException(SpecifiedProfileError.format(id, 401, "Cannot refresh instagram token", ""))
         }
       }
+  }
+
+  override def authenticate[B]()(implicit request: ExtractableRequest[B]): Future[Either[Result, OAuth2Info]] = {
+    logger.debug(s"instagram state is ${request.extractString(State).getOrElse("")}")
+    handleFlow(handleAuthorizationFlow(stateHandler)) { code =>
+      logger.debug(s"instagram state before unserializing ${request.extractString(State).getOrElse("").replace("__", "%3D%3D")}")
+      //      stateHandler.unserializingerialize(request.extractString(State).getOrElse("").replace("__", "%3D%3D")).flatMap { _ =>
+      getAccessToken(code).map(oauth2Info => oauth2Info)
+    }
+  }
+
+  override protected def handleAuthorizationFlow[B](stateHandler: SocialStateHandler)(implicit request: ExtractableRequest[B]): Future[Result] = {
+    stateHandler.state.map { state =>
+      logger.debug(s"[Silhouette][%s] State parameter before serialisation: ${state.items}")
+      val serializedState = stateHandler.serialize(state) //.split("==").headOption.getOrElse("")
+      //      val token = serializedState.split("==").drop(1).headOption.getOrElse("")
+      logger.debug(s"[Silhouette][%s] State parameter after serialisation: ${serializedState}")
+      val stateParam = if (serializedState.isEmpty) List() else List(State -> serializedState)
+      val redirectParam = settings.redirectURL match {
+        case Some(rUri) => List((RedirectURI, resolveCallbackURL(rUri)))
+        case None       => Nil
+      }
+      val params = settings.scope.foldLeft(List(
+        (ClientID, settings.clientID),
+        (ResponseType, Code)) ++ stateParam ++ settings.authorizationParams.toList ++ redirectParam) {
+        case (p, s) => (Scope, s) :: p
+      }
+      val encodedParams = params.map { p => encode(p._1, "UTF-8") + "=" + encode(p._2, "UTF-8") }
+      val url = settings.authorizationURL.getOrElse {
+        throw new ConfigurationException(AuthorizationURLUndefined.format(id))
+      } + encodedParams.mkString("?", "&", "")
+      val nUrl = url.replace("%3D%3D", "__")
+      logger.debug(s"Url is: $nUrl")
+      val redirect = stateHandler.publish(Results.Redirect(nUrl), state)
+      logger.debug("[Silhouette][%s] Use authorization URL: %s".format(id, settings.authorizationURL))
+      logger.debug("[Silhouette][%s] Redirecting to: %s".format(id, nUrl))
+      redirect
+    }
   }
 }
 

@@ -33,7 +33,7 @@
   <logger name="com.hubofallthings.dataplugInstagram.apiInterfaces.InstagramProfileCheck" level="INFO" />
   <logger name="com.hubofallthings.dataplugInstagram.apiInterfaces.authProviders.BaseInstagramProvider" level="INFO" />
   <logger name="com.hubofallthings.dataplugInstagram.apiInterfaces.authProviders.BaseInstagramProvider$class" level="INFO" />
-  <logger name="com.hubofallthings.dataplugInstagram.apiInterfaces.authProviders.InstagramProvider" level="INFO" />
+  <logger name="com.hubofallthings.dataplugInstagram.apiInterfaces.authProviders.InstagramProvider" level="DEBUG" />
 
   <!-- CORE PLUG LOGGERS -->
   <logger name="com.hubofallthings.dataplug.*" level="INFO" />
@@ -46,6 +46,7 @@
   <logger name="com.hubofallthings.dataplug.utils.JwtPhataAuthenticatedAction" level="INFO" />
   <logger name="com.hubofallthings.dataplug.utils.JwtPhataAwareAction" level="INFO" />
   <logger name="com.mohiva.play.silhouette.impl.providers.OAuth2Provider" level="INFO" />
+  <logger name="com.hubofallthings.dataplug.utils.ImprovedJcaSigner" level="DEBUG" />
 
   <!-- LIBRARY LOGGERS -->
   <logger name="org.hatdex.dexter.actors.HatClientActor" level="INFO" />
