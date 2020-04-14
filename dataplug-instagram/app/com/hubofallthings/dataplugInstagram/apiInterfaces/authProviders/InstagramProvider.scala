@@ -7,12 +7,12 @@
 
 package com.hubofallthings.dataplugInstagram.apiInterfaces.authProviders
 
-import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.exceptions.ProfileRetrievalException
 import com.mohiva.play.silhouette.impl.providers._
 import InstagramProvider._
 import play.api.libs.json._
+import play.api.mvc.Result
 
 import scala.concurrent.Future
 
@@ -73,6 +73,45 @@ trait BaseInstagramProvider extends OAuth2Provider {
           case None                       => throw new ProfileRetrievalException(SpecifiedProfileError.format(id, 401, "Cannot refresh instagram token", ""))
         }
       }
+  }
+  
+  /**
+   * Starts the authentication process.
+   *
+   * @param request The current request.
+   * @tparam B The type of the request body.
+   * @return Either a Result or the auth info from the provider.
+   */
+  override def authenticate[B]()(implicit request: ExtractableRequest[B]): Future[Either[Result, OAuth2Info]] = {
+    handleFlow(handleAuthorizationFlow(stateHandler)) { code =>
+      /*
+      Instagram was failing authorization, both for v1 and v2 APIs, with a Bad Signature error. After a thorough research
+      we identified that the problem lies in the `state` parameter and how Silhouette and Instagram form and parse it.
+      Specifically the `state` parameter Silhouette is sending, not only to instagram but on all social providers, has the
+      following format: `1-signature-data==-HAT token== example:
+
+      [DEBUG] [2020-04-07 22:44:46] c.h.d.u.ImprovedJcaSigner - State parameter is
+      1-1dd74ac1125e19d8de39fa4afb7ad44ad8a9798c-Y3NyZi1zdGF0ZQ%3D%3D-eyJ0b2tlbiI6IjE5ZjNjMjQ3NDE0NWQyZGQxMmIyODljNjU5ZDNhYWU2ZDk2OWE1N2UzNDAxMzM1YmY3ZjEwNWE2YzU3YzJiOGEwOGIzNzE5MTlhNTEzZTZiNmUxZTYxZjExMGI1MDJiNjJiZDMwNjQ1NzBhZjM5ZDYyNzBhMWUwMmE3NzQxOGVhMTA0NDQ0NGY4YWQxYjc0ZDRiMjdlM2RiNDRiN2JkY2IwMTI4NjFkMWYwMzIwNWI5OGNjNjdhZTdmMmZlMTVhYzJmNjU0YzE1Y2U4NTVhYTMwMDY3MWQ5MDdlMmE2NzhmNzFkNmVlZTU0NTIyMjZkNWY2NzAxMTUwY2M5NmEwNWIifQ%3D%3D
+
+      Instagram by default removes the token, because of the = character. Upon successful authorization the `state` parameter
+      returned by Instagram has been stripped from the token. This results in the signatures between what the Data Plug
+      sent and what Instagram returns to be different and as a result Silhouette throws the Bad Signature error. To test
+      that it's indeed the = character that is causing the issues we replaced the == with __ just before the redirect to
+      instagram happens. As expected, Instagram is not removing the token in this case. In this case, the `state` parameter
+      has been modified and us a result we weren't able to pass the validation step once again. Removing the token entirely
+      has another effect down the line, Silhouette is not able to identify which user connected the Data Plug and it throws
+      another exception this time.
+
+      As a result we concluded to disable the CSRF check for the time being. Also filled a bug report to Facebook that's
+      currently under investigation.
+
+      Issue reported to facebook:
+      https://developers.facebook.com/support/bugs/511886289481673/
+      command that has been removed here:
+      stateHandler.unserialize(request.extractString(State).getOrElse("")).flatMap { _ => ... }
+      */
+      getAccessToken(code).map(oauth2Info => oauth2Info)
+    }
   }
 }
 
