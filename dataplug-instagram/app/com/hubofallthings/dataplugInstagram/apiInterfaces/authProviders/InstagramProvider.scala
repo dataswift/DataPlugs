@@ -8,7 +8,7 @@
 package com.hubofallthings.dataplugInstagram.apiInterfaces.authProviders
 
 import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.api.util.{ExtractableRequest, HTTPLayer}
+import com.mohiva.play.silhouette.api.util.{ ExtractableRequest, HTTPLayer }
 import com.mohiva.play.silhouette.impl.exceptions.ProfileRetrievalException
 import com.mohiva.play.silhouette.impl.providers._
 import InstagramProvider._

@@ -120,8 +120,13 @@ class InstagramFeedInterface @Inject() (
     hatClient: AuthenticatedHatClient,
     fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
+    val dataValidation =
+      transformData(content)
+        .map(validateMinDataStructure)
+        .getOrElse(Failure(SourceDataProcessingException("Source data malformed, could not insert date in to the structure")))
+
     for {
-      validatedData <- FutureTransformations.transform(validateMinDataStructure(content))
+      validatedData <- FutureTransformations.transform(dataValidation)
       _ <- uploadHatData(namespace, endpoint, validatedData, hatAddress, hatClient) // Upload the data
     } yield {
       logger.debug(s"Successfully uploaded ${validatedData.value.length} new records to $hatAddress HAT")
@@ -144,6 +149,21 @@ class InstagramFeedInterface @Inject() (
       logger.error(s"Error parsing JSON object, necessary property not found: ${rawData.toString}")
       Failure(SourceDataProcessingException(s"Error parsing JSON object, necessary property not found."))
     }
+  }
+
+  private def transformData(rawData: JsValue): JsResult[JsObject] = {
+    val transformation = (__ \ "data").json.update(
+      __.read[JsArray].map { feedData =>
+        {
+          val updatedFeedData = feedData.value.map { item =>
+            item.as[JsObject] ++ JsObject(Map("api_version" -> JsString("v2")))
+          }
+
+          JsArray(updatedFeedData)
+        }
+      })
+
+    rawData.transform(transformation)
   }
 
   override def attachAccessToken(params: ApiEndpointCall, authInfo: OAuth2Info): ApiEndpointCall =

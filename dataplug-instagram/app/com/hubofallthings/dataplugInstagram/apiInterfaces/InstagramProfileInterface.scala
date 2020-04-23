@@ -78,12 +78,11 @@ class InstagramProfileInterface @Inject() (
   }
 
   private def transformData(rawData: JsValue): JsResult[JsObject] = {
-
     val transformation = __.json.update(
       __.read[JsObject].map(profile => {
-
         profile ++ JsObject(Map(
-          "hat_created_time" -> JsString(LocalDateTime.now().toString)))
+          "hat_created_time" -> JsString(LocalDateTime.now().toString),
+          "api_version" -> JsString("v2")))
       }))
 
     rawData.transform(transformation)
