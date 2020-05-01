@@ -16,9 +16,11 @@ case class FacebookProfile(
     email: Option[String],
     first_name: String,
     last_name: String,
+    full_name: Option[String],
     gender: Option[String], //need extra permissions
     name: String,
     age_range: Option[String],
+    profile_pic: Option[String],
     link: Option[String])
 
 case class FacebookBasicUser(

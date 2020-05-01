@@ -8,6 +8,7 @@
 
 package com.hubofallthings.dataplug.dao
 
+import akka.Done
 import com.hubofallthings.dataplug.actors.IoExecutionContext
 import com.hubofallthings.dataplug.dal.Tables
 import com.hubofallthings.dataplug.models.User
@@ -107,5 +108,28 @@ class UserDAOImpl @Inject() (protected val dbConfigProvider: DatabaseConfigProvi
     } yield result
 
     db.run(q).map(_ => Unit)
+  }
+
+  /**
+   * Deletes user from relevant user tables.
+   *
+   * @param phata The phata of the user to delete.
+   * @param userId The userId of user to delete.
+   * @return Done if success.
+   */
+  def delete(phata: String, userId: String): Future[Done] = {
+    val dateNow = DateTime.now().toLocalDateTime.toString
+    val q = DBIO.seq(
+      Tables.DataplugUser.filter(_.phata === phata).delete, //phata
+      Tables.DataplugUserStatus.filter(_.phata === phata).delete, //phata
+      Tables.UserLink.filter(_.masterUserId === phata).delete, //phata
+      Tables.UserOauth2Info.filter(_.userId === userId).delete, //user id
+      Tables.UserUser.filter(_.userId === userId).delete, // user id
+      Tables.LogDataplugUser.filter(_.phata === phata).map(_.message).update(Some(s"Deleted on $dateNow")), // phata
+      Tables.UserUser.filter(_.userId === phata).delete) // phata
+
+    db.run(q.transactionally).flatMap { _ =>
+      Future.successful(Done)
+    }
   }
 }

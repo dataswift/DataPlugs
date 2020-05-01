@@ -1,30 +1,32 @@
 /*
- * Copyright (C) 2019 Dataswift Ltd - All Rights Reserved
+ * Copyright (C) 2020 Dataswift Ltd - All Rights Reserved
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- * Written by Marios Tsekis <marios.tsekis@dataswift.io> 7, 2019
+ * Written by Marios Tsekis <marios.tsekis@dataswift.io> 5, 2020
  */
 
-package com.hubofallthings.dataplugUber.apiInterfaces.authProviders
+package com.hubofallthings.dataplugFacebook.apiInterfaces.authProviders
 
+import com.hubofallthings.dataplug.apiInterfaces.authProviders.HatOAuth2Provider
+import com.hubofallthings.dataplugFacebook.models.FacebookProfile
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.exceptions.ProfileRetrievalException
 import com.mohiva.play.silhouette.impl.providers._
-import UberProvider._
-import com.hubofallthings.dataplug.apiInterfaces.authProviders.HatOAuth2Provider
-import play.api.http.HeaderNames._
+import com.mohiva.play.silhouette.impl.providers.oauth2.FacebookProvider._
 import play.api.libs.json.{ JsObject, JsValue }
 
 import scala.concurrent.Future
 
 /**
- * Base Uber OAuth2 Provider.
+ * Base Facebook OAuth2 Provider.
  *
- * @see https://monzo.com/docs/#authentication
+ * @see https://developers.facebook.com/tools/explorer
+ * @see https://developers.facebook.com/docs/graph-api/reference/user
+ * @see https://developers.facebook.com/docs/facebook-login/access-tokens
  */
-trait BaseUberProvider extends HatOAuth2Provider {
+trait BaseFacebookProvider extends HatOAuth2Provider {
 
   /**
    * The content type to parse a profile from.
@@ -48,14 +50,15 @@ trait BaseUberProvider extends HatOAuth2Provider {
    * @return On success the build social profile, otherwise a failure.
    */
   override protected def buildProfile(authInfo: OAuth2Info): Future[Profile] = {
-    httpLayer.url(urls("api")).withHttpHeaders(AUTHORIZATION -> s"Bearer ${authInfo.accessToken}").get().flatMap { response =>
+    httpLayer.url(urls("api").format(authInfo.accessToken)).get().flatMap { response =>
       val json = response.json
       (json \ "error").asOpt[JsObject] match {
         case Some(error) =>
-          val errorCode = (error \ "code").as[Int]
           val errorMsg = (error \ "message").as[String]
+          val errorType = (error \ "type").as[String]
+          val errorCode = (error \ "code").as[Int]
 
-          throw new ProfileRetrievalException(SpecifiedProfileError.format(id, errorCode, errorMsg))
+          throw new ProfileRetrievalException(SpecifiedProfileError.format(id, errorMsg, errorType, errorCode))
         case _ => profileParser.parse(json, authInfo)
       }
     }
@@ -65,7 +68,7 @@ trait BaseUberProvider extends HatOAuth2Provider {
 /**
  * The profile parser for the common social profile.
  */
-class UberProfileParser extends SocialProfileParser[JsValue, CommonSocialProfile, OAuth2Info] {
+class FacebookProfileParser extends SocialProfileParser[JsValue, CommonSocialProfile, OAuth2Info] {
 
   /**
    * Parses the social profile.
@@ -74,36 +77,46 @@ class UberProfileParser extends SocialProfileParser[JsValue, CommonSocialProfile
    * @param authInfo The auth info to query the provider again for additional data.
    * @return The social profile from given result.
    */
-  override def parse(json: JsValue, authInfo: OAuth2Info) = Future.successful {
-    val userID = (json \ "uuid").as[String]
+  override def parse(json: JsValue, authInfo: OAuth2Info) = {
+    val maybeProfile = json.asOpt[FacebookProfile]
+    maybeProfile match {
+      case Some(profile) =>
+        val socialProfile = CommonSocialProfile(
+          loginInfo = LoginInfo(ID, profile.id),
+          firstName = Option(profile.first_name),
+          lastName = Option(profile.last_name),
+          fullName = profile.full_name,
+          avatarURL = profile.profile_pic,
+          email = profile.email)
+        Future.successful(socialProfile)
 
-    CommonSocialProfile(
-      loginInfo = LoginInfo(ID, userID))
+      case None => Future.failed(new ProfileRetrievalException("Could not parse profile information"))
+    }
   }
 }
 
 /**
- * The Uber OAuth2 Provider.
+ * The Facebook OAuth2 Provider.
  *
  * @param httpLayer     The HTTP layer implementation.
- * @param stateHandler The state provider implementation.
+ * @param stateHandler  The state provider implementation.
  * @param settings      The provider settings.
  */
-class UberProvider(
+class FacebookProvider(
     protected val httpLayer: HTTPLayer,
     protected val stateHandler: SocialStateHandler,
     val settings: OAuth2Settings)
-  extends BaseUberProvider with CommonSocialProfileBuilder {
+  extends BaseFacebookProvider with CommonSocialProfileBuilder {
 
   /**
    * The type of this class.
    */
-  type Self = UberProvider
+  override type Self = FacebookProvider
 
   /**
    * The profile parser implementation.
    */
-  val profileParser = new UberProfileParser
+  override val profileParser = new FacebookProfileParser
 
   /**
    * Gets a provider initialized with a new settings object.
@@ -111,13 +124,13 @@ class UberProvider(
    * @param f A function which gets the settings passed and returns different settings.
    * @return An instance of the provider initialized with new settings.
    */
-  def withSettings(f: (Settings) => Settings) = new UberProvider(httpLayer, stateHandler, f(settings))
+  override def withSettings(f: (Settings) => Settings) = new FacebookProvider(httpLayer, stateHandler, f(settings))
 }
 
 /**
  * The companion object.
  */
-object UberProvider {
+object FacebookProvider {
 
   /**
    * The error messages.
@@ -127,7 +140,7 @@ object UberProvider {
   /**
    * The Uber constants.
    */
-  val ID = "uber"
-  val API = "https://api.uber.com/v1.2/me"
+  val ID = "facebook"
+  val API = "https://graph.facebook.com/v5.0/me?fields=name,first_name,last_name,picture,email&return_ssl_resources=1&access_token=%s"
 }
 

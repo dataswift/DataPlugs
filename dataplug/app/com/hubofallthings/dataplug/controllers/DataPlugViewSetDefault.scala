@@ -34,6 +34,9 @@ class DataPlugViewSetDefault extends DataPlugViewSet {
   def indexRedirect: Call =
     com.hubofallthings.dataplug.controllers.routes.Application.index()
 
+  def disconnectRedirect: Call =
+    com.hubofallthings.dataplug.controllers.routes.Application.disconnect()
+
   def signupComplete(
     socialProviderRegistry: SocialProviderRegistry,
     endpointVariants: Option[Seq[ApiEndpointVariantChoice]])(implicit user: User, request: RequestHeader, messages: Messages): Html = {
@@ -47,6 +50,7 @@ class DataPlugViewSetDefault extends DataPlugViewSet {
     chooseVariants: Boolean)(implicit user: User, request: RequestHeader, messages: Messages): Html = {
     dataplugViews.html.disconnect(socialProviderRegistry, endpointVariants,
       request.session.get("redirect").getOrElse(defaultRedirect),
+      disconnectRedirect,
       chooseVariants)
   }
 

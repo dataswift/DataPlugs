@@ -17,7 +17,6 @@ import com.mohiva.play.silhouette.api.{ LoginEvent, Silhouette }
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import com.nimbusds.jwt.SignedJWT
-import com.hubofallthings.dataplug.controllers.routes
 import play.api.Configuration
 import play.api.data.Forms._
 import org.joda.time.DateTime

@@ -12,6 +12,7 @@ import com.mohiva.play.silhouette.api.util.{ ExtractableRequest, HTTPLayer }
 import com.mohiva.play.silhouette.impl.exceptions.ProfileRetrievalException
 import com.mohiva.play.silhouette.impl.providers._
 import InstagramProvider._
+import com.hubofallthings.dataplug.apiInterfaces.authProviders.HatOAuth2Provider
 import play.api.libs.json._
 import play.api.mvc.Result
 
@@ -22,7 +23,7 @@ import scala.concurrent.Future
  *
  * @see https://docs.yapily.com/?version=latest
  */
-trait BaseInstagramProvider extends OAuth2Provider {
+trait BaseInstagramProvider extends HatOAuth2Provider {
 
   /**
    * The content type to parse a profile from.
@@ -69,9 +70,9 @@ trait BaseInstagramProvider extends OAuth2Provider {
       .get().flatMap { response =>
 
         val json = response.json
-        (json \ "access_token").asOpt[String] match {
-          case Some(longLivedAccessToken) => Future.successful(authInfo.copy(accessToken = longLivedAccessToken))
-          case None                       => throw new ProfileRetrievalException(SpecifiedProfileError.format(id, 401, "Cannot refresh instagram token", ""))
+        json.asOpt[OAuth2Info] match {
+          case Some(instagramOAuthInfo) => Future.successful(instagramOAuthInfo)
+          case None                     => throw new ProfileRetrievalException(SpecifiedProfileError.format(id, 401, "Cannot refresh instagram token", ""))
         }
       }
   }
@@ -182,4 +183,3 @@ object InstagramProvider {
   val ID = "instagram"
   val API = "https://graph.instagram.com/me"
 }
-
