@@ -66,14 +66,16 @@ class FacebookPlugModule extends AbstractModule with ScalaModule with AkkaGuiceS
     facebookProfilePictureInterface: FacebookProfilePictureInterface,
     facebookEventInterface: FacebookEventInterface,
     facebookFeedInterface: FacebookFeedInterface,
-    facebookPostsInterface: FacebookPostsInterface): DataPlugRegistry = {
+    facebookPostsInterface: FacebookPostsInterface,
+    facebookUserLikesInterface: FacebookUserLikesInterface): DataPlugRegistry = {
 
     DataPlugRegistry(Seq(
       facebookProfileInterface,
       facebookProfilePictureInterface,
       facebookEventInterface,
       facebookFeedInterface,
-      facebookPostsInterface))
+      facebookPostsInterface,
+      facebookUserLikesInterface))
   }
 
   @Provides
