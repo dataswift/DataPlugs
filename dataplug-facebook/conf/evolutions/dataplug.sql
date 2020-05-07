@@ -101,3 +101,17 @@ UPDATE dataplug_user
 SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters,limit}', '"100"')
 WHERE dataplug_user.dataplug_endpoint = 'posts';
 
+--changeset dataplugFacebook:endpointsInsertUserLikes2 context:data
+
+INSERT INTO dataplug_endpoint (name, description, details)
+VALUES
+  ('likes/pages', 'User''s likes on Facebook', 'sequence')
+ON CONFLICT (name) DO NOTHING;
+
+--changeset dataplugFacebook:addBirthdayAndLocationToProfile
+
+UPDATE dataplug_user
+SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters}', '{"fields":"id,first_name,last_name,middle_name,name,link,age_range,email,languages,name_format,public_key,relationship_status,religion,significant_other,sports,friends,location,birthday","summary":"total_count"}')
+WHERE dataplug_user.dataplug_endpoint = 'profile';
+
+
