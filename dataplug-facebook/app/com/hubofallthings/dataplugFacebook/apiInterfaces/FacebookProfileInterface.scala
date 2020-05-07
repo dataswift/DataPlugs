@@ -116,7 +116,7 @@ object FacebookProfileInterface {
     ApiEndpointMethod.Get("Get"),
     Map(),
     Map("summary" -> "total_count", "fields" -> ("id,first_name,last_name,middle_name,name,link,age_range,email,languages,name_format," +
-      "public_key,relationship_status,religion,significant_other,sports,friends")),
+      "public_key,relationship_status,religion,significant_other,sports,friends,location,birthday")),
     Map(),
     Some(Map()))
 }
