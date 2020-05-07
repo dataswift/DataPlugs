@@ -24,7 +24,7 @@ import com.hubofallthings.dataplugInstagram.apiInterfaces.authProviders.Instagra
 import com.hubofallthings.dataplugInstagram.models.InstagramProfile
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
-import play.api.Logger
+import play.api.{ Configuration, Logger }
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 
@@ -39,6 +39,7 @@ class InstagramProfileInterface @Inject() (
     val tokenHelper: OAuth2TokenHelper,
     val mailer: Mailer,
     val scheduler: Scheduler,
+    val configuration: Configuration,
     val provider: InstagramProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
 
   val namespace: String = "instagram"
@@ -78,11 +79,12 @@ class InstagramProfileInterface @Inject() (
   }
 
   private def transformData(rawData: JsValue): JsResult[JsObject] = {
+    val prependFieldsId = configuration.get[String]("service.customFieldId")
     val transformation = __.json.update(
       __.read[JsObject].map(profile => {
         profile ++ JsObject(Map(
-          "hat_created_time" -> JsString(LocalDateTime.now().toString),
-          "api_version" -> JsString("v2")))
+          s"${prependFieldsId}_created_time" -> JsString(LocalDateTime.now().toString),
+          s"${prependFieldsId}_api_version" -> JsString("v2")))
       }))
 
     rawData.transform(transformation)

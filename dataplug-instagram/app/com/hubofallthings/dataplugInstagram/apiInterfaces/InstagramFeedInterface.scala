@@ -23,7 +23,8 @@ import com.hubofallthings.dataplugInstagram.models.InstagramMedia
 import com.hubofallthings.dataplugInstagram.apiInterfaces.authProviders.InstagramProvider
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
-import play.api.Logger
+import org.joda.time.DateTime
+import play.api.{ Configuration, Logger }
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 
@@ -38,6 +39,7 @@ class InstagramFeedInterface @Inject() (
     val tokenHelper: OAuth2TokenHelper,
     val mailer: Mailer,
     val scheduler: Scheduler,
+    val configuration: Configuration,
     val provider: InstagramProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
 
   val namespace: String = "instagram"
@@ -152,11 +154,15 @@ class InstagramFeedInterface @Inject() (
   }
 
   private def transformData(rawData: JsValue): JsResult[JsObject] = {
+    val prependFieldsId = configuration.get[String]("service.customFieldId")
     val transformation = (__ \ "data").json.update(
       __.read[JsArray].map { feedData =>
         {
           val updatedFeedData = feedData.value.map { item =>
-            item.as[JsObject] ++ JsObject(Map("api_version" -> JsString("v2")))
+            val unixTimeStamp = DateTime.parse((item \ "timestamp").asOpt[String].getOrElse("")).getMillis / 1000
+            item.as[JsObject] ++ JsObject(Map(
+              s"${prependFieldsId}_api_version" -> JsString("v2"),
+              s"${prependFieldsId}_created_time" -> JsString(unixTimeStamp.toString)))
           }
 
           JsArray(updatedFeedData)
