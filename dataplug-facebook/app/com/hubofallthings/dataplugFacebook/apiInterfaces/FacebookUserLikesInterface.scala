@@ -168,9 +168,9 @@ object FacebookUserLikesInterface {
     "/me/likes",
     ApiEndpointMethod.Get("Get"),
     Map(),
-    Map("summary" -> "total_count", "limit" -> "500", "fields" -> ("id,about,created_time,app_links,awards,can_checkin,can_post,category,category_list,checkins," +
-      "description,description_html,display_subtext,emails,fan_count,has_added_app,has_whatsapp_number,link," +
-      "location,name,overall_star_rating,phone,place_type,rating_count,username,verification_status,website,whatsapp_number")),
+    Map("summary" -> "total_count", "limit" -> "500", "fields" -> ("id,about,created_time,awards,can_checkin,can_post,category,category_list,checkins," +
+      "description,description_html,display_subtext,emails,fan_count,has_whatsapp_number,link,location,name,overall_star_rating," +
+      "place_type,rating_count,username,verification_status,website,whatsapp_number")),
     Map(),
     Some(Map()))
 }
