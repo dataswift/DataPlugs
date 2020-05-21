@@ -21,7 +21,7 @@ import com.hubofallthings.dataplug.services.UserService
 import com.hubofallthings.dataplug.utils.{ AuthenticatedHatClient, FutureTransformations, Mailer }
 import com.hubofallthings.dataplugFacebook.models.FacebookEvent
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import com.mohiva.play.silhouette.impl.providers.oauth2.FacebookProvider
+import com.hubofallthings.dataplugFacebook.apiInterfaces.authProviders._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSClient

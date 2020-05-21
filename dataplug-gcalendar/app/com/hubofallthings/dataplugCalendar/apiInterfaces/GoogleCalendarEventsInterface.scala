@@ -13,7 +13,7 @@ import akka.actor.Scheduler
 import akka.util.Timeout
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import com.mohiva.play.silhouette.impl.providers.oauth2.GoogleProvider
+import com.hubofallthings.dataplugCalendar.apiInterfaces.authProviders._
 import com.hubofallthings.dataplug.utils.{ AuthenticatedHatClient, FutureTransformations, Mailer }
 import com.hubofallthings.dataplug.actors.Errors.SourceDataProcessingException
 import com.hubofallthings.dataplug.apiInterfaces.DataPlugEndpointInterface

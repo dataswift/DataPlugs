@@ -11,7 +11,7 @@ package com.hubofallthings.dataplugFacebook.apiInterfaces
 import com.google.inject.Inject
 import com.hubofallthings.dataplug.apiInterfaces.DataPlugContentUploader
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import com.mohiva.play.silhouette.impl.providers.oauth2.FacebookProvider
+import com.hubofallthings.dataplugFacebook.apiInterfaces.authProviders._
 import com.hubofallthings.dataplug.actors.Errors.{ SourceApiCommunicationException, SourceAuthenticationException }
 import com.hubofallthings.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelper, RequestAuthenticatorOAuth2 }
 import com.hubofallthings.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod, DataPlugNotableShareRequest }

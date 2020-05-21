@@ -16,7 +16,7 @@ import com.hubofallthings.dataplug.apiInterfaces.models.{ ApiEndpoint, ApiEndpoi
 import com.hubofallthings.dataplug.services.UserService
 import com.hubofallthings.dataplug.utils.Mailer
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import com.mohiva.play.silhouette.impl.providers.oauth2.FacebookProvider
+import com.hubofallthings.dataplugFacebook.apiInterfaces.authProviders._
 import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.libs.ws.WSClient

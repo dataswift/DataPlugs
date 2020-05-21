@@ -14,6 +14,7 @@ import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.exceptions.ProfileRetrievalException
 import com.mohiva.play.silhouette.impl.providers._
 import StarlingProvider._
+import com.hubofallthings.dataplug.apiInterfaces.authProviders.HatOAuth2Provider
 import play.api.http.HeaderNames._
 import play.api.libs.json.{ JsArray, JsValue }
 
@@ -24,7 +25,7 @@ import scala.concurrent.Future
  *
  * @see https://dev.fitbit.com/docs/oauth2/
  */
-trait BaseStarlingProvider extends OAuth2Provider {
+trait BaseStarlingProvider extends HatOAuth2Provider {
 
   /**
    * The content type to parse a profile from.

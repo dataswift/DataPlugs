@@ -13,6 +13,7 @@ import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.exceptions.ProfileRetrievalException
 import com.mohiva.play.silhouette.impl.providers._
 import MonzoProvider._
+import com.hubofallthings.dataplug.apiInterfaces.authProviders.HatOAuth2Provider
 import play.api.http.HeaderNames._
 import play.api.libs.json.{ JsObject, JsValue }
 
@@ -23,7 +24,7 @@ import scala.concurrent.Future
  *
  * @see https://monzo.com/docs/#authentication
  */
-trait BaseMonzoProvider extends OAuth2Provider {
+trait BaseMonzoProvider extends HatOAuth2Provider {
 
   /**
    * The content type to parse a profile from.

@@ -1,30 +1,32 @@
 /*
- * Copyright (C) 2019 Dataswift Ltd - All Rights Reserved
+ * Copyright (C) 2020 Dataswift Ltd - All Rights Reserved
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- * Written by Marios Tsekis <marios.tsekis@dataswift.io> 7, 2019
+ * Written by Marios Tsekis <marios.tsekis@dataswift.io> 5, 2020
  */
 
-package com.hubofallthings.dataplugUber.apiInterfaces.authProviders
+package com.hubofallthings.dataplugCalendar.apiInterfaces.authProviders
 
+import com.hubofallthings.dataplug.apiInterfaces.authProviders.HatOAuth2Provider
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.exceptions.ProfileRetrievalException
 import com.mohiva.play.silhouette.impl.providers._
-import UberProvider._
-import com.hubofallthings.dataplug.apiInterfaces.authProviders.HatOAuth2Provider
-import play.api.http.HeaderNames._
+import com.mohiva.play.silhouette.impl.providers.oauth2.GoogleProvider._
 import play.api.libs.json.{ JsObject, JsValue }
 
 import scala.concurrent.Future
 
 /**
- * Base Uber OAuth2 Provider.
+ * Base Google OAuth2 Provider.
  *
- * @see https://monzo.com/docs/#authentication
+ * @see https://developers.google.com/+/api/auth-migration#timetable
+ * @see https://developers.google.com/+/api/auth-migration#oauth2login
+ * @see https://developers.google.com/accounts/docs/OAuth2Login
+ * @see https://developers.google.com/+/api/latest/people
  */
-trait BaseUberProvider extends HatOAuth2Provider {
+trait BaseGoogleProvider extends HatOAuth2Provider {
 
   /**
    * The content type to parse a profile from.
@@ -48,7 +50,7 @@ trait BaseUberProvider extends HatOAuth2Provider {
    * @return On success the build social profile, otherwise a failure.
    */
   override protected def buildProfile(authInfo: OAuth2Info): Future[Profile] = {
-    httpLayer.url(urls("api")).withHttpHeaders(AUTHORIZATION -> s"Bearer ${authInfo.accessToken}").get().flatMap { response =>
+    httpLayer.url(urls("api").format(authInfo.accessToken)).get().flatMap { response =>
       val json = response.json
       (json \ "error").asOpt[JsObject] match {
         case Some(error) =>
@@ -65,7 +67,7 @@ trait BaseUberProvider extends HatOAuth2Provider {
 /**
  * The profile parser for the common social profile.
  */
-class UberProfileParser extends SocialProfileParser[JsValue, CommonSocialProfile, OAuth2Info] {
+class GoogleProfileParser extends SocialProfileParser[JsValue, CommonSocialProfile, OAuth2Info] {
 
   /**
    * Parses the social profile.
@@ -75,35 +77,53 @@ class UberProfileParser extends SocialProfileParser[JsValue, CommonSocialProfile
    * @return The social profile from given result.
    */
   override def parse(json: JsValue, authInfo: OAuth2Info) = Future.successful {
-    val userID = (json \ "uuid").as[String]
+    val userID = (json \ "id").as[String]
+    val firstName = (json \ "name" \ "givenName").asOpt[String]
+    val lastName = (json \ "name" \ "familyName").asOpt[String]
+    val fullName = (json \ "displayName").asOpt[String]
+    val avatarURL = (json \ "image" \ "url").asOpt[String]
+
+    // https://developers.google.com/+/api/latest/people#emails.type
+    val emailIndex = (json \ "emails" \\ "type").indexWhere(_.as[String] == "account")
+    val emailValue = if ((json \ "emails" \\ "value").isDefinedAt(emailIndex)) {
+      (json \ "emails" \\ "value")(emailIndex).asOpt[String]
+    }
+    else {
+      None
+    }
 
     CommonSocialProfile(
-      loginInfo = LoginInfo(ID, userID))
+      loginInfo = LoginInfo(ID, userID),
+      firstName = firstName,
+      lastName = lastName,
+      fullName = fullName,
+      avatarURL = avatarURL,
+      email = emailValue)
   }
 }
 
 /**
- * The Uber OAuth2 Provider.
+ * The Google OAuth2 Provider.
  *
  * @param httpLayer     The HTTP layer implementation.
- * @param stateHandler The state provider implementation.
+ * @param stateHandler  The state provider implementation.
  * @param settings      The provider settings.
  */
-class UberProvider(
+class GoogleProvider(
     protected val httpLayer: HTTPLayer,
     protected val stateHandler: SocialStateHandler,
     val settings: OAuth2Settings)
-  extends BaseUberProvider with CommonSocialProfileBuilder {
+  extends BaseGoogleProvider with CommonSocialProfileBuilder {
 
   /**
    * The type of this class.
    */
-  type Self = UberProvider
+  type Self = GoogleProvider
 
   /**
    * The profile parser implementation.
    */
-  val profileParser = new UberProfileParser
+  val profileParser = new GoogleProfileParser
 
   /**
    * Gets a provider initialized with a new settings object.
@@ -111,13 +131,13 @@ class UberProvider(
    * @param f A function which gets the settings passed and returns different settings.
    * @return An instance of the provider initialized with new settings.
    */
-  def withSettings(f: (Settings) => Settings) = new UberProvider(httpLayer, stateHandler, f(settings))
+  def withSettings(f: (Settings) => Settings) = new GoogleProvider(httpLayer, stateHandler, f(settings))
 }
 
 /**
  * The companion object.
  */
-object UberProvider {
+object GoogleProvider {
 
   /**
    * The error messages.
@@ -125,9 +145,9 @@ object UberProvider {
   val SpecifiedProfileError = "[Silhouette][%s] Error retrieving profile information. Error code: %s, message: %s"
 
   /**
-   * The Uber constants.
+   * The Google constants.
    */
-  val ID = "uber"
-  val API = "https://api.uber.com/v1.2/me"
+  val ID = "google"
+  val API = "https://www.googleapis.com/plus/v1/people/me?access_token=%s" // This is old. Latest version is v3
 }
 

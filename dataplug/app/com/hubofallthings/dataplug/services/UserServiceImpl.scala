@@ -8,6 +8,7 @@
 
 package com.hubofallthings.dataplug.services
 
+import akka.Done
 import com.hubofallthings.dataplug.dao.UserDAO
 import com.hubofallthings.dataplug.models.User
 import javax.inject.Inject
@@ -62,7 +63,24 @@ class UserServiceImpl @Inject() (userDAO: UserDAO) extends UserService {
     }
   }
 
+  /**
+   * Links two user accounts together (e.g. multi-account login with social credentials)
+   *
+   * @param mainUser The login info of the main user.
+   * @param linkedUser The login info of the user to link.
+   */
   def link(mainUser: User, linkedUser: User) = {
     userDAO.link(mainUser.loginInfo, linkedUser.loginInfo)
+  }
+
+  /**
+   * Deletes user from relevant user tables.
+   *
+   * @param phata The phata of the user to delete.
+   * @param userId The userId of user to delete.
+   * @return Done if success.
+   */
+  def delete(phata: String, userId: String): Future[Done] = {
+    userDAO.delete(phata, userId)
   }
 }
