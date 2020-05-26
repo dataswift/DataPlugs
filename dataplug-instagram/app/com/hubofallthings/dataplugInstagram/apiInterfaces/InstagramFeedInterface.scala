@@ -10,6 +10,7 @@ package com.hubofallthings.dataplugInstagram.apiInterfaces
 
 import akka.Done
 import akka.actor.Scheduler
+import akka.http.scaladsl.model.Uri
 import akka.util.Timeout
 import com.google.inject.Inject
 import com.hubofallthings.dataplug.actors.Errors.SourceDataProcessingException
@@ -19,10 +20,11 @@ import com.hubofallthings.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEn
 import com.hubofallthings.dataplug.services.UserService
 import com.hubofallthings.dataplug.utils.{ AuthenticatedHatClient, FutureTransformations, Mailer }
 import com.hubofallthings.dataplugInstagram.models.InstagramMedia
+import com.hubofallthings.dataplugInstagram.apiInterfaces.authProviders.InstagramProvider
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
-import com.mohiva.play.silhouette.impl.providers.oauth2.InstagramProvider
-import play.api.Logger
+import org.joda.time.DateTime
+import play.api.{ Configuration, Logger }
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 
@@ -37,6 +39,7 @@ class InstagramFeedInterface @Inject() (
     val tokenHelper: OAuth2TokenHelper,
     val mailer: Mailer,
     val scheduler: Scheduler,
+    val configuration: Configuration,
     val provider: InstagramProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
 
   val namespace: String = "instagram"
@@ -50,22 +53,39 @@ class InstagramFeedInterface @Inject() (
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     logger.debug("Building continuation...")
 
-    val maybeMinIdParam = params.pathParameters.get("min_id")
-    if (maybeMinIdParam.isDefined) {
-      None
-    }
-    else {
-      val maybeNextMaxId = (content \ "pagination" \ "next_max_id").asOpt[String]
-      val maybeMinIdStorage = params.storage.get("min_id")
+    logger.debug(s"Content is $content")
 
-      (maybeNextMaxId, maybeMinIdStorage) match {
-        case (Some(nextMaxId), Some(_)) =>
-          Some(params.copy(queryParameters = params.queryParameters + ("max_id" -> nextMaxId)))
-        case (Some(nextMaxId), None) =>
-          Some(params.copy(
-            queryParameters = params.queryParameters + ("max_id" -> nextMaxId),
-            storageParameters = Some(params.storage + ("min_id" -> extractHeadId(content).get))))
-        case (None, _) => None
+    val maybeNextPage = (content \ "paging" \ "next").asOpt[String]
+    val maybeSinceParam = params.pathParameters.get("since")
+
+    logger.debug(s"Found possible next page link: $maybeNextPage")
+    logger.debug(s"Found possible next since parameter: $maybeSinceParam")
+
+    maybeNextPage.map { nextPage =>
+      logger.debug(s"Found next page link (continuing sync): $nextPage")
+
+      val nextPageUri = Uri(nextPage)
+      val updatedQueryParams = params.queryParameters ++ nextPageUri.query().toMap
+
+      logger.debug(s"Updated query parameters: $updatedQueryParams")
+
+      if (maybeSinceParam.isDefined) {
+        logger.debug("\"Since\" parameter already set, updating query params")
+        params.copy(queryParameters = updatedQueryParams)
+      }
+      else {
+        (content \ "paging" \ "previous").asOpt[String].flatMap { previousPage =>
+          val previousPageUri = Uri(previousPage)
+          previousPageUri.query().get("since").map { sinceParam =>
+            val updatedPathParams = params.pathParameters + ("since" -> sinceParam)
+
+            logger.debug(s"Updating query params and setting 'since': $sinceParam")
+            params.copy(pathParameters = updatedPathParams, queryParameters = updatedQueryParams)
+          }
+        }.getOrElse {
+          logger.warn("Unexpected API behaviour: 'since' not set and it was not possible to extract it from response body")
+          params.copy(queryParameters = updatedQueryParams)
+        }
       }
     }
   }
@@ -73,16 +93,26 @@ class InstagramFeedInterface @Inject() (
   def buildNextSync(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
     logger.debug(s"Building next sync...")
 
-    params.storage.get("min_id").map { savedMinId =>
-      params.copy(
-        queryParameters = params.queryParameters + ("min_id" -> savedMinId) - "max_id",
-        storageParameters = Some(params.storage - "min_id"))
-    }.getOrElse {
-      val maybeHeadId = extractHeadId(content)
+    val maybeSinceParam = params.pathParameters.get("since")
+    val updatedQueryParams = params.queryParameters - "__paging_token" - "until" - "access_token"
 
-      maybeHeadId.map { headId =>
-        params.copy(queryParameters = params.queryParameters + ("min_id" -> headId))
-      }.getOrElse(params)
+    logger.debug(s"Updated query parameters: $updatedQueryParams")
+
+    maybeSinceParam.map { sinceParameter =>
+      logger.debug(s"Building next sync parameters $updatedQueryParams with 'since': $sinceParameter")
+      params.copy(pathParameters = params.pathParameters - "since", queryParameters = updatedQueryParams + ("since" -> sinceParameter))
+    }.getOrElse {
+      val maybePreviousPage = (content \ "paging" \ "previous").asOpt[String]
+
+      logger.debug("'Since' parameter not found (likely no continuation runs), setting one now")
+      maybePreviousPage.flatMap { previousPage =>
+        Uri(previousPage).query().get("since").map { newSinceParam =>
+          params.copy(queryParameters = params.queryParameters + ("since" -> newSinceParam))
+        }
+      }.getOrElse {
+        logger.warn("Could not extract previous page 'since' parameter so the new value is not set. Was the feed list empty?")
+        params
+      }
     }
   }
 
@@ -92,12 +122,16 @@ class InstagramFeedInterface @Inject() (
     hatClient: AuthenticatedHatClient,
     fetchParameters: ApiEndpointCall)(implicit ec: ExecutionContext, timeout: Timeout): Future[Done] = {
 
+    val dataValidation =
+      transformData(content)
+        .map(validateMinDataStructure)
+        .getOrElse(Failure(SourceDataProcessingException("Source data malformed, could not insert date in to the structure")))
+
     for {
-      validatedData <- FutureTransformations.transform(validateMinDataStructure(content))
-      processedData <- transformData(validatedData, fetchParameters)
-      _ <- uploadHatData(namespace, endpoint, processedData, hatAddress, hatClient) // Upload the data
+      validatedData <- FutureTransformations.transform(dataValidation)
+      _ <- uploadHatData(namespace, endpoint, validatedData, hatAddress, hatClient) // Upload the data
     } yield {
-      logger.debug(s"Successfully uploaded ${processedData.value.length} new records to $hatAddress HAT")
+      logger.debug(s"Successfully uploaded ${validatedData.value.length} new records to $hatAddress HAT")
       Done
     }
   }
@@ -119,18 +153,24 @@ class InstagramFeedInterface @Inject() (
     }
   }
 
-  private def transformData(value: JsArray, params: ApiEndpointCall): Future[JsArray] = {
-    val postsWithSortedArrays = value.value.map { post =>
-      Try {
-        val sortedTags = (post \ "tags").as[Seq[String]].sorted
-        post.as[JsObject] ++ Json.obj("tags" -> JsArray(sortedTags.map(JsString)))
-      }.getOrElse(post)
-    }
+  private def transformData(rawData: JsValue): JsResult[JsObject] = {
+    val prependFieldsId = configuration.get[String]("service.customFieldId")
+    val transformation = (__ \ "data").json.update(
+      __.read[JsArray].map { feedData =>
+        {
+          val updatedFeedData = feedData.value.map { item =>
+            val unixTimeStamp = DateTime.parse((item \ "timestamp").asOpt[String].getOrElse("")).getMillis / 1000
+            item.as[JsObject] ++ JsObject(Map(
+              s"${prependFieldsId}_api_version" -> JsString("v2"),
+              s"${prependFieldsId}_created_time" -> JsString(unixTimeStamp.toString)))
+          }
 
-    Future.successful(JsArray(postsWithSortedArrays))
+          JsArray(updatedFeedData)
+        }
+      })
+
+    rawData.transform(transformation)
   }
-
-  private def extractHeadId(value: JsValue): Try[String] = Try((value \ "data" \ 0 \ "id").as[String])
 
   override def attachAccessToken(params: ApiEndpointCall, authInfo: OAuth2Info): ApiEndpointCall =
     params.copy(queryParameters = params.queryParameters + ("access_token" -> authInfo.accessToken))
@@ -138,11 +178,11 @@ class InstagramFeedInterface @Inject() (
 
 object InstagramFeedInterface {
   val defaultApiEndpoint = ApiEndpointCall(
-    "https://api.instagram.com/v1",
-    "/users/self/media/recent",
+    "https://graph.instagram.com",
+    "/[userId]/media",
     ApiEndpointMethod.Get("Get"),
     Map(),
-    Map("count" -> "100"),
+    Map("limit" -> "250", "fields" -> "id,caption,media_type,media_url,permalink,thumbnail_url,timestamp,username"),
     Map(),
     Some(Map()))
 }

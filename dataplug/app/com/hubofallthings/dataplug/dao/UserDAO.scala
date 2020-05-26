@@ -8,6 +8,7 @@
 
 package com.hubofallthings.dataplug.dao
 
+import akka.Done
 import com.hubofallthings.dataplug.models.User
 import com.mohiva.play.silhouette.api.LoginInfo
 
@@ -41,4 +42,13 @@ trait UserDAO {
    * @param linkedLoginInfo The login info of the user to link.
    */
   def link(mainLoginInfo: LoginInfo, linkedLoginInfo: LoginInfo): Future[Unit]
+
+  /**
+   * Deletes user from relevant user tables.
+   *
+   * @param phata The phata of the user to delete.
+   * @param userId The userId of user to delete.
+   * @return Done if success.
+   */
+  def delete(phata: String, userId: String): Future[Done]
 }

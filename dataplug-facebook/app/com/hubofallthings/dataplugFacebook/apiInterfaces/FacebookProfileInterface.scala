@@ -20,7 +20,7 @@ import com.hubofallthings.dataplug.services.UserService
 import com.hubofallthings.dataplug.utils.{ AuthenticatedHatClient, FutureTransformations, Mailer }
 import com.hubofallthings.dataplugFacebook.models.FacebookProfile
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import com.mohiva.play.silhouette.impl.providers.oauth2.FacebookProvider
+import com.hubofallthings.dataplugFacebook.apiInterfaces.authProviders._
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
@@ -116,7 +116,7 @@ object FacebookProfileInterface {
     ApiEndpointMethod.Get("Get"),
     Map(),
     Map("summary" -> "total_count", "fields" -> ("id,first_name,last_name,middle_name,name,link,age_range,email,languages,name_format," +
-      "public_key,relationship_status,religion,significant_other,sports,friends")),
+      "public_key,relationship_status,religion,significant_other,sports,friends,location,birthday")),
     Map(),
     Some(Map()))
 }

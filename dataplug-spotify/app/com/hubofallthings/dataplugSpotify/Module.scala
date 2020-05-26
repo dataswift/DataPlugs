@@ -11,6 +11,7 @@ package com.hubofallthings.dataplugSpotify
 import akka.actor.{ ActorSystem, Scheduler }
 import com.google.inject.{ AbstractModule, Provides }
 import com.hubofallthings.dataplug.actors.DataPlugManagerActor
+import com.hubofallthings.dataplug.apiInterfaces.authProviders.HatOAuth2Provider
 import com.hubofallthings.dataplug.apiInterfaces.{ DataPlugOptionsCollector, DataPlugOptionsCollectorRegistry, DataPlugRegistry }
 import com.hubofallthings.dataplug.controllers.{ DataPlugViewSet, DataPlugViewSetDefault }
 import com.hubofallthings.dataplug.dal.SchemaMigrationImpl
@@ -45,6 +46,7 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
     bind[DataPlugEndpointService].to[DataPlugEndpointServiceImpl]
 
     bind[DataPlugViewSet].to[DataPlugViewSetDefault]
+    bind[HatOAuth2Provider].to[SpotifyProvider]
 
     //    bindActorFactory[InjectedHatClientActor, InjectedHatClientActor.Factory]
     bindActor[DataPlugManagerActor]("dataplug-manager")

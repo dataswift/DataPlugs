@@ -20,11 +20,11 @@ import com.hubofallthings.dataplug.apiInterfaces.authProviders.{ OAuth2TokenHelp
 import com.hubofallthings.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointMethod }
 import com.hubofallthings.dataplug.services.UserService
 import com.hubofallthings.dataplug.utils.{ AuthenticatedHatClient, FutureTransformations, Mailer }
+import com.hubofallthings.dataplugInstagram.apiInterfaces.authProviders.InstagramProvider
 import com.hubofallthings.dataplugInstagram.models.InstagramProfile
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
-import com.mohiva.play.silhouette.impl.providers.oauth2.InstagramProvider
-import play.api.Logger
+import play.api.{ Configuration, Logger }
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 
@@ -39,6 +39,7 @@ class InstagramProfileInterface @Inject() (
     val tokenHelper: OAuth2TokenHelper,
     val mailer: Mailer,
     val scheduler: Scheduler,
+    val configuration: Configuration,
     val provider: InstagramProvider) extends DataPlugEndpointInterface with RequestAuthenticatorOAuth2 {
 
   val namespace: String = "instagram"
@@ -78,31 +79,25 @@ class InstagramProfileInterface @Inject() (
   }
 
   private def transformData(rawData: JsValue): JsResult[JsObject] = {
-
+    val prependFieldsId = configuration.get[String]("service.customFieldId")
     val transformation = __.json.update(
       __.read[JsObject].map(profile => {
-
         profile ++ JsObject(Map(
-          "hat_updated_time" -> JsString(LocalDateTime.now().toString)))
+          s"${prependFieldsId}_created_time" -> JsString(LocalDateTime.now().toString),
+          s"${prependFieldsId}_api_version" -> JsString("v2")))
       }))
 
     rawData.transform(transformation)
   }
 
   override def validateMinDataStructure(rawData: JsValue): Try[JsArray] = {
-    (rawData \ "data").toOption.map {
-      case data: JsObject if data.validate[InstagramProfile].isSuccess =>
+    rawData.validate[InstagramProfile].isSuccess match {
+      case true =>
         logger.info(s"Validated JSON Instagram profile object.")
-        Success(JsArray(Seq(data)))
-      case data: JsObject =>
-        logger.error(s"Error validating data, some of the required fields missing:\n${data.toString}")
-        Failure(SourceDataProcessingException(s"Error validating data, some of the required fields missing."))
-      case _ =>
+        Success(JsArray(Seq(rawData)))
+      case false =>
         logger.error(s"Error parsing JSON object: ${rawData.toString}")
         Failure(SourceDataProcessingException(s"Error parsing JSON object."))
-    }.getOrElse {
-      logger.error(s"Error parsing JSON object, necessary property not found: ${rawData.toString}")
-      Failure(SourceDataProcessingException(s"Error parsing JSON object, necessary property not found."))
     }
   }
 
@@ -112,11 +107,11 @@ class InstagramProfileInterface @Inject() (
 
 object InstagramProfileInterface {
   val defaultApiEndpoint = ApiEndpointCall(
-    "https://api.instagram.com/v1",
-    "/users/self",
+    "https://graph.instagram.com",
+    "/me",
     ApiEndpointMethod.Get("Get"),
     Map(),
-    Map(),
+    Map("fields" -> "username,account_type,media_count"),
     Map(),
     Some(Map()))
 }

@@ -16,7 +16,7 @@ import com.hubofallthings.dataplug.apiInterfaces.models.{ ApiEndpoint, ApiEndpoi
 import com.hubofallthings.dataplug.services.UserService
 import com.hubofallthings.dataplug.utils.Mailer
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import com.mohiva.play.silhouette.impl.providers.oauth2.FacebookProvider
+import com.hubofallthings.dataplugFacebook.apiInterfaces.authProviders._
 import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.libs.ws.WSClient
@@ -66,10 +66,10 @@ class FacebookProfileCheck @Inject() (
       Some(""), Some(""),
       Some(FacebookPostsInterface.defaultApiEndpoint))
 
-    //    val userLikesVariant = ApiEndpointVariant(
-    //      ApiEndpoint("likes/pages", "User's likes on Facebook", None),
-    //      Some(""), Some(""),
-    //      Some(FacebookUserLikesInterface.defaultApiEndpoint))
+    val userLikesVariant = ApiEndpointVariant(
+      ApiEndpoint("likes/pages", "User's likes on Facebook", None),
+      Some(""), Some(""),
+      Some(FacebookUserLikesInterface.defaultApiEndpoint))
 
     val eventsVariant = ApiEndpointVariant(
       ApiEndpoint("events", "Facebook events the user has been invited to", None),
@@ -81,7 +81,7 @@ class FacebookProfileCheck @Inject() (
       ApiEndpointVariantChoice("profile/picture", "User's Facebook profile picture", active = true, profilePictureVariant),
       ApiEndpointVariantChoice("feed", "User's Facebook posts feed", active = true, feedVariant),
       ApiEndpointVariantChoice("posts", "User's own Facebook posts", active = true, postsVariant),
-      //      ApiEndpointVariantChoice("likes/pages", "User's likes on Facebook", active = true, userLikesVariant),
+      ApiEndpointVariantChoice("likes/pages", "User's likes on Facebook", active = true, userLikesVariant),
       ApiEndpointVariantChoice("events", "Facebook events the user has been invited to", active = true, eventsVariant))
 
     choices

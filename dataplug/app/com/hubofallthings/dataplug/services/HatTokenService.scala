@@ -13,6 +13,7 @@ import akka.stream.scaladsl.Source
 import com.hubofallthings.dataplug.actors.IoExecutionContext
 import com.hubofallthings.dataplug.dal.Tables
 import com.hubofallthings.dataplug.models.HatAccessCredentials
+import com.hubofallthings.dataplug.services.Errors.UserNotFoundException
 import javax.inject.Inject
 import org.hatdex.libs.dal.SlickPostgresDriver
 import org.hatdex.libs.dal.SlickPostgresDriver.api._
@@ -64,4 +65,19 @@ class HatTokenService @Inject() (protected val dbConfigProvider: DatabaseConfigP
         case _ => db.run(update).map(_ => Right(Done))
       })
   }
+
+  def delete(hat: String): Future[Done] = {
+    val q = Tables.HatToken.filter(_.hat === hat).delete
+    db.run(q).map {
+      case 0 => throw UserNotFoundException(s"Could not find user $hat")
+      case 1 => Done
+      case rows  =>
+        logger.info(s"Deleting $rows HAT tokens for $hat")
+        Done
+    }
+  }
+}
+
+object Errors {
+  case class UserNotFoundException(message: String, cause: Throwable = None.orNull) extends Exception(message, cause)
 }

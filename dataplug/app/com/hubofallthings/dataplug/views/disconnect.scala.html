@@ -1,12 +1,11 @@
 @import com.hubofallthings.dataplug.apiInterfaces.models.ApiEndpointVariantChoice
 @import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 @import com.hubofallthings.dataplug.models.User
-@import com.hubofallthings.dataplug.controllers.routes
 
-@import com.hubofallthings.dataplug.models.User
 @(socialProviders: SocialProviderRegistry,
         endpointVariants: Option[Seq[ApiEndpointVariantChoice]],
         redirect: String,
+        disconnectUrl: Call,
         chooseVariants: Boolean = false)(implicit user: User, request: RequestHeader, messages: Messages)
 
 @import views.html.b3.vertical.fieldConstructor
@@ -29,7 +28,7 @@
                 <div class="complete-instructions">
                     @Messages("disconnect.note")
                 </div>
-                <a class="btn btn-block btn-dataplug" href="@routes.Application.disconnect()">
+                <a class="btn btn-block btn-dataplug" href="@disconnectUrl">
                     @Messages("disconnect.button")
                 </a>
             }.getOrElse {
@@ -39,9 +38,6 @@
                 <div class="complete-instructions">
                     @Messages("disconnect.noteDisconnected")
                 </div>
-                <a class="btn btn-block btn-dataplug" href="@routes.Application.index()">
-                    @Messages("disconnect.reconnectButton")
-                </a>
             }
             <a class="btn btn-block btn-dataplug" id="rumpel-link" href="@redirect">
             @Messages("button.rumpel")

@@ -9,9 +9,10 @@
 package com.hubofallthings.dataplug.controllers
 
 import com.hubofallthings.dataplug.actors.IoExecutionContext
+import com.hubofallthings.dataplug.apiInterfaces.authProviders.HatOAuth2Provider
 import com.hubofallthings.dataplug.apiInterfaces.models.{ ApiEndpointStatus, ApiEndpointVariantChoice }
 import com.hubofallthings.dataplug.models.User
-import com.hubofallthings.dataplug.services.{ DataPlugEndpointService, DataplugSyncerActorManager }
+import com.hubofallthings.dataplug.services.{ DataPlugEndpointService, DataplugSyncerActorManager, HatTokenService, UserService }
 import com.hubofallthings.dataplug.utils.{ PhataAuthenticationEnvironment, SilhouettePhataAuthenticationController }
 import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
@@ -34,6 +35,9 @@ class Application @Inject() (
     dataPlugViewSet: DataPlugViewSet,
     dataPlugEndpointService: DataPlugEndpointService,
     syncerActorManager: DataplugSyncerActorManager,
+    userService: UserService,
+    hatTokenService: HatTokenService,
+    hatProvider: HatOAuth2Provider,
     clock: Clock) extends SilhouettePhataAuthenticationController(components, silhouette, clock, configuration) {
 
   protected val logger: Logger = Logger(this.getClass)
@@ -90,7 +94,7 @@ class Application @Inject() (
       }
   }
 
-  private def handleUserWithChoice(
+  protected def handleUserWithChoice(
     variantChoices: Seq[ApiEndpointVariantChoice],
     apiEndpointStatuses: Seq[ApiEndpointStatus])(implicit requestHeader: RequestHeader, user: User): Result = {
     logger.debug(s"Let user choose what to sync: $variantChoices")
@@ -155,7 +159,7 @@ class Application @Inject() (
     }
   }
 
-  def disconnect(): Action[AnyContent] = SecuredAction.async { implicit request =>
+  def deactivateEndpoints(): Action[AnyContent] = SecuredAction.async { implicit request =>
     val eventualResult = for {
       variantChoices <- syncerActorManager.currentProviderApiVariantChoices(request.identity, provider)(ioEC)
       apiEndpointStatuses <- dataPlugEndpointService.listCurrentEndpointStatuses(request.identity.userId)
@@ -175,9 +179,24 @@ class Application @Inject() (
       .recover {
         case e =>
           logger.error(s"$provider API cannot be accessed: ${e.getMessage}. Redirecting to $provider OAuth service.", e)
-          Redirect(com.hubofallthings.dataplug.controllers.routes.SocialAuthController.authenticate(provider))
+          Redirect(dataPlugViewSet.disconnectRedirect)
       }
   }
 
+  def disconnect(): Action[AnyContent] = SecuredAction.async { implicit request =>
+    val userId = request.identity.linkedUsers.map(_.userId).headOption.getOrElse("")
+    val phata = request.identity.userId
+    val serviceName = configuration.get[String]("service.name")
+    logger.warn(s"User $phata attempts to disconnect $serviceName plug")
+
+    for {
+      redirect <- deactivateEndpoints()(request)
+      _ <- userService.delete(phata, userId)
+      _ <- hatTokenService.delete(phata)
+      _ <- hatProvider.disconnect(phata, userId)
+    } yield {
+      redirect
+    }
+  }
 }
 
