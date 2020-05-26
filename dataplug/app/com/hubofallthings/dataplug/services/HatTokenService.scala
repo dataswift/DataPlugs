@@ -71,7 +71,7 @@ class HatTokenService @Inject() (protected val dbConfigProvider: DatabaseConfigP
     db.run(q).map {
       case 0 => throw UserNotFoundException(s"Could not find user $hat")
       case 1 => Done
-      case rows  =>
+      case rows =>
         logger.info(s"Deleting $rows HAT tokens for $hat")
         Done
     }

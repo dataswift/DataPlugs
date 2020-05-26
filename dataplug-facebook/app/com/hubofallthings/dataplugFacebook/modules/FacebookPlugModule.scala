@@ -17,7 +17,7 @@ import com.hubofallthings.dataplug.controllers.{ DataPlugViewSet, DataPlugViewSe
 import com.hubofallthings.dataplug.dal.SchemaMigrationImpl
 import com.hubofallthings.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl, DataPlugSharedNotableDAO, DataPlugSharedNotableDAOImpl }
 import com.hubofallthings.dataplug.services.{ DataPlugEndpointService, DataPlugEndpointServiceImpl, DataPlugNotablesService, DataPlugNotablesServiceImpl, StartupService, StartupServiceImpl }
-import com.hubofallthings.dataplugFacebook.apiInterfaces.{ FacebookEventInterface, FacebookFeedInterface, FacebookPostsInterface, FacebookProfileCheck, FacebookProfileInterface, FacebookProfilePictureInterface }
+import com.hubofallthings.dataplugFacebook.apiInterfaces.{ FacebookEventInterface, FacebookFeedInterface, FacebookPostsInterface, FacebookProfileCheck, FacebookProfileInterface, FacebookProfilePictureInterface, FacebookUserLikesInterface }
 import com.hubofallthings.dataplugFacebook.apiInterfaces.authProviders._
 import com.mohiva.play.silhouette.api.Provider
 import com.mohiva.play.silhouette.api.util.HTTPLayer
