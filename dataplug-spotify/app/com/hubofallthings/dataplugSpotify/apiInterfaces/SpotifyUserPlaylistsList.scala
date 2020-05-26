@@ -16,7 +16,7 @@ import com.hubofallthings.dataplug.services.UserService
 import com.hubofallthings.dataplug.utils.Mailer
 import com.hubofallthings.dataplugSpotify.models.SpotifyUsersPlaylist
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import com.hubofallthings.dataplugCalendar.apiInterfaces.authProviders._
+import com.hubofallthings.dataplugSpotify.apiInterfaces.authProviders.SpotifyProvider
 import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.libs.ws.WSClient
@@ -27,7 +27,7 @@ class SpotifyUserPlaylistsList @Inject() (
     val authInfoRepository: AuthInfoRepository,
     val tokenHelper: OAuth2TokenHelper,
     val mailer: Mailer,
-    val provider: GoogleProvider) extends DataPlugOptionsCollector with RequestAuthenticatorOAuth2 {
+    val provider: SpotifyProvider) extends DataPlugOptionsCollector with RequestAuthenticatorOAuth2 {
 
   val namespace: String = "spotify"
   val endpoint: String = "playlists/user"
