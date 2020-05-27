@@ -17,10 +17,9 @@ import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.util.Clock
 import com.mohiva.play.silhouette.impl.providers._
 import play.api.i18n.{ I18nSupport, Messages }
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.ControllerComponents
 
-import scala.concurrent.Future
+import scala.concurrent.{ ExecutionContext, Future }
 
 /**
  * The social auth controller.
@@ -38,7 +37,7 @@ class SocialAuthController @Inject() (
     authInfoRepository: AuthInfoRepository,
     socialProviderRegistry: SocialProviderRegistry,
     dataPlugViewSet: DataPlugViewSet,
-    clock: Clock) extends SilhouettePhataAuthenticationController(components, silhouette, clock, configuration) with I18nSupport with Logger {
+    clock: Clock)(implicit ec: ExecutionContext) extends SilhouettePhataAuthenticationController(components, silhouette, clock, configuration) with I18nSupport with Logger {
 
   /**
    * Authenticates a user against a social provider.
