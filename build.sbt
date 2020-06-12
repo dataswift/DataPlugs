@@ -69,6 +69,7 @@ val dataplug = project
       Library.Specs2.core,
       Library.Specs2.matcherExtra,
       Library.Specs2.mock,
+      Library.Utils.apacheCommonLang,
       Library.scalaGuice
     )
   )
