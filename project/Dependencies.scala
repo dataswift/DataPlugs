@@ -11,14 +11,14 @@ import sbt._
 object Dependencies {
 
   object Versions {
-    val crossScala = Seq("2.12.4")
+    val crossScala = Seq("2.12.11")
     val scalaVersion = crossScala.head
   }
 
   val resolvers = Seq(
     "Atlassian Releases" at "https://maven.atlassian.com/public/",
-    "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases",
-    "Sonatype snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/",
+    Resolver.bintrayRepo("scalaz", "releases"),
+    Resolver.sonatypeRepo("snapshots"),
     "HAT Library Artifacts Releases" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com",
     "HAT Library Artifacts Snapshots" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-snapshots.hubofallthings.com"
   )
@@ -46,7 +46,7 @@ object Dependencies {
       val playSlick = "com.typesafe.play" %% "play-slick" % "3.0.3"
 
       object Jwt {
-        private val bouncyCastleVersion = "1.59"
+        private val bouncyCastleVersion = "1.60"
         val bouncyCastle = "org.bouncycastle" % "bcprov-jdk15on" % bouncyCastleVersion
         val bouncyCastlePkix = "org.bouncycastle" % "bcpkix-jdk15on" % bouncyCastleVersion
         val nimbusDsJwt = "com.nimbusds" % "nimbus-jose-jwt" % "4.41.2"
@@ -76,6 +76,7 @@ object Dependencies {
 
     object Utils {
       val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.0.9"
+      val apacheCommonLang = "org.apache.commons" % "commons-lang3" % "3.10"
     }
 
     val scalaGuice = "net.codingwell" %% "scala-guice" % "4.1.0"
