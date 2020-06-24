@@ -13,38 +13,47 @@ import com.hubofallthings.dataplug.apiInterfaces.authProviders.RequestAuthentica
 import com.hubofallthings.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointVariantChoice }
 import play.api.http.Status._
 import play.api.libs.json.JsValue
+import play.api.libs.ws.WSResponse
 
 import scala.concurrent.{ ExecutionContext, Future }
 
 trait DataPlugOptionsCollector extends RequestAuthenticator with DataPlugApiEndpointClient {
-  def get(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef, retrying: Boolean)(implicit ec: ExecutionContext): Future[Seq[ApiEndpointVariantChoice]] = {
-    val authenticatedFetchParameters = authenticateRequest(fetchParams, hatAddress, refreshToken = retrying)
+  def get(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef, retrying: Boolean)
+         (implicit ec: ExecutionContext): Future[Seq[ApiEndpointVariantChoice]] = {
 
-    authenticatedFetchParameters flatMap { requestParameters =>
-      buildRequest(requestParameters)
-    } flatMap { result =>
+    authenticateRequest(fetchParams, hatAddress, refreshToken = retrying).flatMap(buildRequest).flatMap { result =>
       result.status match {
         case OK =>
           Future.successful(generateEndpointChoices(Some(result.json)))
 
         case UNAUTHORIZED =>
-          if (!retrying) {
-            logger.debug(s"Unauthorized request $fetchParams for $hatAddress - ${result.status}: ${result.body}")
-            get(fetchParams, hatAddress, hatClientActor, retrying = true)
-          }
-          else {
-            logger.warn(s"Unauthorized request after retrying $fetchParams for $hatAddress - ${result.status}: ${result.body}")
-            Future.failed(new RuntimeException(s"Unauthorized request after retrying $fetchParams for $hatAddress - ${result.status}: ${result.body}"))
-          }
+          unauthorizedResponse(fetchParams, hatAddress, hatClientActor, retrying, result)
 
         case _ =>
-          logger.warn(s"Unsuccessful response from api endpoint $fetchParams - ${result.status}: ${result.body}")
-          Future.failed(new RuntimeException(s"Unsuccessful response from api endpoint $fetchParams - ${result.status}: ${result.body}"))
+          val errorMessage = s"Unsuccessful response from api endpoint $fetchParams - ${result.status}: ${result.body}"
+          error(errorMessage, new RuntimeException(errorMessage))
       }
     } recoverWith {
       case e =>
-        logger.warn(s"Error when querying api endpoint $fetchParams - ${e.getMessage}")
-        Future.failed(e)
+        error(s"Error when querying api endpoint $fetchParams - ${e.getMessage}", e)
+    }
+  }
+
+  def error(errorMessage: String, exception: Throwable): Future[Nothing] = {
+    logger.warn(errorMessage)
+    Future.failed(exception)
+  }
+
+  def unauthorizedResponse(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef, retrying: Boolean, response: WSResponse)
+                          (implicit ec: ExecutionContext): Future[Seq[ApiEndpointVariantChoice]] = {
+
+    if (!retrying) {
+      logger.debug(s"Unauthorized request $fetchParams for $hatAddress - ${response.status}: ${response.body}")
+      get(fetchParams, hatAddress, hatClientActor, retrying = true)
+    }
+    else {
+      val errorMessage = s"Unauthorized request after retrying $fetchParams for $hatAddress - ${response.status}: ${response.body}"
+      error(errorMessage, new RuntimeException(errorMessage))
     }
   }
 
