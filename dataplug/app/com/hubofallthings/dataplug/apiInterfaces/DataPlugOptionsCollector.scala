@@ -39,7 +39,7 @@ trait DataPlugOptionsCollector extends RequestAuthenticator with DataPlugApiEndp
     }
   }
 
-  def error(errorMessage: String, exception: Throwable): Future[Nothing] = {
+  protected def error(errorMessage: String, exception: Throwable): Future[Nothing] = {
     logger.warn(errorMessage)
     Future.failed(exception)
   }
