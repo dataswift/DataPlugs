@@ -44,7 +44,7 @@ trait DataPlugOptionsCollector extends RequestAuthenticator with DataPlugApiEndp
     Future.failed(exception)
   }
 
-  def unauthorizedResponse(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef, retrying: Boolean, response: WSResponse)
+  protected def unauthorizedResponse(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef, retrying: Boolean, response: WSResponse)
                           (implicit ec: ExecutionContext): Future[Seq[ApiEndpointVariantChoice]] = {
 
     if (!retrying) {
