@@ -19,7 +19,7 @@ lazy val packageSettings = Seq(
   maintainer in Docker := maintainer.value,
   version in Docker := version.value,
   dockerExposedPorts := Seq(9000),
-  dockerBaseImage := "openjdk:8-jre-alpine",
+  dockerBaseImage := "adoptopenjdk/openjdk11:jre-11.0.7_10-alpine",
   dockerEntrypoint := Seq(s"bin/${packageName.value}")
 )
 
