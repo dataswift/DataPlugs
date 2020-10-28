@@ -33,3 +33,17 @@ dist
 
 # Keystore
 *.keystore
+
+# VS Code and Metals
+.bloop
+.metals
+.vscode
+project/metals.sbt
+
+# .swp files
+*.swp
+
+# IntelliJ files
+*.iml
+
+

@@ -7,19 +7,27 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    env:
+      DATAPLUG: dataplug-spotify
+      REPOSITORY: dataplug-spotify
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
+      - name: Setup Java environment
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+          java-package: jdk
+          architecture: x64
       - name: Setup NodeJs environment
         uses: actions/setup-node@v1
         with:
           node-version: '10.x'
-      - name: Build plug
+      - name: Docker stage
+        run: sbt "project $DATAPLUG" docker:stage
+        if: github.event_name == 'push'
+      - name: Build, tag, and push image to docker hub
         run: |
-          sbt "project $DATAPLUG" "docker:stage"
           docker build -t hubofallthings/$REPOSITORY $DATAPLUG/target/docker/stage/
-          docker login -u "${{secrets.DOCKER_USERNAME}}" -p "${{secrets.DOCKER_PASSWORD}}"
+          docker login -u "${{ secrets.DOCKER_USERNAME }}" -p "${{ secrets.DOCKER_PASSWORD }}"
           docker push hubofallthings/$REPOSITORY
-        env:
-          DATAPLUG: dataplug-spotify
-          REPOSITORY: dataplug-spotify
