@@ -18,8 +18,7 @@ import play.api.libs.ws.WSResponse
 import scala.concurrent.{ ExecutionContext, Future }
 
 trait DataPlugOptionsCollector extends RequestAuthenticator with DataPlugApiEndpointClient {
-  def get(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef, retrying: Boolean)
-         (implicit ec: ExecutionContext): Future[Seq[ApiEndpointVariantChoice]] = {
+  def get(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef, retrying: Boolean)(implicit ec: ExecutionContext): Future[Seq[ApiEndpointVariantChoice]] = {
 
     authenticateRequest(fetchParams, hatAddress, refreshToken = retrying).flatMap(buildRequest).flatMap { result =>
       result.status match {
@@ -44,8 +43,7 @@ trait DataPlugOptionsCollector extends RequestAuthenticator with DataPlugApiEndp
     Future.failed(exception)
   }
 
-  protected def unauthorizedResponse(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef, retrying: Boolean, response: WSResponse)
-                          (implicit ec: ExecutionContext): Future[Seq[ApiEndpointVariantChoice]] = {
+  protected def unauthorizedResponse(fetchParams: ApiEndpointCall, hatAddress: String, hatClientActor: ActorRef, retrying: Boolean, response: WSResponse)(implicit ec: ExecutionContext): Future[Seq[ApiEndpointVariantChoice]] = {
 
     if (!retrying) {
       logger.debug(s"Unauthorized request $fetchParams for $hatAddress - ${response.status}: ${response.body}")
