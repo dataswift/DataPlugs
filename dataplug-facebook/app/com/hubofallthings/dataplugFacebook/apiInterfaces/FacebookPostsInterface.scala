@@ -154,8 +154,8 @@ object FacebookPostsInterface {
     "/me/posts",
     ApiEndpointMethod.Get("Get"),
     Map(),
-    Map("limit" -> "100", "fields" -> ("id,attachments,caption,created_time,description,from,full_picture,icon,link," +
-      "is_instagram_eligible,is_spherical,message,message_tags,name,object_id,permalink_url,place,shares,status_type,type,updated_time,with_tags")),
+    Map("limit" -> "100", "fields" -> ("id,caption,created_time,description,from,full_picture,icon,link,is_instagram_eligible," +
+      "message,message_tags,name,object_id,permalink_url,place,shares,status_type,type,updated_time,with_tags")),
     Map(),
     Some(Map()))
 }
