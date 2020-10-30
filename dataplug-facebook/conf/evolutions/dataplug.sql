@@ -120,7 +120,7 @@ UPDATE dataplug_user
 SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters,fields}', '"id,about,created_time,awards,can_checkin,can_post,category,category_list,checkins,description,description_html,display_subtext,emails,fan_count,has_whatsapp_number,link,location,name,overall_star_rating,place_type,rating_count,username,verification_status,website,whatsapp_number"')
 WHERE dataplug_user.dataplug_endpoint = 'likes/pages';
 
---changeset dataplugFacebook:updateFeedAndPostsFields
+--changeset dataplugFacebook:updateUserLikesFields
 
 UPDATE dataplug_user
 SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters,fields}', '"id,caption,created_time,description,from,full_picture,icon,link,is_instagram_eligible,message,message_tags,name,object_id,permalink_url,place,shares,status_type,type,updated_time,with_tags"')
