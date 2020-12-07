@@ -51,38 +51,48 @@ class FacebookPostsInterface @Inject() (
 
     logger.debug(s"Content is $content")
 
+    val maybeData = (content \ "data").toOption.exists {
+      case data: JsArray => data.value.isEmpty
+      case _             => false
+    }
     val maybeNextPage = (content \ "paging" \ "next").asOpt[String]
     val maybeSinceParam = params.pathParameters.get("since")
 
     logger.debug(s"Found possible next page link: $maybeNextPage")
     logger.debug(s"Found possible next since parameter: $maybeSinceParam")
 
-    maybeNextPage.map { nextPage =>
-      logger.debug(s"Found next page link (continuing sync): $nextPage")
+    if (!maybeData) {
+      maybeNextPage.map { nextPage =>
+        logger.debug(s"Found next page link (continuing sync): $nextPage")
 
-      val nextPageUri = Uri(nextPage)
-      val updatedQueryParams = params.queryParameters ++ nextPageUri.query().toMap
+        val nextPageUri = Uri(nextPage)
+        val updatedQueryParams = params.queryParameters ++ nextPageUri.query().toMap
 
-      logger.debug(s"Updated query parameters: $updatedQueryParams")
+        logger.debug(s"Updated query parameters: $updatedQueryParams")
 
-      if (maybeSinceParam.isDefined) {
-        logger.debug("\"Since\" parameter already set, updating query params")
-        params.copy(queryParameters = updatedQueryParams)
-      }
-      else {
-        (content \ "paging" \ "previous").asOpt[String].flatMap { previousPage =>
-          val previousPageUri = Uri(previousPage)
-          previousPageUri.query().get("since").map { sinceParam =>
-            val updatedPathParams = params.pathParameters + ("since" -> sinceParam)
-
-            logger.debug(s"Updating query params and setting 'since': $sinceParam")
-            params.copy(pathParameters = updatedPathParams, queryParameters = updatedQueryParams)
-          }
-        }.getOrElse {
-          logger.warn("Unexpected API behaviour: 'since' not set and it was not possible to extract it from response body")
+        if (maybeSinceParam.isDefined) {
+          logger.debug("\"Since\" parameter already set, updating query params")
           params.copy(queryParameters = updatedQueryParams)
         }
+        else {
+          (content \ "paging" \ "previous").asOpt[String].flatMap { previousPage =>
+            val previousPageUri = Uri(previousPage)
+            previousPageUri.query().get("since").map { sinceParam =>
+              val updatedPathParams = params.pathParameters + ("since" -> sinceParam)
+
+              logger.debug(s"Updating query params and setting 'since': $sinceParam")
+              params.copy(pathParameters = updatedPathParams, queryParameters = updatedQueryParams)
+            }
+          }.getOrElse {
+            logger.warn("Unexpected API behaviour: 'since' not set and it was not possible to extract it from response body")
+            params.copy(queryParameters = updatedQueryParams)
+          }
+        }
       }
+    }
+    else {
+      logger.debug(s"No Data: $maybeData")
+      None
     }
   }
 
