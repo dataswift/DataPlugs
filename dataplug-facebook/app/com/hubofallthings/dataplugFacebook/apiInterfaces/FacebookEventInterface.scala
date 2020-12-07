@@ -50,35 +50,45 @@ class FacebookEventInterface @Inject() (
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     logger.debug("Building continuation...")
 
+    val maybeData = (content \ "data").toOption.exists {
+      case data: JsArray => data.value.isEmpty
+      case _             => false
+    }
     val maybeNextCursor = (content \ "paging" \ "next").asOpt[String]
       .flatMap(nextPage => Uri(nextPage).query().get("after"))
     val maybeSinceParam = params.pathParameters.get("since")
 
-    maybeNextCursor.map { afterCursor =>
-      logger.debug(s"Found next page cursor (continuing sync): $afterCursor")
-      val updatedQueryParams = params.queryParameters + ("after" -> afterCursor)
+    if (!maybeData) {
+      maybeNextCursor.map { afterCursor =>
+        logger.debug(s"Found next page cursor (continuing sync): $afterCursor")
+        val updatedQueryParams = params.queryParameters + ("after" -> afterCursor)
 
-      logger.debug(s"Updated query parameters: $updatedQueryParams")
+        logger.debug(s"Updated query parameters: $updatedQueryParams")
 
-      if (maybeSinceParam.isDefined) {
-        logger.debug("'Since' parameter already set, updating query params")
-        params.copy(queryParameters = updatedQueryParams)
-      }
-      else {
-        val maybeNewSinceParam = for {
-          dataArray <- (content \ "data").asOpt[JsArray]
-          headItem <- dataArray.value.headOption
-          latestUpdateTime <- (headItem \ "start_time").asOpt[String]
-        } yield latestUpdateTime
-
-        maybeNewSinceParam.map { newSinceParam =>
-          logger.debug(s"Updating query params and setting 'since': $newSinceParam")
-          params.copy(pathParameters = params.pathParameters + ("since" -> newSinceParam), queryParameters = updatedQueryParams)
-        }.getOrElse {
-          logger.warn("Unexpected API behaviour: 'since' not set and it was not possible to extract it from response body")
+        if (maybeSinceParam.isDefined) {
+          logger.debug("'Since' parameter already set, updating query params")
           params.copy(queryParameters = updatedQueryParams)
         }
+        else {
+          val maybeNewSinceParam = for {
+            dataArray <- (content \ "data").asOpt[JsArray]
+            headItem <- dataArray.value.headOption
+            latestUpdateTime <- (headItem \ "start_time").asOpt[String]
+          } yield latestUpdateTime
+
+          maybeNewSinceParam.map { newSinceParam =>
+            logger.debug(s"Updating query params and setting 'since': $newSinceParam")
+            params.copy(pathParameters = params.pathParameters + ("since" -> newSinceParam), queryParameters = updatedQueryParams)
+          }.getOrElse {
+            logger.warn("Unexpected API behaviour: 'since' not set and it was not possible to extract it from response body")
+            params.copy(queryParameters = updatedQueryParams)
+          }
+        }
       }
+    }
+    else {
+      logger.debug(s"No Data: $maybeData")
+      None
     }
   }
 

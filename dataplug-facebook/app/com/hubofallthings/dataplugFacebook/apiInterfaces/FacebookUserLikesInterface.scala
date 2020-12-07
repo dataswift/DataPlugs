@@ -50,32 +50,41 @@ class FacebookUserLikesInterface @Inject() (
   def buildContinuation(content: JsValue, params: ApiEndpointCall): Option[ApiEndpointCall] = {
     logger.debug("Building continuation...")
 
+    val maybeData = (content \ "data").toOption.exists {
+      case data: JsArray => data.value.isEmpty
+      case _             => false
+    }
     val maybeNextPage = (content \ "paging" \ "next").asOpt[String]
     val maybeBeforeParam = params.pathParameters.get("before")
 
-    maybeNextPage.map { nextPage =>
-      logger.debug(s"Found next page link (continuing sync): $nextPage")
+    if (!maybeData) {
+      maybeNextPage.map { nextPage =>
+        logger.debug(s"Found next page link (continuing sync): $nextPage")
 
-      val nextPageUri = Uri(nextPage)
-      val updatedQueryParams = params.queryParameters ++ nextPageUri.query().toMap
+        val nextPageUri = Uri(nextPage)
+        val updatedQueryParams = params.queryParameters ++ nextPageUri.query().toMap
 
-      logger.debug(s"Updated query parameters: $updatedQueryParams")
+        logger.debug(s"Updated query parameters: $updatedQueryParams")
 
-      if (maybeBeforeParam.isDefined) {
-        logger.debug("\"Before\" parameter already set, updating query params")
-        params.copy(queryParameters = updatedQueryParams)
-      }
-      else {
-        (content \ "paging" \ "cursors" \ "before").asOpt[String].map { beforeParameter =>
-          val updatedPathParams = params.pathParameters + ("before" -> beforeParameter)
-
-          logger.debug(s"Updating query params and setting 'before': $beforeParameter")
-          params.copy(pathParameters = updatedPathParams, queryParameters = updatedQueryParams)
+        if (maybeBeforeParam.isDefined) {
+          logger.debug("\"Before\" parameter already set, updating query params")
+          params.copy(queryParameters = updatedQueryParams)
         }
-      }.getOrElse {
-        logger.warn("Unexpected API behaviour: 'before' not set and it was not possible to extract it from response body")
-        params.copy(queryParameters = updatedQueryParams)
+        else {
+          (content \ "paging" \ "cursors" \ "before").asOpt[String].map { beforeParameter =>
+            val updatedPathParams = params.pathParameters + ("before" -> beforeParameter)
+
+            logger.debug(s"Updating query params and setting 'before': $beforeParameter")
+            params.copy(pathParameters = updatedPathParams, queryParameters = updatedQueryParams)
+          }
+        }.getOrElse {
+          logger.warn("Unexpected API behaviour: 'before' not set and it was not possible to extract it from response body")
+          params.copy(queryParameters = updatedQueryParams)
+        }
       }
+    }
+    else {
+      None
     }
   }
 
