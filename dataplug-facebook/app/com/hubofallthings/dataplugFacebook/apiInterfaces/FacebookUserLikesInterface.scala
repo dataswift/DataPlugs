@@ -22,6 +22,7 @@ import com.hubofallthings.dataplug.utils.{ AuthenticatedHatClient, FutureTransfo
 import com.hubofallthings.dataplugFacebook.models.{ FacebookPost, FacebookUserLikes }
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.hubofallthings.dataplugFacebook.apiInterfaces.authProviders._
+import com.typesafe.config.ConfigFactory
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
@@ -159,8 +160,9 @@ class FacebookUserLikesInterface @Inject() (
 }
 
 object FacebookUserLikesInterface {
+  val baseApiUrl = ConfigFactory.load.getString("service.baseApiUrl")
   val defaultApiEndpoint = ApiEndpointCall(
-    "https://graph.facebook.com/v9.0",
+    baseApiUrl,
     "/me/likes",
     ApiEndpointMethod.Get("Get"),
     Map(),

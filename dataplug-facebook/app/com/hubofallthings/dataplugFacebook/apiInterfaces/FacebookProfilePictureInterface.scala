@@ -21,6 +21,7 @@ import com.hubofallthings.dataplug.utils.{ AuthenticatedHatClient, FutureTransfo
 import com.hubofallthings.dataplugFacebook.models.FacebookProfilePicture
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.hubofallthings.dataplugFacebook.apiInterfaces.authProviders._
+import com.typesafe.config.ConfigFactory
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
@@ -88,8 +89,9 @@ class FacebookProfilePictureInterface @Inject() (
 }
 
 object FacebookProfilePictureInterface {
+  val baseApiUrl = ConfigFactory.load.getString("service.baseApiUrl")
   val defaultApiEndpoint = ApiEndpointCall(
-    "https://graph.facebook.com/v9.0",
+    baseApiUrl,
     "/me/picture",
     ApiEndpointMethod.Get("Get"),
     Map(),

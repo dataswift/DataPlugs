@@ -18,6 +18,7 @@ import com.hubofallthings.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEn
 import com.hubofallthings.dataplug.services.UserService
 import com.hubofallthings.dataplug.utils.Mailer
 import com.hubofallthings.dataplugFacebook.models.FacebookFeedUpdate
+import com.typesafe.config.ConfigFactory
 import play.api.Logger
 import play.api.http.Status._
 import play.api.libs.json.Json
@@ -93,8 +94,10 @@ class FacebookFeedUploadInterface @Inject() (
 }
 
 object FacebookFeedUploadInterface {
+  val baseApiUrl = ConfigFactory.load.getString("service.baseApiUrl")
+
   val defaultApiEndpoint = ApiEndpointCall(
-    "https://graph.facebook.com/v9.0",
+    baseApiUrl,
     "/me/feed",
     ApiEndpointMethod.Post("Post", ""),
     Map(),
@@ -103,7 +106,7 @@ object FacebookFeedUploadInterface {
     Some(Map()))
 
   val photoUploadApiEndpoint = ApiEndpointCall(
-    "https://graph.facebook.com/v9.0",
+    baseApiUrl,
     "/me/photos",
     ApiEndpointMethod.Post("Post", ""),
     Map(),
@@ -112,7 +115,7 @@ object FacebookFeedUploadInterface {
     Some(Map()))
 
   val deleteApiEndpoint = ApiEndpointCall(
-    "https://graph.facebook.com/v9.0",
+    baseApiUrl,
     "/[post-id]",
     ApiEndpointMethod.Delete("Delete"),
     Map(),

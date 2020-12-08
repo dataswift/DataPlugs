@@ -22,6 +22,7 @@ import com.hubofallthings.dataplug.utils.{ AuthenticatedHatClient, FutureTransfo
 import com.hubofallthings.dataplugFacebook.models.FacebookEvent
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.hubofallthings.dataplugFacebook.apiInterfaces.authProviders._
+import com.typesafe.config.ConfigFactory
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
@@ -143,8 +144,9 @@ class FacebookEventInterface @Inject() (
 }
 
 object FacebookEventInterface {
+  val baseApiUrl = ConfigFactory.load.getString("service.baseApiUrl")
   val defaultApiEndpoint = ApiEndpointCall(
-    "https://graph.facebook.com/v9.0",
+    baseApiUrl,
     "/me/events",
     ApiEndpointMethod.Get("Get"),
     Map(),
