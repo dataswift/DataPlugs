@@ -130,3 +130,9 @@ UPDATE dataplug_user
 SET endpoint_configuration = jsonb_set(endpoint_configuration, '{queryParameters,fields}', '"id,caption,created_time,description,from,full_picture,icon,link,is_instagram_eligible,message,message_tags,name,object_id,permalink_url,place,shares,status_type,type,updated_time,with_tags"')
 WHERE dataplug_user.dataplug_endpoint = 'posts';
 
+--changeset dataplugFacebook:removeUserEventsEndpoint context:data
+
+DELETE FROM dataplug_user_status WHERE dataplug_endpoint = 'events';
+DELETE FROM dataplug_user WHERE dataplug_endpoint = 'events';
+DELETE FROM dataplug_endpoint WHERE name = 'events';
+

@@ -141,6 +141,6 @@ object FacebookProvider {
    * The Uber constants.
    */
   val ID = "facebook"
-  val API = "https://graph.facebook.com/v5.0/me?fields=name,first_name,last_name,picture,email&return_ssl_resources=1&access_token=%s"
+  val API = "https://graph.facebook.com/v9.0/me?fields=name,first_name,last_name,picture,email&return_ssl_resources=1&access_token=%s"
 }
 

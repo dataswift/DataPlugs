@@ -22,6 +22,8 @@ import com.hubofallthings.dataplug.utils.{ AuthenticatedHatClient, FutureTransfo
 import com.hubofallthings.dataplugFacebook.models.{ FacebookPost, FacebookUserLikes }
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.hubofallthings.dataplugFacebook.apiInterfaces.authProviders._
+import com.typesafe.config.ConfigFactory
+import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
@@ -89,29 +91,15 @@ class FacebookUserLikesInterface @Inject() (
   }
 
   def buildNextSync(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
-    logger.debug(s"Building next sync...")
-
-    val maybeBeforeParam = params.pathParameters.get("before")
-    val updatedQueryParams = params.queryParameters - "after" - "access_token"
+    val updatedQueryParams = params.queryParameters - "__paging_token" - "access_token" - "__previous"
 
     logger.debug(s"Updated query parameters: $updatedQueryParams")
 
-    maybeBeforeParam.map { beforeParameter =>
-      logger.debug(s"Building next sync parameters $updatedQueryParams with 'before': $beforeParameter")
-      params.copy(pathParameters = params.pathParameters - "before", queryParameters = updatedQueryParams + ("before" -> beforeParameter))
-    }.getOrElse {
-      val maybePreviousPage = (content \ "paging" \ "cursors" \ "before").asOpt[String]
-
-      logger.debug("'Before' parameter not found (likely no continuation runs), setting one now")
-      maybePreviousPage.flatMap { previousPage =>
-        Uri(previousPage).query().get("before").map { newBefore =>
-          params.copy(queryParameters = params.queryParameters + ("before" -> newBefore))
-        }
-      }.getOrElse {
-        logger.warn("Could not extract previous page 'before' parameter so the new value is not set. Was the feed list empty?")
-        params
-      }
-    }
+    val sinceParameter = DateTime.now().getMillis / 1000
+    val untilParameter = DateTime.now().plusDays(2).getMillis / 1000
+    params.copy(
+      pathParameters = params.pathParameters - "since",
+      queryParameters = updatedQueryParams + ("since" -> sinceParameter.toString) + ("until" -> untilParameter.toString))
   }
 
   override protected def processResults(
@@ -172,8 +160,9 @@ class FacebookUserLikesInterface @Inject() (
 }
 
 object FacebookUserLikesInterface {
+  val baseApiUrl = ConfigFactory.load.getString("service.baseApiUrl")
   val defaultApiEndpoint = ApiEndpointCall(
-    "https://graph.facebook.com/v5.0",
+    baseApiUrl,
     "/me/likes",
     ApiEndpointMethod.Get("Get"),
     Map(),

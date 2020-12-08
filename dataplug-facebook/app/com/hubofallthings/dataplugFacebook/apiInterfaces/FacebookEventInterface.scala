@@ -22,6 +22,8 @@ import com.hubofallthings.dataplug.utils.{ AuthenticatedHatClient, FutureTransfo
 import com.hubofallthings.dataplugFacebook.models.FacebookEvent
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.hubofallthings.dataplugFacebook.apiInterfaces.authProviders._
+import com.typesafe.config.ConfigFactory
+import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
@@ -93,33 +95,15 @@ class FacebookEventInterface @Inject() (
   }
 
   def buildNextSync(content: JsValue, params: ApiEndpointCall): ApiEndpointCall = {
-    logger.debug(s"Building next sync...")
-
-    val maybeSinceParam = params.pathParameters.get("since")
-    val updatedQueryParams = params.queryParameters - "after"
+    val updatedQueryParams = params.queryParameters - "__paging_token" - "access_token" - "__previous"
 
     logger.debug(s"Updated query parameters: $updatedQueryParams")
 
-    maybeSinceParam.map { sinceParam =>
-      logger.debug(s"Building next sync parameters $updatedQueryParams with 'since': $sinceParam")
-      params.copy(pathParameters = params.pathParameters - "since", queryParameters = updatedQueryParams + ("since" -> sinceParam))
-    }.getOrElse {
-      logger.debug("'Since' parameter not found (likely no continuation runs), setting one now")
-
-      val maybeNewSinceParam = for {
-        dataArray <- (content \ "data").asOpt[JsArray]
-        headItem <- dataArray.value.headOption
-        latestUpdateTime <- (headItem \ "start_time").asOpt[String]
-      } yield latestUpdateTime
-
-      maybeNewSinceParam.map { newSinceParam =>
-        logger.debug(s"Building next sync parameters $updatedQueryParams with 'since': $newSinceParam")
-        params.copy(queryParameters = updatedQueryParams + ("since" -> newSinceParam))
-      }.getOrElse {
-        logger.warn("Could not extract latest event update time,'since' field is not set. Was the events list empty?")
-        params
-      }
-    }
+    val sinceParameter = DateTime.now().getMillis / 1000
+    val untilParameter = DateTime.now().plusDays(2).getMillis / 1000
+    params.copy(
+      pathParameters = params.pathParameters - "since",
+      queryParameters = updatedQueryParams + ("since" -> sinceParameter.toString) + ("until" -> untilParameter.toString))
   }
 
   override protected def processResults(
@@ -160,8 +144,9 @@ class FacebookEventInterface @Inject() (
 }
 
 object FacebookEventInterface {
+  val baseApiUrl = ConfigFactory.load.getString("service.baseApiUrl")
   val defaultApiEndpoint = ApiEndpointCall(
-    "https://graph.facebook.com/v5.0",
+    baseApiUrl,
     "/me/events",
     ApiEndpointMethod.Get("Get"),
     Map(),

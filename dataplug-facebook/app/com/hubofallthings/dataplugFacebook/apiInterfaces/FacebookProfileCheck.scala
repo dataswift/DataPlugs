@@ -17,6 +17,7 @@ import com.hubofallthings.dataplug.services.UserService
 import com.hubofallthings.dataplug.utils.Mailer
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.hubofallthings.dataplugFacebook.apiInterfaces.authProviders._
+import com.typesafe.config.ConfigFactory
 import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.libs.ws.WSClient
@@ -33,9 +34,10 @@ class FacebookProfileCheck @Inject() (
   val namespace: String = "facebook"
   val endpoint: String = "profile"
   protected val logger: Logger = Logger(this.getClass)
+  val baseApiUrl = ConfigFactory.load.getString("service.baseApiUrl")
 
   val defaultApiEndpoint = ApiEndpointCall(
-    "https://graph.facebook.com/v5.0",
+    baseApiUrl,
     "/me",
     ApiEndpointMethod.Get("Get"),
     Map(),
@@ -66,17 +68,11 @@ class FacebookProfileCheck @Inject() (
       Some(""), Some(""),
       Some(FacebookPostsInterface.defaultApiEndpoint))
 
-    val eventsVariant = ApiEndpointVariant(
-      ApiEndpoint("events", "Facebook events the user has been invited to", None),
-      Some(""), Some(""),
-      Some(FacebookEventInterface.defaultApiEndpoint))
-
     val choices = Seq(
       ApiEndpointVariantChoice("profile", "User's Facebook profile information", active = true, profileVariant),
       ApiEndpointVariantChoice("profile/picture", "User's Facebook profile picture", active = true, profilePictureVariant),
       ApiEndpointVariantChoice("feed", "User's Facebook posts feed", active = true, feedVariant),
-      ApiEndpointVariantChoice("posts", "User's own Facebook posts", active = true, postsVariant),
-      ApiEndpointVariantChoice("events", "Facebook events the user has been invited to", active = true, eventsVariant))
+      ApiEndpointVariantChoice("posts", "User's own Facebook posts", active = true, postsVariant))
 
     choices
   }
