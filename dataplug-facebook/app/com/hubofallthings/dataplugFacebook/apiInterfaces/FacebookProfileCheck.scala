@@ -35,7 +35,7 @@ class FacebookProfileCheck @Inject() (
   protected val logger: Logger = Logger(this.getClass)
 
   val defaultApiEndpoint = ApiEndpointCall(
-    "https://graph.facebook.com/v5.0",
+    "https://graph.facebook.com/v9.0",
     "/me",
     ApiEndpointMethod.Get("Get"),
     Map(),
@@ -66,17 +66,11 @@ class FacebookProfileCheck @Inject() (
       Some(""), Some(""),
       Some(FacebookPostsInterface.defaultApiEndpoint))
 
-    val eventsVariant = ApiEndpointVariant(
-      ApiEndpoint("events", "Facebook events the user has been invited to", None),
-      Some(""), Some(""),
-      Some(FacebookEventInterface.defaultApiEndpoint))
-
     val choices = Seq(
       ApiEndpointVariantChoice("profile", "User's Facebook profile information", active = true, profileVariant),
       ApiEndpointVariantChoice("profile/picture", "User's Facebook profile picture", active = true, profilePictureVariant),
       ApiEndpointVariantChoice("feed", "User's Facebook posts feed", active = true, feedVariant),
-      ApiEndpointVariantChoice("posts", "User's own Facebook posts", active = true, postsVariant),
-      ApiEndpointVariantChoice("events", "Facebook events the user has been invited to", active = true, eventsVariant))
+      ApiEndpointVariantChoice("posts", "User's own Facebook posts", active = true, postsVariant))
 
     choices
   }

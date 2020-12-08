@@ -111,7 +111,7 @@ class FacebookProfileInterface @Inject() (
 
 object FacebookProfileInterface {
   val defaultApiEndpoint = ApiEndpointCall(
-    "https://graph.facebook.com/v5.0",
+    "https://graph.facebook.com/v9.0",
     "/me",
     ApiEndpointMethod.Get("Get"),
     Map(),

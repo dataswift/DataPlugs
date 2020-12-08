@@ -94,7 +94,7 @@ class FacebookFeedUploadInterface @Inject() (
 
 object FacebookFeedUploadInterface {
   val defaultApiEndpoint = ApiEndpointCall(
-    "https://graph.facebook.com/v5.0",
+    "https://graph.facebook.com/v9.0",
     "/me/feed",
     ApiEndpointMethod.Post("Post", ""),
     Map(),
@@ -103,7 +103,7 @@ object FacebookFeedUploadInterface {
     Some(Map()))
 
   val photoUploadApiEndpoint = ApiEndpointCall(
-    "https://graph.facebook.com/v5.0",
+    "https://graph.facebook.com/v9.0",
     "/me/photos",
     ApiEndpointMethod.Post("Post", ""),
     Map(),
@@ -112,7 +112,7 @@ object FacebookFeedUploadInterface {
     Some(Map()))
 
   val deleteApiEndpoint = ApiEndpointCall(
-    "https://graph.facebook.com/v5.0",
+    "https://graph.facebook.com/v9.0",
     "/[post-id]",
     ApiEndpointMethod.Delete("Delete"),
     Map(),
