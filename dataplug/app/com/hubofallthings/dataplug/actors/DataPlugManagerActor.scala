@@ -8,22 +8,23 @@
 
 package com.hubofallthings.dataplug.actors
 
-import javax.inject.{ Inject, Named }
-import akka.actor.{ Actor, ActorRef, Cancellable, PoisonPill, Props, Scheduler }
+import javax.inject.{Inject, Named}
+import akka.actor.{Actor, ActorRef, Cancellable, PoisonPill, Props, Scheduler}
 import akka.pattern.pipe
 import akka.stream.ActorMaterializer
-import com.hubofallthings.dataplug.actors.Errors.{ DataPlugError, HATApiForbiddenException }
-import com.hubofallthings.dataplug.apiInterfaces.{ DataPlugEndpointInterface, DataPlugRegistry }
-import com.hubofallthings.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointVariant, ApiEndpointVariantChoice }
+import com.hubofallthings.dataplug.actors.Errors.{DataPlugError, HATApiForbiddenException}
+import com.hubofallthings.dataplug.apiInterfaces.{DataPlugEndpointInterface, DataPlugRegistry}
+import com.hubofallthings.dataplug.apiInterfaces.models.{ApiEndpointCall, ApiEndpointVariant, ApiEndpointVariantChoice}
 import com.hubofallthings.dataplug.models.User
-import com.hubofallthings.dataplug.services.{ DataPlugEndpointService, DataplugSyncerActorManager, HatTokenService }
-import com.hubofallthings.dataplug.utils.{ AuthenticatedHatClient, Mailer }
+import com.hubofallthings.dataplug.services.{DataPlugEndpointService, DataplugSyncerActorManager, HatTokenService}
+import com.hubofallthings.dataplug.utils.{AuthenticatedHatClient, Mailer}
 import play.api.cache.AsyncCacheApi
 import play.api.libs.ws.WSClient
-import play.api.{ Configuration, Logger }
+import play.api.{Configuration, Logger}
 
+import java.io.{PrintWriter, StringWriter}
 import scala.concurrent.duration._
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 object DataPlugManagerActor {
@@ -176,7 +177,10 @@ class DataPlugManagerActor @Inject() (
 
           eventualSyncMessage.recover {
             case e =>
-              logger.error(s"Error while trying to start syncing dat for $phata, variant $variant: ${e.getMessage}", e)
+              logger.error(s"Error while trying to start syncing data for $phata, variant $variant: ${e.getMessage}", e)
+              val sw = new StringWriter
+              e.printStackTrace(new PrintWriter(sw))
+              logger.error(sw.toString)
               DataPlugManagerActor.Nop()
           } pipeTo throttledSyncActor
 
