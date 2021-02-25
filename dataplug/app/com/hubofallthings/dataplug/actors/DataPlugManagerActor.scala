@@ -8,23 +8,23 @@
 
 package com.hubofallthings.dataplug.actors
 
-import javax.inject.{Inject, Named}
-import akka.actor.{Actor, ActorRef, Cancellable, PoisonPill, Props, Scheduler}
+import javax.inject.{ Inject, Named }
+import akka.actor.{ Actor, ActorRef, Cancellable, PoisonPill, Props, Scheduler }
 import akka.pattern.pipe
 import akka.stream.ActorMaterializer
-import com.hubofallthings.dataplug.actors.Errors.{DataPlugError, HATApiForbiddenException}
-import com.hubofallthings.dataplug.apiInterfaces.{DataPlugEndpointInterface, DataPlugRegistry}
-import com.hubofallthings.dataplug.apiInterfaces.models.{ApiEndpointCall, ApiEndpointVariant, ApiEndpointVariantChoice}
+import com.hubofallthings.dataplug.actors.Errors.{ DataPlugError, HATApiForbiddenException }
+import com.hubofallthings.dataplug.apiInterfaces.{ DataPlugEndpointInterface, DataPlugRegistry }
+import com.hubofallthings.dataplug.apiInterfaces.models.{ ApiEndpointCall, ApiEndpointVariant, ApiEndpointVariantChoice }
 import com.hubofallthings.dataplug.models.User
-import com.hubofallthings.dataplug.services.{DataPlugEndpointService, DataplugSyncerActorManager, HatTokenService}
-import com.hubofallthings.dataplug.utils.{AuthenticatedHatClient, Mailer}
+import com.hubofallthings.dataplug.services.{ DataPlugEndpointService, DataplugSyncerActorManager, HatTokenService }
+import com.hubofallthings.dataplug.utils.{ AuthenticatedHatClient, Mailer }
 import play.api.cache.AsyncCacheApi
 import play.api.libs.ws.WSClient
-import play.api.{Configuration, Logger}
+import play.api.{ Configuration, Logger }
 
-import java.io.{PrintWriter, StringWriter}
+import java.io.{ PrintWriter, StringWriter }
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Try
 
 object DataPlugManagerActor {
