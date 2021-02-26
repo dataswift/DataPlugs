@@ -139,6 +139,7 @@ lazy val dataplugFitbit = Project(id = "dataplug-fitbit", base = file("dataplug-
   .enablePlugins(AshScriptPlugin)
   .settings(packageSettings)
   .dependsOn(dataplug)
+  .disablePlugins(PlayLogback)
 
 lazy val dataplugSpotify = Project(id = "dataplug-spotify", base = file("dataplug-spotify"))
   .enablePlugins(BasicSettings)
