@@ -177,10 +177,7 @@ class DataPlugManagerActor @Inject() (
 
           eventualSyncMessage.recover {
             case e =>
-              logger.error(s"Error while trying to start syncing data for $phata, variant $variant: ${e.getMessage}", e)
-              val sw = new StringWriter
-              e.printStackTrace(new PrintWriter(sw))
-              logger.error(sw.toString)
+              logger.error(s"Error while trying to start syncing data for $phata, variant $variant", e)
               DataPlugManagerActor.Nop()
           } pipeTo throttledSyncActor
 
