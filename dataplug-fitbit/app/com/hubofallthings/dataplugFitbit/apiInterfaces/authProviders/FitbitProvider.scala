@@ -8,13 +8,13 @@
 
 package com.hubofallthings.dataplugFitbit.apiInterfaces.authProviders
 
+import com.hubofallthings.dataplug.apiInterfaces.authProviders.DataPlugDisconnect
+import com.hubofallthings.dataplugFitbit.apiInterfaces.authProviders.FitbitProvider._
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.crypto.Base64
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.exceptions.ProfileRetrievalException
 import com.mohiva.play.silhouette.impl.providers._
-import FitbitProvider._
-import com.hubofallthings.dataplug.apiInterfaces.authProviders.HatOAuth2Provider
 import play.api.http.HeaderNames._
 import play.api.libs.json.{ JsArray, JsValue }
 
@@ -25,7 +25,7 @@ import scala.concurrent.Future
  *
  * @see https://dev.fitbit.com/docs/oauth2/
  */
-trait BaseFitbitProvider extends HatOAuth2Provider {
+trait BaseFitbitProvider extends DataPlugDisconnect with OAuth2Provider {
 
   /**
    * The content type to parse a profile from.

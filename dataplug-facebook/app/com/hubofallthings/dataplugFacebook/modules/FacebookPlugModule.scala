@@ -11,14 +11,14 @@ package com.hubofallthings.dataplugFacebook.modules
 import akka.actor.{ ActorSystem, Scheduler }
 import com.google.inject.{ AbstractModule, Provides }
 import com.hubofallthings.dataplug.actors.DataPlugManagerActor
-import com.hubofallthings.dataplug.apiInterfaces.authProviders.HatOAuth2Provider
+import com.hubofallthings.dataplug.apiInterfaces.authProviders.DataPlugDisconnect
 import com.hubofallthings.dataplug.apiInterfaces.{ DataPlugOptionsCollector, DataPlugOptionsCollectorRegistry, DataPlugRegistry }
 import com.hubofallthings.dataplug.controllers.{ DataPlugViewSet, DataPlugViewSetDefault }
 import com.hubofallthings.dataplug.dal.SchemaMigrationImpl
 import com.hubofallthings.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl, DataPlugSharedNotableDAO, DataPlugSharedNotableDAOImpl }
-import com.hubofallthings.dataplug.services.{ DataPlugEndpointService, DataPlugEndpointServiceImpl, DataPlugNotablesService, DataPlugNotablesServiceImpl, StartupService, StartupServiceImpl }
-import com.hubofallthings.dataplugFacebook.apiInterfaces.{ FacebookEventInterface, FacebookFeedInterface, FacebookPostsInterface, FacebookProfileCheck, FacebookProfileInterface, FacebookProfilePictureInterface, FacebookUserLikesInterface }
+import com.hubofallthings.dataplug.services._
 import com.hubofallthings.dataplugFacebook.apiInterfaces.authProviders._
+import com.hubofallthings.dataplugFacebook.apiInterfaces._
 import com.mohiva.play.silhouette.api.Provider
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.providers._
@@ -48,7 +48,7 @@ class FacebookPlugModule extends AbstractModule with ScalaModule with AkkaGuiceS
     bind[DataPlugNotablesService].to[DataPlugNotablesServiceImpl]
 
     bind[DataPlugViewSet].to[DataPlugViewSetDefault]
-    bind[HatOAuth2Provider].to[FacebookProvider]
+    bind[DataPlugDisconnect].to[FacebookProvider]
 
     //    bindActorFactory[InjectedHatClientActor, InjectedHatClientActor.Factory]
     bindActor[DataPlugManagerActor]("dataplug-manager")
