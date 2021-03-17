@@ -9,11 +9,12 @@
 package com.hubofallthings.dataplug.controllers
 
 import com.hubofallthings.dataplug.actors.IoExecutionContext
-import com.hubofallthings.dataplug.apiInterfaces.authProviders.HatOAuth2Provider
+import com.hubofallthings.dataplug.apiInterfaces.authProviders.DataPlugDisconnect
 import com.hubofallthings.dataplug.apiInterfaces.models.{ ApiEndpointStatus, ApiEndpointVariantChoice }
 import com.hubofallthings.dataplug.models.User
 import com.hubofallthings.dataplug.services.{ DataPlugEndpointService, DataplugSyncerActorManager, HatTokenService, UserService }
 import com.hubofallthings.dataplug.utils.{ PhataAuthenticationEnvironment, SilhouettePhataAuthenticationController }
+
 import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Clock
@@ -37,7 +38,7 @@ class Application @Inject() (
     syncerActorManager: DataplugSyncerActorManager,
     userService: UserService,
     hatTokenService: HatTokenService,
-    hatProvider: HatOAuth2Provider,
+    plugDisconnect: DataPlugDisconnect,
     clock: Clock) extends SilhouettePhataAuthenticationController(components, silhouette, clock, configuration) {
 
   protected val logger: Logger = Logger(this.getClass)
@@ -193,7 +194,7 @@ class Application @Inject() (
       redirect <- deactivateEndpoints()(request)
       _ <- userService.delete(phata, userId)
       _ <- hatTokenService.delete(phata)
-      _ <- hatProvider.disconnect(phata, userId)
+      _ <- plugDisconnect.disconnect(phata, userId)
     } yield {
       redirect
     }

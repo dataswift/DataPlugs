@@ -8,7 +8,7 @@
 
 package com.hubofallthings.dataplugFacebook.apiInterfaces.authProviders
 
-import com.hubofallthings.dataplug.apiInterfaces.authProviders.HatOAuth2Provider
+import com.hubofallthings.dataplug.apiInterfaces.authProviders.DataPlugDisconnect
 import com.hubofallthings.dataplugFacebook.models.FacebookProfile
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.HTTPLayer
@@ -26,7 +26,7 @@ import scala.concurrent.Future
  * @see https://developers.facebook.com/docs/graph-api/reference/user
  * @see https://developers.facebook.com/docs/facebook-login/access-tokens
  */
-trait BaseFacebookProvider extends HatOAuth2Provider {
+trait BaseFacebookProvider extends DataPlugDisconnect with OAuth2Provider {
 
   /**
    * The content type to parse a profile from.

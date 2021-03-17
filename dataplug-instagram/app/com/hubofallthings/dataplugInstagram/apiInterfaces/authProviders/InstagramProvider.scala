@@ -7,12 +7,12 @@
 
 package com.hubofallthings.dataplugInstagram.apiInterfaces.authProviders
 
+import com.hubofallthings.dataplug.apiInterfaces.authProviders.DataPlugDisconnect
+import com.hubofallthings.dataplugInstagram.apiInterfaces.authProviders.InstagramProvider._
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.{ ExtractableRequest, HTTPLayer }
 import com.mohiva.play.silhouette.impl.exceptions.ProfileRetrievalException
 import com.mohiva.play.silhouette.impl.providers._
-import InstagramProvider._
-import com.hubofallthings.dataplug.apiInterfaces.authProviders.HatOAuth2Provider
 import play.api.libs.json._
 import play.api.mvc.Result
 
@@ -23,7 +23,7 @@ import scala.concurrent.Future
  *
  * @see https://docs.yapily.com/?version=latest
  */
-trait BaseInstagramProvider extends HatOAuth2Provider {
+trait BaseInstagramProvider extends DataPlugDisconnect with OAuth2Provider {
 
   /**
    * The content type to parse a profile from.

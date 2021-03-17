@@ -11,12 +11,13 @@ package com.hubofallthings.dataplugTwitter
 import akka.actor.{ ActorSystem, Scheduler }
 import com.google.inject.{ AbstractModule, Provides }
 import com.hubofallthings.dataplug.actors.DataPlugManagerActor
+import com.hubofallthings.dataplug.apiInterfaces.authProviders.DataPlugDisconnect
 import com.hubofallthings.dataplug.apiInterfaces.{ DataPlugOptionsCollector, DataPlugOptionsCollectorRegistry, DataPlugRegistry }
 import com.hubofallthings.dataplug.controllers.{ DataPlugViewSet, DataPlugViewSetDefault }
 import com.hubofallthings.dataplug.dal.SchemaMigrationImpl
 import com.hubofallthings.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl, DataPlugSharedNotableDAO, DataPlugSharedNotableDAOImpl }
-import com.hubofallthings.dataplug.services.{ DataPlugEndpointService, DataPlugEndpointServiceImpl, DataPlugNotablesService, DataPlugNotablesServiceImpl, StartupService, StartupServiceImpl }
-import com.hubofallthings.dataplugTwitter.apiInterfaces.{ TwitterFollowerInterface, TwitterFriendInterface, TwitterTweetInterface, TwitterTweetsCheck }
+import com.hubofallthings.dataplug.services._
+import com.hubofallthings.dataplugTwitter.apiInterfaces._
 import com.mohiva.play.silhouette.api.Provider
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.providers._
@@ -48,7 +49,7 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
     bind[DataPlugNotablesService].to[DataPlugNotablesServiceImpl]
 
     bind[DataPlugViewSet].to[DataPlugViewSetDefault]
-
+    bind[DataPlugDisconnect].to[HatTwitterProvider]
     bindActor[DataPlugManagerActor]("dataplug-manager")
   }
 

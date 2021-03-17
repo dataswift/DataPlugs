@@ -11,14 +11,14 @@ package com.hubofallthings.dataplugInstagram
 import akka.actor.{ ActorSystem, Scheduler }
 import com.google.inject.{ AbstractModule, Provides }
 import com.hubofallthings.dataplug.actors.DataPlugManagerActor
-import com.hubofallthings.dataplug.apiInterfaces.authProviders.HatOAuth2Provider
+import com.hubofallthings.dataplug.apiInterfaces.authProviders.DataPlugDisconnect
 import com.hubofallthings.dataplug.apiInterfaces.{ DataPlugOptionsCollector, DataPlugOptionsCollectorRegistry, DataPlugRegistry }
 import com.hubofallthings.dataplug.controllers.{ DataPlugViewSet, DataPlugViewSetDefault }
 import com.hubofallthings.dataplug.dal.SchemaMigrationImpl
 import com.hubofallthings.dataplug.dao.{ DataPlugEndpointDAO, DataPlugEndpointDAOImpl }
 import com.hubofallthings.dataplug.services.{ DataPlugEndpointService, DataPlugEndpointServiceImpl, StartupService, StartupServiceImpl }
-import com.hubofallthings.dataplugInstagram.apiInterfaces.{ InstagramFeedInterface, InstagramProfileCheck, InstagramProfileInterface }
 import com.hubofallthings.dataplugInstagram.apiInterfaces.authProviders.InstagramProvider
+import com.hubofallthings.dataplugInstagram.apiInterfaces.{ InstagramFeedInterface, InstagramProfileCheck, InstagramProfileInterface }
 import com.mohiva.play.silhouette.api.Provider
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.providers._
@@ -46,7 +46,7 @@ class Module extends AbstractModule with ScalaModule with AkkaGuiceSupport {
     bind[DataPlugEndpointService].to[DataPlugEndpointServiceImpl]
 
     bind[DataPlugViewSet].to[DataPlugViewSetDefault]
-    bind[HatOAuth2Provider].to[InstagramProvider]
+    bind[DataPlugDisconnect].to[InstagramProvider]
 
     //    bindActorFactory[InjectedHatClientActor, InjectedHatClientActor.Factory]
     bindActor[DataPlugManagerActor]("dataplug-manager")

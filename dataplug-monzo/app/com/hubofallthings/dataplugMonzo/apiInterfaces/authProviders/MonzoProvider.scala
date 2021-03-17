@@ -8,12 +8,12 @@
 
 package com.hubofallthings.dataplugMonzo.apiInterfaces.authProviders
 
+import com.hubofallthings.dataplug.apiInterfaces.authProviders.DataPlugDisconnect
+import com.hubofallthings.dataplugMonzo.apiInterfaces.authProviders.MonzoProvider._
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.exceptions.ProfileRetrievalException
 import com.mohiva.play.silhouette.impl.providers._
-import MonzoProvider._
-import com.hubofallthings.dataplug.apiInterfaces.authProviders.HatOAuth2Provider
 import play.api.http.HeaderNames._
 import play.api.libs.json.{ JsObject, JsValue }
 
@@ -24,7 +24,7 @@ import scala.concurrent.Future
  *
  * @see https://monzo.com/docs/#authentication
  */
-trait BaseMonzoProvider extends HatOAuth2Provider {
+trait BaseMonzoProvider extends DataPlugDisconnect with OAuth2Provider {
 
   /**
    * The content type to parse a profile from.

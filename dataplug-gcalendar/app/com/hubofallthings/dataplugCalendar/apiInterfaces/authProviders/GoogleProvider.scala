@@ -8,7 +8,7 @@
 
 package com.hubofallthings.dataplugCalendar.apiInterfaces.authProviders
 
-import com.hubofallthings.dataplug.apiInterfaces.authProviders.HatOAuth2Provider
+import com.hubofallthings.dataplug.apiInterfaces.authProviders.DataPlugDisconnect
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.exceptions.ProfileRetrievalException
@@ -26,7 +26,7 @@ import scala.concurrent.Future
  * @see https://developers.google.com/accounts/docs/OAuth2Login
  * @see https://developers.google.com/+/api/latest/people
  */
-trait BaseGoogleProvider extends HatOAuth2Provider {
+trait BaseGoogleProvider extends DataPlugDisconnect with OAuth2Provider {
 
   /**
    * The content type to parse a profile from.

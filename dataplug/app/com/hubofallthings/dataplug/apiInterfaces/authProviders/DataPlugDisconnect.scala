@@ -9,10 +9,9 @@
 package com.hubofallthings.dataplug.apiInterfaces.authProviders
 
 import akka.Done
-import com.mohiva.play.silhouette.impl.providers.OAuth2Provider
 
 import scala.concurrent.Future
 
-trait HatOAuth2Provider extends OAuth2Provider {
-  def disconnect(phata: String, userId: String): Future[Done] = Future.successful(Done)
+trait DataPlugDisconnect {
+  def disconnect(phata: String, userId: String): Future[Unit] = Future.successful(())
 }
