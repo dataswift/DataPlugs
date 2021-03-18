@@ -25,14 +25,14 @@ jobs:
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
       - name: Container - Pull
-        run: docker pull ${{ env.REGISTRY }}:${{ github.sha }}
+        run: docker pull ${{ env.REGISTRY }}:main
 
       - name: Container - Scan - create git issue
         uses: dataswift/gha-trivy@main
         id: trivy
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          image: ${{ env.REGISTRY }}:${{ github.sha }}
+          image: ${{ env.REGISTRY }}:main
           issue: 'true'
           issue_label: trivy, vulnerability, security
           issue_title: Trivy generated Security Alert
@@ -52,14 +52,14 @@ jobs:
         with:
           project: ${{ secrets.JIRA_TRIVY_PROJECT }}
           issuetype: ${{ secrets.JIRA_TRIVY_ISSUE_TYPE }}
-          summary: Trivy has detected a vulnerability with a Docker container
+          summary: DataPlug - Trivy has detected a vulnerability in container
           description: ${{steps.trivy.outputs.html_url}}
 
       - name: Container - Scan - Save Result
         if: steps.trivy.outputs.issue_number != ''
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "${{ env.REGISTRY }}:${{ github.sha }}"
+          image-ref: "${{ env.REGISTRY }}:main"
           format: "template"
           template: "@/contrib/sarif.tpl"
           output: "trivy-results.sarif"

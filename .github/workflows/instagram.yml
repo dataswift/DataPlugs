@@ -43,10 +43,10 @@ jobs:
         run: docker push hubofallthings/$DATAPLUG:$GITHUB_SHA
 
       - name: Container Image Push - Master
-        if: startsWith(github.ref, 'refs/heads/master')
+        if: startsWith(github.ref, 'refs/heads/main')
         run: |
-          docker tag hubofallthings/$DATAPLUG:$GITHUB_SHA hubofallthings/$DATAPLUG:master
-          docker push hubofallthings/$DATAPLUG:master
+          docker tag hubofallthings/$DATAPLUG:$GITHUB_SHA hubofallthings/$DATAPLUG:main
+          docker push hubofallthings/$DATAPLUG:main
 
       - name: Container Image Push - Tag
         if: startsWith(github.ref, 'refs/tags')
