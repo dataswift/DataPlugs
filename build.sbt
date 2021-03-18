@@ -55,22 +55,21 @@ val dataplug = project
       Library.Play.Jwt.bouncyCastle,
       Library.Play.Jwt.bouncyCastlePkix,
       Library.Play.Jwt.nimbusDsJwt,
-      Library.Play.mailer,
-      Library.Play.mailerGuice,
       Library.Play.playSlick,
       Library.Play.Silhouette.cryptoJca,
       Library.Play.Silhouette.passwordBcrypt,
       Library.Play.Silhouette.persistence,
       Library.Play.Silhouette.silhouette,
-      Library.Play.test,
       Library.Play.typesafeConfigExtras,
       Library.Play.Utils.playBootstrap,
       Library.Play.ws,
-      Library.Specs2.core,
-      Library.Specs2.matcherExtra,
-      Library.Specs2.mock,
       Library.Utils.apacheCommonLang,
-      Library.scalaGuice
+      Library.AwsV1.awsJavaSesSdk,
+      Library.scalaGuice,
+      Library.Play.test % Test,
+      Library.Specs2.core % Test,
+      Library.Specs2.matcherExtra % Test,
+      Library.Specs2.mock % Test
     )
   )
   .enablePlugins(PlayScala, SbtWeb, SbtSassify)
@@ -90,7 +89,7 @@ lazy val dataplugFacebook = Project(id = "dataplug-facebook", base = file("datap
   .settings(buildSettings)
   .enablePlugins(AshScriptPlugin)
   .settings(packageSettings)
-  .dependsOn(dataplug)
+  .dependsOn(dataplug % "test->test;compile->compile")
 
 lazy val dataplugTwitter = Project(id = "dataplug-twitter", base = file("dataplug-twitter"))
   .enablePlugins(BasicSettings)
@@ -114,7 +113,7 @@ lazy val dataplugGcalendar = Project(id = "dataplug-gcalendar", base = file("dat
   .settings(buildSettings)
   .enablePlugins(AshScriptPlugin)
   .settings(packageSettings)
-  .dependsOn(dataplug)
+  .dependsOn(dataplug % "test->test;compile->compile")
 
 lazy val dataplugMonzo = Project(id = "dataplug-monzo", base = file("dataplug-monzo"))
   .enablePlugins(BasicSettings)
@@ -175,7 +174,7 @@ lazy val dataplugInstagram = Project(id = "dataplug-instagram", base = file("dat
   .settings(buildSettings)
   .enablePlugins(AshScriptPlugin)
   .settings(packageSettings)
-  .dependsOn(dataplug)
+  .dependsOn(dataplug % "test->test;compile->compile")
 
 lazy val dataplugUber = Project(id = "dataplug-uber", base = file("dataplug-uber"))
   .enablePlugins(BasicSettings)

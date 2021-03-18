@@ -9,10 +9,10 @@
 package com.hubofallthings.dataplugCalendar
 
 import akka.util.Timeout
-import com.hubofallthings.dataplug.apiInterfaces.models.{DataPlugFetchContinuation, DataPlugFetchNextSync}
+import com.hubofallthings.dataplug.apiInterfaces.models.{ DataPlugFetchContinuation, DataPlugFetchNextSync }
 import com.hubofallthings.dataplug.models.User
 import com.hubofallthings.dataplug.services.UserService
-import com.hubofallthings.dataplug.testkit.{DataPlugEndpointInterfaceTestHelper, TestModule}
+import com.hubofallthings.dataplug.testkit.{ DataPlugEndpointInterfaceTestHelper, TestModule }
 import com.hubofallthings.dataplugCalendar.apiInterfaces.GoogleCalendarEventsInterface
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
@@ -23,9 +23,8 @@ import org.specs2.specification.BeforeAfterAll
 import play.api.inject._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
-import play.api.{Configuration, Logger}
+import play.api.{ Configuration, Logger }
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
 class GoogleCalendarEventsInterfaceSpec(implicit val ee: ExecutionEnv) extends Specification with DataPlugEndpointInterfaceTestHelper with BeforeAfterAll {

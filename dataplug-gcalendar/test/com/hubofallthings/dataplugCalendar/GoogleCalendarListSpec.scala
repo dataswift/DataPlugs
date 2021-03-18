@@ -18,18 +18,20 @@ import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
 import org.specs2.specification.BeforeAfterAll
-import play.api.{Configuration, Logger}
+import play.api.{Configuration, Environment, Logger}
 import play.api.inject._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
 class GoogleCalendarListSpec(implicit val ee: ExecutionEnv) extends Specification with DataPlugEndpointInterfaceTestHelper with BeforeAfterAll {
 
   val injector = new GuiceApplicationBuilder()
-    .loadConfig(env => Configuration.load(env))
+    .loadConfig { env =>
+          println(env)
+      Configuration.load(env)
+    }
     .overrides(new TestModule)
     .overrides(bind[WSClient].toInstance(client))
     .build

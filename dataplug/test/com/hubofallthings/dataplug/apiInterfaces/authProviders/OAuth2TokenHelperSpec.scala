@@ -8,14 +8,12 @@
 
 package com.hubofallthings.dataplug.apiInterfaces.authProviders
 
-import com.hubofallthings.dataplug.testkit.{DataPlugEndpointInterfaceTestHelper, TestModule}
-import com.hubofallthings.dataplug.apiInterfaces.authProviders.OAuth2TokenHelper
 import com.hubofallthings.dataplug.models.User
 import com.hubofallthings.dataplug.services.UserService
+import com.hubofallthings.dataplug.testkit.{ DataPlugEndpointInterfaceTestHelper, TestModule }
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
-import com.hubofallthings.dataplug.testkit.DataPlugEndpointInterfaceTestHelper
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
 import org.specs2.specification.BeforeAfterAll
@@ -24,7 +22,6 @@ import play.api.inject._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
 class OAuth2TokenHelperSpec(implicit val ee: ExecutionEnv) extends Specification with DataPlugEndpointInterfaceTestHelper with BeforeAfterAll {

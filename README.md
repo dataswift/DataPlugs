@@ -40,10 +40,6 @@ You will also need to extend project build settings to include the new plug, ple
 The following configuration parameters need to be provided as environment variables:
 
 - `APPLICATION_SECRET` - application secret
-- `MAILER_HOST` - mailer system host<sup>*</sup>
-- `MAILER_PORT` - mailer system port<sup>*</sup>
-- `MAILER_USER` - mailer system username<sup>*</sup>
-- `MAILER_PASSWORD` - mailer system password<sup>*</sup>
 - `MAILER_FROM` - email `From` field value<sup>*</sup>
 - `HAT_USER` - username of the dedicated dataplug account on HATs
 - `HAT_PASSWORD` - password of the dedicated dataplug account on HATs
