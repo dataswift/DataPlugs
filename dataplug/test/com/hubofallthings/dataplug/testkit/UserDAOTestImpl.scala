@@ -13,6 +13,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import scala.collection.mutable
 import scala.concurrent.Future
 import UserDAOTestImpl._
+import akka.Done
 import com.hubofallthings.dataplug.dao.UserDAO
 import com.hubofallthings.dataplug.models.User
 
@@ -28,8 +29,7 @@ class UserDAOTestImpl extends UserDAO {
    * @return The found user or None if no user for the given login info could be found.
    */
   def find(loginInfo: LoginInfo) = Future.successful(
-    users.find { case (id, user) => user.loginInfo == loginInfo }.map(_._2)
-  )
+    users.find { case (id, user) => user.loginInfo == loginInfo }.map(_._2))
 
   /**
    * Finds a user by its user ID.
@@ -59,6 +59,11 @@ class UserDAOTestImpl extends UserDAO {
       case _ =>
         Future.successful(())
     }
+  }
+
+  override def delete(phata: String, userId: String): Future[Done] = {
+    users.remove(userId)
+    Future.successful(Done)
   }
 }
 

@@ -8,23 +8,30 @@
 
 package com.hubofallthings.dataplug.utils
 
-import javax.inject.Inject
 import akka.actor.ActorSystem
+import com.amazonaws.services.simpleemail.AmazonSimpleEmailService
+import com.amazonaws.services.simpleemail.model._
 import com.google.inject.ImplementedBy
-import play.api.Configuration
-import play.api.libs.mailer.{ Email, MailerClient }
+import play.api.{ Configuration, Logger }
 
+import java.nio.charset.StandardCharsets
+import javax.inject.Inject
+import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 @ImplementedBy(classOf[MailServiceImpl])
 trait MailService {
   def sendEmailAsync(recipients: String*)(subject: String, bodyHtml: String, bodyText: String): Unit
+
   def sendEmail(recipients: String*)(subject: String, bodyHtml: String, bodyText: String): Unit
 }
 
-class MailServiceImpl @Inject() (system: ActorSystem, mailerClient: MailerClient, val conf: Configuration)(implicit ec: ExecutionContext) extends MailService {
-  lazy val from = conf.get[String]("play.mailer.from")
+class MailServiceImpl @Inject() (system: ActorSystem, mailerClient: AmazonSimpleEmailService, conf: Configuration)(implicit ec: ExecutionContext) extends MailService {
+
+  private val logger = Logger(getClass)
+  private val from = conf.get[String]("mailer.from")
+  private val mock = conf.get[Boolean]("mailer.mock")
 
   def sendEmailAsync(recipients: String*)(subject: String, bodyHtml: String, bodyText: String): Unit = {
     system.scheduler.scheduleOnce(100.milliseconds) {
@@ -32,6 +39,16 @@ class MailServiceImpl @Inject() (system: ActorSystem, mailerClient: MailerClient
     }
   }
 
-  def sendEmail(recipients: String*)(subject: String, bodyHtml: String, bodyText: String): Unit =
-    mailerClient.send(Email(subject, from, recipients, Some(bodyText), Some(bodyHtml)))
+  def sendEmail(recipients: String*)(subject: String, bodyHtml: String, bodyText: String): Unit = {
+    if (mock) logger.info(s"not sending email about '$subject' to ${recipients.mkString(", ")}")
+    else {
+      val message = new Message(content(subject), new Body(content(bodyText)).withHtml(content(bodyHtml)))
+      val request = new SendEmailRequest(from, new Destination(recipients.asJava), message)
+      mailerClient.sendEmail(request)
+    }
+  }
+
+  private def content(s: String): Content =
+    new Content(s).withCharset(StandardCharsets.UTF_8.name())
+
 }

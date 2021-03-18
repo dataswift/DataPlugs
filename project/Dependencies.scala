@@ -11,7 +11,7 @@ import sbt._
 object Dependencies {
 
   object Versions {
-    val crossScala = Seq("2.12.11")
+    val crossScala = Seq("2.12.13")
     val scalaVersion = crossScala.head
   }
 
@@ -37,11 +37,8 @@ object Dependencies {
       val ws = "com.typesafe.play" %% "play-ws" % version
       val cache = "com.typesafe.play" %% "play-cache" % version
       val test = "com.typesafe.play" %% "play-test" % version
-      val specs2 = "com.typesafe.play" %% "play-specs2" % version
       val json = "com.typesafe.play" %% "play-json" % "2.6.9"
       val jsonJoda = "com.typesafe.play" %% "play-json-joda" % "2.6.9"
-      val mailer = "com.typesafe.play" %% "play-mailer" % "6.0.1"
-      val mailerGuice = "com.typesafe.play" %% "play-mailer-guice" % "6.0.1"
       val typesafeConfigExtras = "com.iheart" %% "ficus" % "1.4.3"
       val playSlick = "com.typesafe.play" %% "play-slick" % "3.0.3"
 
@@ -77,6 +74,11 @@ object Dependencies {
     object Utils {
       val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.0.9"
       val apacheCommonLang = "org.apache.commons" % "commons-lang3" % "3.10"
+    }
+
+    object AwsV1 {
+      private val version = "1.11.971"
+      val awsJavaSesSdk   = "com.amazonaws" % "aws-java-sdk-ses" % version
     }
 
     val scalaGuice = "net.codingwell" %% "scala-guice" % "4.1.0"
