@@ -8,21 +8,15 @@
 
 package com.hubofallthings.dataplug.utils
 
-import javax.inject.Inject
-
 import com.hubofallthings.dataplug.views
-import play.api.Configuration
-import play.api.UsefulException
 import play.api.i18n.Messages
 import play.api.mvc.RequestHeader
-import play.twirl.api.Html
+import play.api.{Configuration, UsefulException}
 
+import javax.inject.Inject
 import scala.util.Try
 
-class Mailer @Inject() (configuration: Configuration, ms: MailService) {
-  import scala.language.implicitConversions
-
-  implicit def html2String(html: Html): String = html.toString
+class Mailer @Inject()(configuration: Configuration, ms: MailService) {
 
   private val plugName = configuration.getOptional[String]("service.name").getOrElse("MISCONFIGURED")
   private val adminEmails = configuration.getOptional[Seq[String]]("administrators").getOrElse(Seq())
@@ -30,10 +24,9 @@ class Mailer @Inject() (configuration: Configuration, ms: MailService) {
   def serverErrorNotify(request: RequestHeader, exception: UsefulException)(implicit m: Messages): Unit = {
     // wrap any errors
     Try {
-      val emailFrom = configuration.get[String]("play.mailer.from")
       ms.sendEmailAsync(adminEmails: _*)(
         subject = s"DataPlug $plugName server error: #${exception.getMessage}",
-        bodyHtml = views.html.mails.emailServerError(request, exception),
+        bodyHtml = views.html.mails.emailServerError(request, exception).toString(),
         bodyText = views.html.mails.emailServerError(request, exception).toString())
     }
   }
@@ -41,10 +34,9 @@ class Mailer @Inject() (configuration: Configuration, ms: MailService) {
   def serverExceptionNotify(request: RequestHeader, exception: Throwable)(implicit m: Messages): Unit = {
     // wrap any errors
     Try {
-      val emailFrom = configuration.get[String]("play.mailer.from")
       ms.sendEmailAsync(adminEmails: _*)(
         subject = s"DataPlug $plugName server error: ${exception.getMessage} for ${request.path + request.rawQueryString}",
-        bodyHtml = views.html.mails.emailServerThrowable(request, exception),
+        bodyHtml = views.html.mails.emailServerThrowable(request, exception).toString(),
         bodyText = views.html.mails.emailServerThrowable(request, exception).toString())
     }
   }
@@ -52,10 +44,9 @@ class Mailer @Inject() (configuration: Configuration, ms: MailService) {
   def serverExceptionNotifyInternal(message: String, exception: Throwable): Unit = {
     // wrap any errors
     Try {
-      val emailFrom = configuration.get[String]("play.mailer.from")
       ms.sendEmailAsync(adminEmails: _*)(
         subject = s"DataPlug $plugName server error: ${exception.getMessage}",
-        bodyHtml = views.html.mails.emailServerThrowableInternal(message, exception),
+        bodyHtml = views.html.mails.emailServerThrowableInternal(message, exception).toString(),
         bodyText = views.html.mails.emailServerThrowableInternal(message, exception).toString())
     }
   }
