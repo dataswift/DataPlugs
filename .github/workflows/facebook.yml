@@ -43,10 +43,14 @@ jobs:
         run: docker push hubofallthings/$DATAPLUG:$GITHUB_SHA
 
       - name: Extract Branch Name
-        run: echo "BRANCH=$(echo ${GITHUB_REF##*/})" >> $GITHUB_ENV
+        run:  |
+          echo "BRANCH=$(echo ${GITHUB_REF##*/})" >> $GITHUB_ENV
 
-      - name: Extract Branch Name
-        run: echo "{{$env.BRANCH}}"
+      - name: Test Branch Name
+        run: echo "{{ $env.BRANCH }}"
+
+      - name: Test Github Ref Name
+        run: echo "{{ GITHUB_REF##*/ }}"
 
       - name: Container Image Push - Master
         if: contains(env.BRANCH, 'main')
