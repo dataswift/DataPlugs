@@ -44,7 +44,7 @@ jobs:
 
       - name: Extract Branch Name
         run:  |
-          echo "BRANCH=$(echo ${GITHUB_REF##*/})" >> $GITHUB_ENV
+          echo "BRANCH=$(echo ${GITHUB_REF})" >> $GITHUB_ENV
 
       - name: Display Branch Name
         run:  |
