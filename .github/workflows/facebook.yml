@@ -53,13 +53,13 @@ jobs:
         run: echo "{{ $GITHUB_REF##*/ }}"
 
       - name: Container Image Push - Master
-        if: contains(env.BRANCH, "main")
+        if: contains({{ $BRANCH }}, 'main')
         run: |
           docker tag hubofallthings/$DATAPLUG:$GITHUB_SHA hubofallthings/$DATAPLUG:main
           docker push hubofallthings/$DATAPLUG:main
 
       - name: Container Image Push - Tag
-        if: contains(env.BRANCH, "tags")
+        if: contains({{ $BRANCH }}, 'tags')
         run: |
           docker tag hubofallthings/$DATAPLUG:$GITHUB_SHA hubofallthings/$DATAPLUG:$(echo $GITHUB_REF | sed -e "s/refs\/tags\///g")
           docker push hubofallthings/$DATAPLUG:$(echo $GITHUB_REF | sed -e "s/refs\/tags\///g")
@@ -67,6 +67,6 @@ jobs:
           docker push hubofallthings/$DATAPLUG:latest
 
       - name: Test
-        if: contains(env.BRANCH, "HOTFIX-deploymment")
+        if: contains({{ $BRANCH }}, 'HOTFIX-deploymment')
         run: |
           echo "Hello World"
