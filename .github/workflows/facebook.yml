@@ -33,6 +33,11 @@ jobs:
         run: |
           echo "Hello world"
 
+      - name: Test Tag
+            if: contains(env.BRANCH, 'tags')
+            run: |
+              echo "Hello world"
+
       - name: Container Image Push - Master
         if: env.BRANCH == 'main'
         run: |
