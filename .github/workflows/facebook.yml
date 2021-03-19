@@ -46,37 +46,16 @@ jobs:
         run:  |
           echo "BRANCH=$(echo ${GITHUB_REF##*/})" >> $GITHUB_ENV
 
-      - name: Test Branch Name
-        run: echo "{{ $BRANCH }}"
-
-      - name: Test Github Ref Name
-        run: echo "{{ $GITHUB_REF##*/ }}"
-
       - name: Container Image Push - Master
-        if: contains(env.BRANCH, 'main')
+        if: env.BRANCH == 'main'
         run: |
           docker tag hubofallthings/$DATAPLUG:$GITHUB_SHA hubofallthings/$DATAPLUG:main
           docker push hubofallthings/$DATAPLUG:main
 
       - name: Container Image Push - Tag
-        if: contains(env.BRANCH, 'tags')
+        if: startsWith(env.BRANCH, 'tags')
         run: |
           docker tag hubofallthings/$DATAPLUG:$GITHUB_SHA hubofallthings/$DATAPLUG:$(echo $GITHUB_REF | sed -e "s/refs\/tags\///g")
           docker push hubofallthings/$DATAPLUG:$(echo $GITHUB_REF | sed -e "s/refs\/tags\///g")
           docker tag hubofallthings/$DATAPLUG:$GITHUB_SHA hubofallthings/$DATAPLUG:latest
           docker push hubofallthings/$DATAPLUG:latest
-
-      - name: Test 1
-        if: contains(env.BRANCH, 'deploymment')
-        run: |
-          echo "Hello World"
-
-      - name: Test 2
-        if: startsWith(env.BRANCH, 'HOTFIX')
-        run: |
-          echo "Hello World"
-
-      - name: Test 3
-        if: env.BRANCH =='HOTFIX-deployment'
-        run: |
-          echo "Hello World"
