@@ -55,7 +55,4 @@ jobs:
       - name: Container Image Push - Tag
         if: startsWith(env.BRANCH, 'tags')
         run: |
-          docker tag hubofallthings/$DATAPLUG:$GITHUB_SHA hubofallthings/$DATAPLUG:$(echo $GITHUB_REF | sed -e "s/refs\/tags\///g")
-          docker push hubofallthings/$DATAPLUG:$(echo $GITHUB_REF | sed -e "s/refs\/tags\///g")
-          docker tag hubofallthings/$DATAPLUG:$GITHUB_SHA hubofallthings/$DATAPLUG:latest
-          docker push hubofallthings/$DATAPLUG:latest
+         echo "Hello World"
