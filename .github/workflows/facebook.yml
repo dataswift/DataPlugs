@@ -46,6 +46,10 @@ jobs:
         run:  |
           echo "BRANCH=$(echo ${GITHUB_REF##*/})" >> $GITHUB_ENV
 
+      - name: Display Branch Name
+        run:  |
+          echo "{{ $BRANCH }}"
+
       - name: Container Image Push - Master
         if: env.BRANCH == 'main'
         run: |
