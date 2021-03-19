@@ -80,8 +80,3 @@ jobs:
         if: env.BRANCH =='HOTFIX-deployment')
         run: |
           echo "Hello World"
-
-      - name: Test 4
-          if: env.BRANCH =='*'
-          run: |
-            echo "Hello World"
