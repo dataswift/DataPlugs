@@ -46,7 +46,7 @@ jobs:
         run: echo "BRANCH=$(echo ${GITHUB_REF##*/})" >> $GITHUB_ENV
 
       - name: Extract Branch Name
-        run: echo "{{env.BRANCH}}"
+        run: echo "{{$env.BRANCH}}"
 
       - name: Container Image Push - Master
         if: contains(env.BRANCH, 'main')
