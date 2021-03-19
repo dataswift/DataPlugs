@@ -53,7 +53,7 @@ jobs:
         run: echo "{{ $GITHUB_REF##*/ }}"
 
       - name: Container Image Push - Master
-        if: contains($BRANCH, 'main')
+        if: contains(BRANCH, 'main')
         run: |
           docker tag hubofallthings/$DATAPLUG:$GITHUB_SHA hubofallthings/$DATAPLUG:main
           docker push hubofallthings/$DATAPLUG:main
