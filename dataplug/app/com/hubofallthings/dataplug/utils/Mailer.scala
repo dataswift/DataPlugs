@@ -11,12 +11,12 @@ package com.hubofallthings.dataplug.utils
 import com.hubofallthings.dataplug.views
 import play.api.i18n.Messages
 import play.api.mvc.RequestHeader
-import play.api.{Configuration, UsefulException}
+import play.api.{ Configuration, UsefulException }
 
 import javax.inject.Inject
 import scala.util.Try
 
-class Mailer @Inject()(configuration: Configuration, ms: MailService) {
+class Mailer @Inject() (configuration: Configuration, ms: MailService) {
 
   private val plugName = configuration.getOptional[String]("service.name").getOrElse("MISCONFIGURED")
   private val adminEmails = configuration.getOptional[Seq[String]]("administrators").getOrElse(Seq())
