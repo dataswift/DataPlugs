@@ -1,8 +1,4 @@
-# Run trivy creating a github issue for any issues
-# For each github issue create a Jira Ticket linking to the issue
-# This only runs on a single data plug since they all share a config and should be the same image
-# An issue in one will need to be resolved in all plugs however
-name: Trivy Jira
+name: Trivy
 
 on:
   workflow_dispatch:
@@ -35,7 +31,7 @@ jobs:
           image: ${{ env.REGISTRY }}:main
           issue: 'true'
           issue_label: trivy, vulnerability, security
-          issue_title: Trivy generated Security Alert
+          issue_title: Trivy Security Alert
 
       - name: Jira Login
         if: steps.trivy.outputs.issue_number != ''
@@ -52,7 +48,7 @@ jobs:
         with:
           project: ${{ secrets.JIRA_TRIVY_PROJECT }}
           issuetype: ${{ secrets.JIRA_TRIVY_ISSUE_TYPE }}
-          summary: DataPlug - Trivy has detected a vulnerability in container
+          summary: Trivy Security Alert - ${{ github.repository }}
           description: ${{steps.trivy.outputs.html_url}}
 
       - name: Container - Scan - Save Result
