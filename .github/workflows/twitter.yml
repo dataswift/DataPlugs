@@ -3,13 +3,13 @@ name: Build Twitter plug
 on:
   push:
     tags:
-      - 'twitter-v**'
+      - "twitter-v**"
     branches:
-      - '**'
+      - "**"
     paths:
-      - 'build.sbt'
-      - 'dataplug-twitter/**'
-      - '.github/workflows/twitter.yml'
+      - "build.sbt"
+      - "dataplug-twitter/**"
+      - ".github/workflows/twitter.yml"
 
 env:
   DATAPLUG: dataplug-twitter
@@ -18,11 +18,19 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
 
-      - name: Setup Java environment
-        uses: actions/setup-java@v1
+      - name: Cache - GHA
+        uses: actions/cache@v1
         with:
+          path: ~/.cache/coursier/v1/https
+          key: ${{ runner.OS }}-coursier-cache
+
+      - name: Setup Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: adopt
           java-version: 11
           java-package: jdk
           architecture: x64
@@ -43,7 +51,7 @@ jobs:
         run: docker push hubofallthings/$DATAPLUG:$GITHUB_SHA
 
       - name: Extract Branch Name
-        run:  |
+        run: |
           echo "BRANCH=$(echo ${GITHUB_REF})" >> $GITHUB_ENV
 
       - name: Container Image Push - Master
