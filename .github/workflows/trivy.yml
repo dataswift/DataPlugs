@@ -24,7 +24,7 @@ jobs:
         run: docker pull ${{ env.REGISTRY }}:main
 
       - name: Container - Scan - create git issue
-        uses: dataswift/gha-trivy@main
+        uses: lazy-actions/gitrivy@v3
         id: trivy
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
