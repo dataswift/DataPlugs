@@ -12,10 +12,6 @@ on:
       - "dataplug-facebook/**"
       - ".github/workflows/facebook.yml"
 
-env:
-  NAME: facebook
-  DATAPLUG: dataplug-facebook
-
 jobs:
   deploy:
     runs-on: ubuntu-latest

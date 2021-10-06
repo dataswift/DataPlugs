@@ -1,16 +1,16 @@
-name: Build spotify plug
+name: Build gcalendar plug
 
 on:
   push:
     tags:
-      - "spotify-v**"
+      - "gcalendar-v**"
     branches:
       - "**"
     paths:
       - "dataplug/**"
       - "build.sbt"
-      - "dataplug-spotify/**"
-      - ".github/workflows/spotify.yml"
+      - "dataplug-gcalendar/**"
+      - ".github/workflows/gcalendar.yml"
 
 jobs:
   deploy:
@@ -37,7 +37,7 @@ jobs:
           architecture: x64
 
       - name: Container - Prepare
-        run: sbt "project dataplug-spotify" docker:stage
+        run: sbt "project dataplug-gcalendar" docker:stage
 
       - name: Container - Setup QEMU
         uses: docker/setup-qemu-action@v1
@@ -49,9 +49,9 @@ jobs:
         id: meta
         uses: docker/metadata-action@v3
         with:
-          images: dataswift/dataplug-spotify
+          images: dataswift/dataplug-gcalendar
           tags: |
-            type=semver,pattern=spotify-v{{version}}
+            type=semver,pattern=gcalendar-v{{version}}
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/heads/main') }}
             type=sha,prefix=main-,format=long,enable=${{ startsWith(github.ref, 'refs/heads/main') }}
             type=sha,prefix=dev-,format=long,suffix=-${{ github.run_id }}
@@ -66,11 +66,11 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          context: dataplug-spotify/target/docker/stage/
+          context: dataplug-gcalendar/target/docker/stage/
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
-          cache-from: type=registry,ref=ghcr.io/datasiwft/dataplug-spotify:latest
+          cache-from: type=registry,ref=ghcr.io/datasiwft/dataplug-gcalendar:latest
 
       - name: Slack
         uses: lazy-actions/slatify@master
