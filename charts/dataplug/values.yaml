@@ -1,0 +1,157 @@
+# Default values for dataplug.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: dataswift/dataplug
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  # tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+env:
+  config: []
+  secret:
+    enabled: false
+    name: ""
+
+service:
+  enabled: true
+  annotations: {}
+  type: ClusterIP
+  port: 9000
+
+ingress:
+  enabled: false
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts: {}
+    # - host: chart-example.local
+    #   paths:
+    #   - path: /
+    #     backend:
+    #       serviceName: chart-example.local
+    #       servicePort: 80
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+metrics:
+  enabled: true
+
+  service:
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9000"
+
+    type: ClusterIP
+    port: 9000
+
+  serviceMonitor:
+    enabled: true
+    additionalLabels: {}
+    # The label to use to retrieve the job name from.
+    # jobLabel: "app.kubernetes.io/name"
+    namespace: ""
+    namespaceSelector: {}
+    # Default: scrape .Release.Namespace only
+    # To scrape all, use the following:
+    # namespaceSelector:
+    #   any: true
+    scrapeInterval: 30s
+    # honorLabels: true
+    targetLabels: []
+    metricRelabelings: []
+
+  prometheusRule:
+    enabled: false
+    additionalLabels: {}
+    # namespace: ""
+    rules: []
+      # # These are just examples rules, please adapt them to your needs
+      # - alert: NGINXConfigFailed
+      #   expr: count(nginx_ingress_controller_config_last_reload_successful == 0) > 0
+      #   for: 1s
+      #   labels:
+      #     severity: critical
+      #   annotations:
+      #     description: bad ingress config - nginx config test failed
+      #     summary: uninstall the latest ingress changes to allow config reloads to resume
+      # - alert: NGINXCertificateExpiry
+      #   expr: (avg(nginx_ingress_controller_ssl_expire_time_seconds) by (host) - time()) < 604800
+      #   for: 1s
+      #   labels:
+      #     severity: critical
+      #   annotations:
+      #     description: ssl certificate(s) will expire in less then a week
+      #     summary: renew expiring certificates to avoid downtime
+      # - alert: NGINXTooMany500s
+      #   expr: 100 * ( sum( nginx_ingress_controller_requests{status=~"5.+"} ) / sum(nginx_ingress_controller_requests) ) > 5
+      #   for: 1m
+      #   labels:
+      #     severity: warning
+      #   annotations:
+      #     description: Too many 5XXs
+      #     summary: More than 5% of all requests returned 5XX, this requires your attention
+      # - alert: NGINXTooMany400s
+      #   expr: 100 * ( sum( nginx_ingress_controller_requests{status=~"4.+"} ) / sum(nginx_ingress_controller_requests) ) > 5
+      #   for: 1m
+      #   labels:
+      #     severity: warning
+      #   annotations:
+      #     description: Too many 4XXs
+      #     summary: More than 5% of all requests returned 4XX, this requires your attention
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
