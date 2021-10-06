@@ -53,10 +53,9 @@ jobs:
         id: meta
         uses: docker/metadata-action@v3
         with:
-          images: |
-            dataswift/$DATAPLUG
+          images: dataswift/dataplug-facebook
           tags: |
-            type=semver,pattern=$NAME-v{{version}}
+            type=semver,pattern=facebook-v{{version}}
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/heads/main') }}
             type=sha,prefix=main-,format=long,enable=${{ startsWith(github.ref, 'refs/heads/main') }}
             type=sha,prefix=dev-,format=long,suffix=-${{ github.run_id }}
