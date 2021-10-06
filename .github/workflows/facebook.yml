@@ -41,7 +41,7 @@ jobs:
           architecture: x64
 
       - name: Container - Prepare
-        run: sbt "project $DATAPLUG" docker:stage
+        run: sbt "project dataplug-facebook" docker:stage
 
       - name: Container - Setup QEMU
         uses: docker/setup-qemu-action@v1
@@ -70,18 +70,18 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          context: $DATAPLUG/target/docker/stage/
+          context: dataplug-facebook/target/docker/stage/
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
-          cache-from: type=registry,ref=ghcr.io/datasiwft/$DATAPLUG:latest
+          cache-from: type=registry,ref=ghcr.io/datasiwft/dataplug-facebook:latest
 
       - name: Slack
         uses: lazy-actions/slatify@master
         if: failure()
         with:
           type: ${{ job.status }}
-          job_name: "*${{ env.GITHUB_WORKFLOW }}*"
+          job_name: "*${{ github.workflow }}*"
           channel: "ci"
           commit: true
           mention: "here"
