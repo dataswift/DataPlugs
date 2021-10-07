@@ -51,7 +51,7 @@ jobs:
         with:
           images: dataswift/dataplug-fitbit
           tags: |
-            type=semver,pattern=fitbit-v{{version}}
+            type=match,prefix=v,pattern=fitbit-v(\d.\d.\d),group=1
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/heads/main') }}
             type=sha,prefix=main-,format=long,enable=${{ startsWith(github.ref, 'refs/heads/main') }}
             type=sha,prefix=dev-,format=long,suffix=-${{ github.run_id }}
