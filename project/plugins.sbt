@@ -16,7 +16,7 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-web" % "1.4.3")
 addSbtPlugin("com.typesafe.sbt" % "sbt-digest" % "1.1.3")
 addSbtPlugin("com.typesafe.sbt" % "sbt-gzip" % "1.0.2")
 addSbtPlugin("org.irundaia.sbt" % "sbt-sassify" % "1.4.11")
-addSbtPlugin("com.typesafe.sbt" % "sbt-uglify" % "2.0.0")
+addSbtPlugin("com.github.sbt" % "sbt-uglify" % "3.0.1")
 
 // S3 based SBT resolver
 resolvers += "HAT Library Artifacts releases" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com"
